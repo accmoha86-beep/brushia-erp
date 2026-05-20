@@ -20,13 +20,16 @@ COPY --from=deps /app ./
 COPY packages/ packages/
 COPY apps/api/ apps/api/
 
-# Build workspace packages (composite = tsc -b required, use pnpm exec to find correct tsc)
-RUN cd packages/config && pnpm exec tsc -b --force && echo "✅ config built"
-RUN cd packages/shared && pnpm exec tsc -b --force && echo "✅ shared built"
-RUN cd packages/db && pnpm exec tsc -b --force && echo "✅ db built"
+# Install typescript and swc globally so all packages can use them
+RUN npm install -g typescript @swc/cli @swc/core
+
+# Build workspace packages (composite = tsc -b required)
+RUN cd packages/config && tsc -b --force && echo "✅ config built"
+RUN cd packages/shared && tsc -b --force && echo "✅ shared built"
+RUN cd packages/db && tsc -b --force && echo "✅ db built"
 
 # Build API with SWC (transpile-only, fast)
-RUN cd apps/api && pnpm exec swc src -d dist --strip-leading-paths && echo "✅ API built"
+RUN cd apps/api && swc src -d dist --strip-leading-paths && echo "✅ API built"
 RUN test -f apps/api/dist/main.js && echo "✅ API BUILD OK" || (echo "❌ API BUILD FAILED" && exit 1)
 
 # Replace pnpm symlinks with real package contents for production
