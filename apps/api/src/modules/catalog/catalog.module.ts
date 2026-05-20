@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CatalogController } from './catalog.controller';
 import { CatalogService } from './services/catalog.service';
-import { DatabaseModule } from '../database/database.module';
+import { DatabaseModule } from '../../database/database.module';
 import { AuditModule } from '../audit/audit.module';
 
 @Module({
@@ -10,4 +10,4 @@ import { AuditModule } from '../audit/audit.module';
   providers: [CatalogService],
   exports: [CatalogService],
 })
-export class CatalogModule {}\n
+export class CatalogModule {}

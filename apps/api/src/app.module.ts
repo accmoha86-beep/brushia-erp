@@ -1,17 +1,23 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
+// Configuration
+import { configuration } from './config/configuration';
+
 // Infrastructure
-import { DatabaseModule } from './modules/database/database.module';
-import { RedisModule } from './modules/redis/redis.module';
-import { HealthModule } from './modules/health/health.module';
-import { OutboxModule } from './modules/outbox/outbox.module';
+import { DatabaseModule } from './database/database.module';
+import { RedisModule } from './redis/redis.module';
+import { HealthModule } from './health/health.module';
+import { LoggerModule } from './logger/logger.module';
+import { QueueModule } from './queue/queue.module';
 
 // Security
 import { TenantModule } from './modules/tenant/tenant.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { OutboxModule } from './modules/outbox/outbox.module';
 
 // Business Engines
 import { CatalogModule } from './modules/catalog/catalog.module';
@@ -21,11 +27,18 @@ import { SalesModule } from './modules/sales/sales.module';
 import { POSModule } from './modules/pos/pos.module';
 
 // Middleware
-import { TenantMiddleware } from './modules/tenant/tenant.middleware';
-import { CorrelationMiddleware } from './common/middleware/correlation.middleware';
+import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
 @Module({
   imports: [
+    // Configuration (MUST be first)
+    ConfigModule.forRoot({
+      load: [configuration],
+      isGlobal: true,
+      cache: true,
+    }),
+
     // Rate Limiting
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 10 },
@@ -34,8 +47,10 @@ import { CorrelationMiddleware } from './common/middleware/correlation.middlewar
     ]),
 
     // Infrastructure
+    LoggerModule,
     DatabaseModule,
     RedisModule,
+    QueueModule,
     HealthModule,
     OutboxModule,
 
@@ -56,7 +71,7 @@ import { CorrelationMiddleware } from './common/middleware/correlation.middlewar
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(CorrelationMiddleware)
+      .apply(CorrelationIdMiddleware)
       .forRoutes('*');
     consumer
       .apply(TenantMiddleware)

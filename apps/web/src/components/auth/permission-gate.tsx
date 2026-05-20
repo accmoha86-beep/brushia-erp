@@ -25,7 +25,7 @@ export function PermissionGate({
   requireAll = true,
   fallback = null,
 }: PermissionGateProps) {
-  const { can, canAny, canAll } = usePermissions();
+  const { canAny, canAll } = usePermissions();
 
   const hasAccess = requireAll
     ? canAll(...permissions)

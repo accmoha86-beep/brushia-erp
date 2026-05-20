@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SalesController } from './sales.controller';
 import { SalesService } from './services/sales.service';
-import { DatabaseModule } from '../database/database.module';
+import { DatabaseModule } from '../../database/database.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { AccountingModule } from '../accounting/accounting.module';
 import { AuditModule } from '../audit/audit.module';
