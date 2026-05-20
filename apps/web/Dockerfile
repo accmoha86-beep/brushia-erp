@@ -4,10 +4,11 @@
 FROM node:20-alpine AS deps
 RUN npm install -g pnpm@9.15.0
 WORKDIR /app
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
-RUN pnpm install --no-frozen-lockfile
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+RUN pnpm install --frozen-lockfile
 
 # Stage 2: Build
 FROM node:20-alpine AS build

@@ -1,15 +1,1 @@
-{
-  "name": "@brushia/eslint-config",
-  "version": "0.1.0",
-  "private": true,
-  "main": "./src/base.js",
-  "files": [
-    "src"
-  ],
-  "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.0"
-  }
-}
+{"name":"@brushia/eslint-config","version":"0.1.0","private":true,"main":"index.js"}
