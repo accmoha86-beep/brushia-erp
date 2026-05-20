@@ -1,0 +1,31 @@
+{
+  "name": "brushia-erp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Brushia ERP \u2014 Enterprise Beauty & Cosmetics Platform",
+  "license": "UNLICENSED",
+  "author": "Brushia <hello@brushia.net>",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "test:e2e": "turbo test:e2e",
+    "typecheck": "turbo typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\"",
+    "clean": "turbo clean && rm -rf node_modules",
+    "db:migrate": "pnpm --filter @brushia/db migrate",
+    "db:seed": "pnpm --filter @brushia/db seed",
+    "db:studio": "pnpm --filter @brushia/db studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d",
+    "prepare": "husky"
+  }
+}
