@@ -1,0 +1,57 @@
+# Brushia ERP — Development Docker Compose
+# Usage: docker compose up -d
+
+name: brushia-erp
+
+services:
+  # ─── PostgreSQL 16 ───
+  postgres:
+    image: postgres:16-alpine
+    container_name: brushia-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: brushia
+      POSTGRES_USER: brushia
+      POSTGRES_PASSWORD: brushia_dev_2024
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brushia -d brushia"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - brushia-net
+
+  # ─── Redis 7 ───
+  redis:
+    image: redis:7-alpine
+    container_name: brushia-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_data:/data
+      - ./infra/docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - brushia-net
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  brushia-net:
+    driver: bridge
