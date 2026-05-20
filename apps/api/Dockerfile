@@ -9,7 +9,8 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
 COPY packages/eslint-config/package.json packages/eslint-config/
-RUN pnpm install --no-frozen-lockfile
+ENV HUSKY=0
+RUN pnpm install --no-frozen-lockfile --ignore-scripts && pnpm rebuild
 
 # ── Stage 2: Build ──
 FROM node:20-slim AS builder
