@@ -5,6 +5,7 @@ node_modules
 README.md
 LICENSE
 .env*
+!.env.example
 .vscode
 .idea
 dist
@@ -15,3 +16,4 @@ coverage
 .DS_Store
 Thumbs.db
 .husky
+docs
