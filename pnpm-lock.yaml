@@ -219,6 +219,9 @@ importers:
       '@brushia/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.15
