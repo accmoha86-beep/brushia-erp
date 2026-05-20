@@ -17,7 +17,11 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts && pnpm rebuild 2>/dev/nu
 FROM base AS builder
 COPY --from=deps /app ./
 COPY . .
-RUN cd packages/shared && npx tsc --skipLibCheck 2>/dev/null; true
+
+# Build shared packages (composite = tsc -b required)
+RUN cd packages/config && npx tsc -b --force 2>&1; true
+RUN cd packages/shared && npx tsc -b --force 2>&1; true
+
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @brushia/web build
 
