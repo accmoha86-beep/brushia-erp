@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://erp.brushia.net/sitemap.xml

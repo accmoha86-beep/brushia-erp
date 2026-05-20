@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../../database/database.service';
 import { AuditService } from '../../audit/audit.service';
 import { TCreateCategory, TUpdateCategory, TCreateProduct, TUpdateProduct, TProductQuery, TCreateVariant, TUpdateVariant } from '../dto/catalog.dto';
-import { ICatalogService } from '@brushia/shared/contracts';
+import { ICatalogService } from '@brushia/shared';
 
 @Injectable()
 export class CatalogService implements ICatalogService {
@@ -566,4 +566,4 @@ export class CatalogService implements ICatalogService {
     );
     return result.rows;
   }
-}\n
+}

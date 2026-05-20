@@ -121,4 +121,4 @@ export class OutboxService {
       [eventIds, error],
     );
   }
-}\n
+}

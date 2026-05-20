@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and } from 'drizzle-orm';
 import { DB_CONNECTION } from '../../database/database.constants';
-import * as schema from '@brushia/db/schema/iam';
+import * as schema from '@brushia/db';
 
 @Injectable()
 export class RbacRepository {

@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../../database/database.service';
 import { InventoryService } from '../../inventory/services/inventory.service';
 import { AccountingService } from '../../accounting/services/accounting.service';
 import { AuditService } from '../../audit/audit.service';
 import { OutboxService } from '../../outbox/outbox.service';
 import { TCreateSalesOrder, TCancelOrder, TOrderQuery } from '../dto/sales.dto';
-import { ISalesService } from '@brushia/shared/contracts';
+import { ISalesService } from '@brushia/shared';
 
 /**
  * SALES ENGINE

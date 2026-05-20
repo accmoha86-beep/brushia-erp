@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../../database/database.service';
 import { SalesService } from '../../sales/services/sales.service';
 import { AuditService } from '../../audit/audit.service';
 import { OutboxService } from '../../outbox/outbox.service';

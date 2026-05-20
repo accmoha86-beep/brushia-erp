@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../../database/database.service';
 import { AuditService } from '../../audit/audit.service';
 import { OutboxService } from '../../outbox/outbox.service';
 import { TRecordMovement, TBulkMovement, TReserveStock, TTransferStock, TStockQuery, TMovementQuery } from '../dto/inventory.dto';
-import { IInventoryService } from '@brushia/shared/contracts';
+import { IInventoryService } from '@brushia/shared';
 
 /**
  * INVENTORY TRANSACTION ENGINE
@@ -698,4 +698,4 @@ export class InventoryService implements IInventoryService {
     }
     return Math.abs(hash);
   }
-}\n
+}

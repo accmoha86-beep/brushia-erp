@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../../database/database.service';
 import { AuditService } from '../../audit/audit.service';
 import { OutboxService } from '../../outbox/outbox.service';
 import { TCreateAccount, TCreateJournalEntry } from '../dto/accounting.dto';
-import { IAccountingService } from '@brushia/shared/contracts';
+import { IAccountingService } from '@brushia/shared';
 
 /**
  * ACCOUNTING ENGINE
