@@ -2,18 +2,18 @@
 
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN npm install -g pnpm@9.15.0
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/config/package.json ./packages/config/
 COPY packages/db/package.json ./packages/db/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Stage 2: Build
 FROM node:20-alpine AS build
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN npm install -g pnpm@9.15.0
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
@@ -28,7 +28,7 @@ RUN pnpm --filter @brushia/shared build && \
 FROM node:20-alpine AS production
 RUN apk add --no-cache curl && \
     addgroup -g 1001 -S brushia && \
-    adduser -S brushia -u 1001
+    adduser -S -u 1001 -G brushia brushia
 WORKDIR /app
 COPY --from=build --chown=brushia:brushia /app/apps/api/dist ./dist
 COPY --from=build --chown=brushia:brushia /app/apps/api/node_modules ./node_modules
