@@ -141,4 +141,4 @@ export class CatalogController {
   async resolveBarcode(@CurrentUser() user: any, @Param('barcode') barcode: string) {
     return this.catalogService.resolveBarcode(user.tenantId, barcode);
   }
-}\n
+}

@@ -117,4 +117,4 @@ export class InventoryController {
   ) {
     return this.inventoryService.transferStock(user.tenantId, user.id, dto);
   }
-}\n
+}

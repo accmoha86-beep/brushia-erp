@@ -93,4 +93,4 @@ export type TBulkMovement = z.infer<typeof BulkMovementDto>;
 export type TReserveStock = z.infer<typeof ReserveStockDto>;
 export type TTransferStock = z.infer<typeof TransferStockDto>;
 export type TStockQuery = z.infer<typeof StockQueryDto>;
-export type TMovementQuery = z.infer<typeof MovementQueryDto>;\n
+export type TMovementQuery = z.infer<typeof MovementQueryDto>;

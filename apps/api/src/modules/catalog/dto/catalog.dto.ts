@@ -107,4 +107,4 @@ export type TCreateProduct = z.infer<typeof CreateProductDto>;
 export type TUpdateProduct = z.infer<typeof UpdateProductDto>;
 export type TProductQuery = z.infer<typeof ProductQueryDto>;
 export type TCreateVariant = z.infer<typeof CreateVariantDto>;
-export type TUpdateVariant = z.infer<typeof UpdateVariantDto>;\n
+export type TUpdateVariant = z.infer<typeof UpdateVariantDto>;
