@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DATABASE_CONNECTION } from './database.constants';
 import { DatabaseService } from './database.service';
+import { MigrationService } from './migration.service';
 
 @Global()
 @Module({
@@ -19,6 +20,7 @@ import { DatabaseService } from './database.service';
       },
     },
     DatabaseService,
+    MigrationService,
   ],
   exports: [DATABASE_CONNECTION, DatabaseService],
 })

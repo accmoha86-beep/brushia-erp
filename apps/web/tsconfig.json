@@ -35,7 +35,9 @@
       ]
     },
     "baseUrl": ".",
-    "allowJs": true
+    "allowJs": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": [
     "next-env.d.ts",

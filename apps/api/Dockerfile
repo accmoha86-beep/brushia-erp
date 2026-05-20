@@ -1,66 +1,55 @@
+# ============================================================
+# Brushia ERP API — Production Dockerfile
+# ============================================================
 FROM node:20-slim AS base
 RUN npm install -g pnpm@9.15.0
 ENV HUSKY=0
-WORKDIR /app
 
-# ── Install ALL deps ──
+# ── Install dependencies ──
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY .npmrc ./
+WORKDIR /app
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json apps/api/
+COPY packages/config/package.json packages/config/
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
-COPY packages/config/package.json packages/config/
-COPY packages/eslint-config/package.json packages/eslint-config/
-RUN pnpm install --no-frozen-lockfile --ignore-scripts && pnpm rebuild 2>/dev/null; true
+RUN pnpm install --frozen-lockfile --ignore-scripts 2>/dev/null || pnpm install --no-frozen-lockfile --ignore-scripts
 
-# ── Build ──
-FROM base AS builder
-COPY --from=deps /app ./
-COPY . .
+# ── Build workspace packages ──
+FROM deps AS builder
+WORKDIR /app
+COPY packages/ packages/
+COPY apps/api/ apps/api/
 
-# Build shared packages using tsc -b (required for composite projects)
-RUN cd packages/config && npx tsc -b --force 2>&1; true
-RUN cd packages/shared && npx tsc -b --force 2>&1; true
-RUN cd packages/db && npx tsc -b --force 2>&1; true
+# Build packages with composite project references
+RUN cd packages/config && npx tsc -b --force && echo "✅ config built"
+RUN cd packages/shared && npx tsc -b --force && echo "✅ shared built"
+RUN cd packages/db && npx tsc -b --force && echo "✅ db built"
 
-# Verify package builds
-RUN ls packages/config/dist/index.js && echo "✅ config built" || echo "⚠️ config build failed"
-RUN ls packages/shared/dist/index.js && echo "✅ shared built" || echo "⚠️ shared build failed"
-RUN ls packages/db/dist/index.js && echo "✅ db built" || echo "⚠️ db build failed"
+# Build API with SWC
+RUN cd apps/api && npx swc src -d dist --strip-leading-paths && echo "✅ API built"
+RUN test -f apps/api/dist/main.js && echo "✅ API BUILD OK" || (echo "❌ API BUILD FAILED" && exit 1)
 
-# Build API using SWC
-RUN cd apps/api && npx nest build 2>&1 && echo "✅ API BUILD OK" || \
-    (echo "nest build failed, trying direct swc..." && \
-     npx swc src -d dist --config-file .swcrc 2>&1 || \
-     (echo "swc failed too, trying tsc transpile..." && \
-      npx tsc --outDir dist --noEmit false --declaration false --skipLibCheck --noCheck 2>&1))
+# Prepare workspace packages for production (replace pnpm symlinks with real files)
+RUN for pkg in config shared db; do \
+      target="node_modules/@brushia/$pkg"; \
+      if [ -L "$target" ] || [ -d "$target" ]; then rm -rf "$target"; fi; \
+      mkdir -p "$target"; \
+      cp "packages/$pkg/package.json" "$target/"; \
+      if [ -d "packages/$pkg/dist" ]; then cp -r "packages/$pkg/dist" "$target/dist"; fi; \
+      if [ -d "packages/$pkg/src" ]; then cp -r "packages/$pkg/src" "$target/src"; fi; \
+      echo "✅ $pkg prepared"; \
+    done
 
-# Verify API output
-RUN ls apps/api/dist/main.js && echo "✅ main.js exists"
-
-# ── Prepare production node_modules ──
-# Replace pnpm workspace symlinks with real built packages
-RUN rm -rf node_modules/@brushia/shared node_modules/@brushia/config node_modules/@brushia/db 2>/dev/null; true \
-    && mkdir -p node_modules/@brushia/shared node_modules/@brushia/config node_modules/@brushia/db \
-    && cp packages/shared/package.json node_modules/@brushia/shared/ \
-    && cp -r packages/shared/dist node_modules/@brushia/shared/dist \
-    && cp packages/config/package.json node_modules/@brushia/config/ \
-    && cp -r packages/config/dist node_modules/@brushia/config/dist \
-    && cp packages/db/package.json node_modules/@brushia/db/ \
-    && cp -r packages/db/dist node_modules/@brushia/db/dist \
-    && echo "✅ Workspace packages prepared for production"
-
-# ── Production ──
-FROM node:20-slim AS runner
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# ── Production image ──
+FROM node:20-slim AS production
+ENV NODE_ENV=production
 WORKDIR /app
 
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/apps/api/package.json ./package.json
+COPY --from=builder /app/packages/db/migrations ./packages/db/migrations
 
-EXPOSE 3000
-ENV NODE_ENV=production
-ENV PORT=3000
+EXPOSE 3001
 CMD ["node", "dist/main.js"]
