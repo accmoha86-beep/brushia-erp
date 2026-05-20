@@ -1,9 +1,9 @@
-import { SetMetadata } from '@nestjs/common';
+import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
 
 export const IDEMPOTENCY_KEY = 'IDEMPOTENCY';
-
-/**
- * Mark an endpoint as idempotent.
- * The idempotency guard will check X-Idempotency-Key header.
- */
-export const Idempotent = () => SetMetadata(IDEMPOTENCY_KEY, true);
+export const IdempotencyKey = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.headers['x-idempotency-key'];
+  },
+);

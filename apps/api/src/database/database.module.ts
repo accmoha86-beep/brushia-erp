@@ -1,36 +1,25 @@
-import { Global, Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createConnection, closeConnection } from '@brushia/db';
-import { LoggerService } from '../logger/logger.service';
+import { Global, Module } from '@nestjs/common';
+import { Pool } from 'pg';
 import { DATABASE_CONNECTION } from './database.constants';
+import { DatabaseService } from './database.service';
 
 @Global()
 @Module({
   providers: [
     {
       provide: DATABASE_CONNECTION,
-      useFactory: (config: ConfigService, logger: LoggerService) => {
-        const url = config.getOrThrow<string>('database.url');
-        const poolMax = config.get<number>('database.poolMax', 10);
-        const ssl = config.get<boolean>('database.ssl', false);
-        const debug = config.get<string>('app.env') === 'development';
-
-        logger.log(`Connecting to PostgreSQL (pool: ${poolMax})...`, 'Database');
-
-        return createConnection({
-          url,
-          poolMax,
-          ssl,
-          debug,
+      useFactory: () => {
+        const url = process.env.DATABASE_URL;
+        if (!url) throw new Error('DATABASE_URL is required');
+        return new Pool({
+          connectionString: url,
+          max: parseInt(process.env.DATABASE_POOL_MAX || '10'),
+          ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
         });
       },
-      inject: [ConfigService, LoggerService],
     },
+    DatabaseService,
   ],
-  exports: [DATABASE_CONNECTION],
+  exports: [DATABASE_CONNECTION, DatabaseService],
 })
-export class DatabaseModule implements OnModuleDestroy {
-  async onModuleDestroy(): Promise<void> {
-    await closeConnection();
-  }
-}
+export class DatabaseModule {}

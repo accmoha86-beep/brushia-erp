@@ -1,36 +1,34 @@
-# ── Stage 1: Install dependencies ──
-FROM node:20-slim AS deps
+FROM node:20-slim AS base
 RUN npm install -g pnpm@9.15.0
+ENV HUSKY=0
 WORKDIR /app
-COPY package.json pnpm-workspace.yaml .npmrc ./
-COPY pnpm-lock.yaml ./
+
+# ── Install deps ──
+FROM base AS deps
+COPY package.json pnpm-workspace.yaml .npmrc pnpm-lock.yaml ./
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
 COPY packages/config/package.json packages/config/
 COPY packages/eslint-config/package.json packages/eslint-config/
-ENV HUSKY=0
-RUN pnpm install --no-frozen-lockfile --ignore-scripts && pnpm rebuild
+RUN pnpm install --no-frozen-lockfile --ignore-scripts
+RUN pnpm rebuild 2>/dev/null || true
 
-# ── Stage 2: Build ──
-FROM node:20-slim AS builder
-RUN npm install -g pnpm@9.15.0
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /app/packages ./packages
+# ── Build ──
+FROM base AS builder
+COPY --from=deps /app ./
 COPY . .
-RUN pnpm --filter @brushia/shared build || true
+RUN pnpm --filter @brushia/shared build 2>/dev/null || true
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @brushia/web build
 
-# ── Stage 3: Production ──
-FROM node:20-slim AS production
-RUN groupadd -g 1001 brushia && useradd -u 1001 -g brushia -m brushia
+# ── Production ──
+FROM node:20-slim
 WORKDIR /app
-COPY --from=builder --chown=brushia:brushia /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=brushia:brushia /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=brushia:brushia /app/apps/web/public ./apps/web/public
-USER brushia
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
 EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 CMD ["node", "apps/web/server.js"]
