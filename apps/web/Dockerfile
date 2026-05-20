@@ -17,9 +17,9 @@ FROM base AS builder
 COPY --from=deps /app ./
 COPY . .
 
-# Build shared packages (composite = tsc -b required)
-RUN cd packages/config && npx tsc -b --force 2>&1; true
-RUN cd packages/shared && npx tsc -b --force 2>&1; true
+# Build shared packages (use pnpm exec to find correct tsc)
+RUN cd packages/config && pnpm exec tsc -b --force 2>&1; true
+RUN cd packages/shared && pnpm exec tsc -b --force 2>&1; true
 
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @brushia/web build
