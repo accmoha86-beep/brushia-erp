@@ -237,7 +237,7 @@ export class CatalogService implements ICatalogService {
     let sql = `SELECT p.*, c.name as category_name,
       (SELECT COUNT(*) FROM catalog.product_variants v WHERE v.product_id = p.id AND v.tenant_id = $1) as variant_count,
       COALESCE(
-        (SELECT SUM(sl.quantity) FROM inventory.stock_levels sl WHERE sl.product_id = p.id AND sl.tenant_id = $1), 0
+        (SELECT SUM(sl.qty_on_hand) FROM inventory.stock_levels sl WHERE sl.product_id = p.id AND sl.tenant_id = $1), 0
       ) as total_stock
       FROM catalog.products p
       LEFT JOIN catalog.categories c ON c.id = p.category_id
@@ -348,7 +348,7 @@ export class CatalogService implements ICatalogService {
     if (product.product_type === 'variable') {
       const variants = await this.db.query(
         `SELECT v.*, 
-          COALESCE((SELECT SUM(sl.quantity) FROM inventory.stock_levels sl WHERE sl.variant_id = v.id AND sl.tenant_id = $2), 0) as total_stock
+          COALESCE((SELECT SUM(sl.qty_on_hand) FROM inventory.stock_levels sl WHERE sl.variant_id = v.id AND sl.tenant_id = $2), 0) as total_stock
          FROM catalog.product_variants v 
          WHERE v.product_id = $1 AND v.tenant_id = $2 
          ORDER BY v.sort_order ASC, v.name ASC`,
@@ -549,7 +549,7 @@ export class CatalogService implements ICatalogService {
       `SELECT p.id, p.name, p.sku, p.barcode, p.selling_price, p.cost_price, p.image_url, p.product_type,
         c.name as category_name,
         COALESCE(
-          (SELECT SUM(sl.quantity) FROM inventory.stock_levels sl WHERE sl.product_id = p.id AND sl.tenant_id = $1), 0
+          (SELECT SUM(sl.qty_on_hand) FROM inventory.stock_levels sl WHERE sl.product_id = p.id AND sl.tenant_id = $1), 0
         ) as total_stock
        FROM catalog.products p
        LEFT JOIN catalog.categories c ON c.id = p.category_id

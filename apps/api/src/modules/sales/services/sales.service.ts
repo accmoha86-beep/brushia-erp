@@ -184,7 +184,7 @@ export class SalesService implements ISalesService {
           [item.product_id, dto.location_id, tenantId, item.variant_id || null],
         ).then(r => r.rows[0]);
 
-        const currentQty = stockLevel ? parseInt(stockLevel.quantity) : 0;
+        const currentQty = stockLevel ? parseInt(stockLevel.qty_on_hand) : 0;
         const newQty = currentQty - item.quantity;
 
         if (newQty < 0) {
@@ -340,7 +340,7 @@ export class SalesService implements ISalesService {
             [item.product_id, order.location_id, tenantId, item.variant_id],
           ).then(r => r.rows[0]);
 
-          const currentQty = stockLevel ? parseInt(stockLevel.quantity) : 0;
+          const currentQty = stockLevel ? parseInt(stockLevel.qty_on_hand) : 0;
           const newQty = currentQty + parseInt(item.quantity);
 
           await client.query(
