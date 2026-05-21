@@ -34,4 +34,3 @@ VALUES
   ('a0000000-0000-0000-0000-000000000001', 'google_analytics', 'Google Analytics', 'Website and e-commerce analytics tracking', 'pending')
 ON CONFLICT (tenant_id, integration_key) DO NOTHING;
 
-INSERT INTO public.migrations (name) VALUES ('016_integration_settings') ON CONFLICT DO NOTHING;
