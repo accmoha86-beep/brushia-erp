@@ -37,7 +37,7 @@ export class POSService {
       SELECT r.*, w.name as warehouse_name,
         (SELECT COUNT(*) FROM pos.sessions s WHERE s.register_id = r.id AND s.status = 'open') as open_sessions
       FROM pos.registers r
-      INNER JOIN inventory.warehouses w ON w.id = r.location_id
+      LEFT JOIN inventory.warehouses w ON w.id = r.location_id
       WHERE r.tenant_id = $1`;
     const params: any[] = [tenantId];
 
@@ -252,7 +252,7 @@ export class POSService {
       `SELECT s.*, r.name as register_name, r.location_id, w.name as warehouse_name
        FROM pos.sessions s
        INNER JOIN pos.registers r ON r.id = s.register_id
-       INNER JOIN inventory.warehouses w ON w.id = r.location_id
+       LEFT JOIN inventory.warehouses w ON w.id = r.location_id
        WHERE s.cashier_id = $1 AND s.tenant_id = $2 AND s.status = 'open'`,
       [userId, tenantId],
     );
