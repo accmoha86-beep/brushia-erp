@@ -103,7 +103,7 @@ export class AppModule implements NestModule {
       .forRoutes('*');
     consumer
       .apply(TenantMiddleware)
-      .exclude('health', 'health/(.*)', 'auth/login', 'auth/register', 'docs', 'docs/(.*)')
+      .exclude('health', 'health/(.*)', 'auth/login', 'auth/register', 'docs', 'docs/(.*)', 'webhook', 'webhook/(.*)', 'tenants', 'tenants/(.*)')
       .forRoutes('*');
   }
 }

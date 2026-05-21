@@ -6,12 +6,14 @@ export class TenantMiddleware implements NestMiddleware {
   use(req: Request, _res: Response, next: NextFunction): void {
     const path = req.path.toLowerCase();
 
-    // Skip tenant check for health, auth, and docs endpoints
+    // Skip tenant check for health, auth, docs, webhook, and tenant lookup endpoints
     if (
       path.includes('/health') ||
       path.includes('/auth/login') ||
       path.includes('/auth/register') ||
       path.includes('/docs') ||
+      path.includes('/webhook') ||
+      path.includes('/tenants/slug') ||
       path === '/' ||
       path === '/api' ||
       path === '/api/'

@@ -69,7 +69,7 @@ export class WhatsAppService {
     let idx = 3;
 
     for (const [key, val] of Object.entries(dto)) {
-      if (['status', 'assigned_to', 'tags', 'notes'].includes(key)) {
+      if (['status', 'assigned_to', 'tags', 'notes', 'bot_enabled', 'bot_state'].includes(key)) {
         if (key === 'tags') {
           sets.push(`tags = $${idx}`);
           params.push(JSON.stringify(val));
