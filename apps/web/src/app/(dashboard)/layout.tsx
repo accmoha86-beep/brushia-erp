@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, ShoppingCart, Package, Grid3X3, Warehouse, ShoppingBag, Users, Truck, FileText, BarChart3, Tag, Settings, LogOut, Menu, X, Building2, Crown } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Grid3X3, Warehouse, ShoppingBag, Users, Truck, FileText, BarChart3, Tag, Settings, LogOut, Menu, X, Building2, Crown, BookOpen, Calculator } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -23,6 +23,9 @@ const navigation = [
   { name: 'Inventory', href: '/inventory', icon: Warehouse },
   { name: 'Warehouses', href: '/warehouses', icon: Building2 },
   { name: 'Shipping', href: '/shipping', icon: Truck },
+  { type: 'separator' as const, label: 'Finance' },
+  { name: 'Accounting', href: '/accounting', icon: BookOpen },
+  { name: 'Commissions', href: '/commissions', icon: Calculator },
   { type: 'separator' as const, label: 'Analytics' },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'Promotions', href: '/promotions', icon: Tag },
