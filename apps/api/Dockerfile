@@ -17,34 +17,28 @@ RUN pnpm install --frozen-lockfile --ignore-scripts 2>/dev/null || pnpm install 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app ./
-
-# Copy root tsconfig (packages extend ../../tsconfig.base.json)
-COPY tsconfig.base.json ./
-
-# Copy all source
 COPY packages/ packages/
 COPY apps/api/ apps/api/
 
-# Install build tools globally (pnpm strict isolation prevents packages from finding tsc)
-RUN npm install -g typescript @swc/cli @swc/core
+# Install SWC globally — fast transpiler, zero type errors
+RUN npm install -g @swc/cli @swc/core
 
-# Build workspace packages
-RUN cd packages/config && tsc -b --force && echo "✅ config built"
-RUN cd packages/shared && tsc -b --force && echo "✅ shared built"
-RUN cd packages/db && tsc -b --force && echo "✅ db built"
+# Build workspace packages with SWC (CommonJS output for NestJS require())
+RUN cd packages/config && swc src -d dist --strip-leading-paths -C module.type=commonjs && echo "✅ config built"
+RUN cd packages/shared && swc src -d dist --strip-leading-paths -C module.type=commonjs && echo "✅ shared built"
+RUN cd packages/db && swc src -d dist --strip-leading-paths -C module.type=commonjs && echo "✅ db built"
 
-# Build API with SWC (transpile-only, fast)
+# Build API with SWC (uses apps/api/.swcrc for NestJS decorators)
 RUN cd apps/api && swc src -d dist --strip-leading-paths && echo "✅ API built"
 RUN test -f apps/api/dist/main.js && echo "✅ API BUILD OK" || (echo "❌ API BUILD FAILED" && exit 1)
 
-# Replace pnpm symlinks with real package contents for production
+# Replace pnpm symlinks with real compiled packages for production
 RUN for pkg in config shared db; do \
       target="node_modules/@brushia/$pkg"; \
       if [ -L "$target" ] || [ -d "$target" ]; then rm -rf "$target"; fi; \
       mkdir -p "$target"; \
       cp "packages/$pkg/package.json" "$target/"; \
-      if [ -d "packages/$pkg/dist" ]; then cp -r "packages/$pkg/dist" "$target/dist"; fi; \
-      if [ -d "packages/$pkg/src" ]; then cp -r "packages/$pkg/src" "$target/src"; fi; \
+      cp -r "packages/$pkg/dist" "$target/dist"; \
       echo "✅ $pkg prepared"; \
     done
 
