@@ -75,11 +75,9 @@ export default function WhatsAppPage() {
   }, [messages]);
 
   const loadConversations = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/whatsapp/conversations', token);
+      const res = await api.get('/whatsapp/conversations');
       const data = Array.isArray(res) ? res : res.data || [];
       setConversations(data);
     } catch (err) {
@@ -90,10 +88,8 @@ export default function WhatsAppPage() {
   };
 
   const loadStats = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
-      const res = await api.get('/whatsapp/stats', token);
+      const res = await api.get('/whatsapp/stats');
       setStats(res.data || res);
     } catch (err) {
       console.error(err);
@@ -101,10 +97,8 @@ export default function WhatsAppPage() {
   };
 
   const loadMessages = async (convId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
-      const res = await api.get(`/whatsapp/conversations/${convId}/messages`, token);
+      const res = await api.get(`/whatsapp/conversations/${convId}/messages`);
       const data = Array.isArray(res) ? res : res.data || [];
       setMessages(data);
     } catch (err) {
@@ -119,13 +113,11 @@ export default function WhatsAppPage() {
 
   const handleSendMessage = async () => {
     if (!selectedConv || !messageInput.trim()) return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post(`/whatsapp/conversations/${selectedConv.id}/messages`, {
         direction: 'outbound',
         content: messageInput.trim(),
-      }, token);
+      });
       setMessageInput('');
       loadMessages(selectedConv.id);
     } catch (err) {
@@ -134,14 +126,12 @@ export default function WhatsAppPage() {
   };
 
   const handleNewConversation = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post('/whatsapp/conversations', {
         customer_phone: newForm.customer_phone,
         customer_name: newForm.customer_name,
         notes: newForm.notes,
-      }, token);
+      });
       setShowNewModal(false);
       setNewForm({ customer_phone: '+20', customer_name: '', notes: '' });
       loadConversations();
@@ -152,8 +142,6 @@ export default function WhatsAppPage() {
 
   const handleConvert = async () => {
     if (!selectedConv) return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post(`/whatsapp/conversations/${selectedConv.id}/convert`, {
         items: convertItems.map((i) => ({
@@ -162,7 +150,7 @@ export default function WhatsAppPage() {
           price: Math.round(parseFloat(i.price) * 100),
         })),
         shipping_address: convertAddress,
-      }, token);
+      });
       setShowConvertModal(false);
       setConvertItems([{ product: '', quantity: '1', price: '' }]);
       setConvertAddress('');
