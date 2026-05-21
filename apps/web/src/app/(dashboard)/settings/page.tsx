@@ -74,14 +74,34 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'branches' && (
-            <div><h2 className="text-lg font-semibold mb-4">Branches</h2>
-              <div className="space-y-3">
-                {[{ name: 'Main Warehouse', city: 'Cairo', type: 'Warehouse' }, { name: 'Showroom', city: 'Cairo', type: 'Showroom' }, { name: 'Returns Center', city: 'Cairo', type: 'Returns' }].map((b, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-lg border p-3">
-                    <div className="flex items-center gap-3"><MapPin className="h-5 w-5 text-rose-500" /><div><p className="text-sm font-medium">{b.name}</p><p className="text-xs text-gray-400">{b.city}</p></div></div>
-                    <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs">{b.type}</span>
-                  </div>
-                ))}
+            <div><h2 className="text-lg font-semibold mb-4">Sales Channels & Branches</h2>
+              <p className="text-sm text-gray-500 mb-4">Back Office controls all sales channels — POS branches, exhibitions, WhatsApp, and e-commerce.</p>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="rounded-xl border-2 border-rose-200 bg-rose-50 p-4">
+                  <div className="flex items-center gap-2 mb-2"><span className="text-2xl">🏪</span><h3 className="font-semibold">POS Branches</h3></div>
+                  <p className="text-xs text-gray-600 mb-3">Physical store locations with POS registers</p>
+                  <a href="/branches" className="text-sm font-medium text-rose-600 hover:text-rose-700">Manage Branches →</a>
+                </div>
+                <div className="rounded-xl border-2 border-purple-200 bg-purple-50 p-4">
+                  <div className="flex items-center gap-2 mb-2"><span className="text-2xl">🎪</span><h3 className="font-semibold">Exhibitions</h3></div>
+                  <p className="text-xs text-gray-600 mb-3">Pop-up events, trade shows, and fairs</p>
+                  <a href="/exhibitions" className="text-sm font-medium text-purple-600 hover:text-purple-700">Manage Events →</a>
+                </div>
+                <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4">
+                  <div className="flex items-center gap-2 mb-2"><span className="text-2xl">💬</span><h3 className="font-semibold">WhatsApp</h3></div>
+                  <p className="text-xs text-gray-600 mb-3">Order intake via WhatsApp conversations</p>
+                  <a href="/whatsapp" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">Manage Conversations →</a>
+                </div>
+                <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
+                  <div className="flex items-center gap-2 mb-2"><span className="text-2xl">🌐</span><h3 className="font-semibold">E-commerce</h3></div>
+                  <p className="text-xs text-gray-600 mb-3">Online store (Shopify / WooCommerce)</p>
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">Coming Soon</span>
+                </div>
+              </div>
+              <div className="rounded-lg border bg-gray-50 p-4 text-center">
+                <Shield className="h-8 w-8 text-rose-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-700">Back Office Central Control</p>
+                <p className="text-xs text-gray-500">Promotions, inventory transfers, purchasing, and reports are managed here. POS terminals only handle sales and returns.</p>
               </div>
             </div>
           )}

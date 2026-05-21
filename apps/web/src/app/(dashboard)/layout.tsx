@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, ShoppingCart, Package, Grid3X3, Warehouse, ShoppingBag, Users, Truck, FileText, BarChart3, Tag, Settings, LogOut, Menu, X, Building2, Crown, BookOpen, Calculator } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Grid3X3, ShoppingBag, Users, Building2, FileText, Warehouse, Truck, BookOpen, Calculator, BarChart3, Tag, Crown, Settings, ChevronRight, Menu, X, Heart, ClipboardCheck, CalendarDays, MessageCircle, GitBranch, Store } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -16,20 +16,26 @@ const navigation = [
   { type: 'separator' as const, label: 'Sales' },
   { name: 'Orders', href: '/orders', icon: ShoppingBag },
   { name: 'Customers', href: '/customers', icon: Users },
+  { name: 'WhatsApp Orders', href: '/whatsapp', icon: MessageCircle },
   { type: 'separator' as const, label: 'Purchasing' },
   { name: 'Vendors', href: '/vendors', icon: Building2 },
   { name: 'Purchase Orders', href: '/purchase-orders', icon: FileText },
   { type: 'separator' as const, label: 'Operations' },
+  { name: 'Branches', href: '/branches', icon: Store },
   { name: 'Inventory', href: '/inventory', icon: Warehouse },
   { name: 'Warehouses', href: '/warehouses', icon: Building2 },
+  { name: 'Stock Counts', href: '/stock-counts', icon: ClipboardCheck },
+  { name: 'Exhibitions', href: '/exhibitions', icon: CalendarDays },
   { name: 'Shipping', href: '/shipping', icon: Truck },
   { type: 'separator' as const, label: 'Finance' },
   { name: 'Accounting', href: '/accounting', icon: BookOpen },
   { name: 'Commissions', href: '/commissions', icon: Calculator },
-  { type: 'separator' as const, label: 'Analytics' },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { type: 'separator' as const, label: 'Marketing' },
   { name: 'Promotions', href: '/promotions', icon: Tag },
   { name: 'Wholesale', href: '/wholesale', icon: Crown },
+  { name: 'Loyalty Program', href: '/loyalty', icon: Heart },
+  { type: 'separator' as const, label: 'Analytics' },
+  { name: 'Reports', href: '/reports', icon: BarChart3 },
   { type: 'separator' as const, label: 'System' },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
