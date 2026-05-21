@@ -50,7 +50,7 @@ export class SalesService implements ISalesService {
              LIMIT 1), p.cost_price
            ) as current_cost
            FROM catalog.products p WHERE p.id = $1 AND p.tenant_id = $2`,
-          [item.product_id, tenantId, dto.location_id],
+          [item.product_id, tenantId, dto.warehouse_id],
         ).then(r => r.rows[0]);
 
         if (!product) throw new NotFoundException(`Product ${item.product_id} not found`);
@@ -59,7 +59,7 @@ export class SalesService implements ISalesService {
         let unitPrice = item.unit_price;
         if (dto.price_list_id) {
           const plPrice = await client.query(
-            `SELECT price FROM crm.price_list_items 
+            `SELECT price FROM catalog.price_list_items 
              WHERE price_list_id = $1 AND product_id = $2 AND tenant_id = $3`,
             [dto.price_list_id, item.product_id, tenantId],
           ).then(r => r.rows[0]);
@@ -117,15 +117,15 @@ export class SalesService implements ISalesService {
 
       // ─── 6. Create order ─────────────────────────────
       const order = await client.query(
-        `INSERT INTO sales.orders (
-          tenant_id, order_number, customer_id, location_id, source, status,
+        `INSERT INTO sales.sales_orders (
+          tenant_id, order_number, customer_id, warehouse_id, source, status,
           subtotal, discount_amount, tax_amount, tax_rate, shipping_amount,
           loyalty_discount, grand_total,
           payment_method, price_list_id, salesperson_id, notes, created_by
         ) VALUES ($1,$2,$3,$4,$5,'confirmed',$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
         RETURNING *`,
         [
-          tenantId, orderNumber, dto.customer_id, dto.location_id, dto.source,
+          tenantId, orderNumber, dto.customer_id, dto.warehouse_id, dto.source,
           subtotal, totalDiscount, taxAmount, dto.tax_rate, dto.shipping_amount,
           loyaltyDiscount, finalTotal,
           dto.payment_method, dto.price_list_id, dto.salesperson_id, dto.notes, userId,
@@ -172,7 +172,7 @@ export class SalesService implements ISalesService {
 
       // ─── 9. Deduct inventory ─────────────────────────
       for (const item of orderItems) {
-        const lockKey = this.computeLockKey(item.product_id, dto.location_id);
+        const lockKey = this.computeLockKey(item.product_id, dto.warehouse_id);
         await client.query(`SELECT pg_advisory_xact_lock($1)`, [lockKey]);
 
         // Get current stock
@@ -181,7 +181,7 @@ export class SalesService implements ISalesService {
            WHERE product_id = $1 AND location_id = $2 AND tenant_id = $3
              AND ($4::uuid IS NULL AND variant_id IS NULL OR variant_id = $4)
            FOR UPDATE`,
-          [item.product_id, dto.location_id, tenantId, item.variant_id || null],
+          [item.product_id, dto.warehouse_id, tenantId, item.variant_id || null],
         ).then(r => r.rows[0]);
 
         const currentQty = stockLevel ? parseInt(stockLevel.qty_on_hand) : 0;
@@ -202,7 +202,7 @@ export class SalesService implements ISalesService {
             reference_type, reference_id, performed_by
           ) VALUES ($1,$2,$3,$4,'sale',$5,$6,$7,$8,$9,'sales_order',$10,$11)`,
           [
-            tenantId, item.product_id, item.variant_id || null, dto.location_id,
+            tenantId, item.product_id, item.variant_id || null, dto.warehouse_id,
             -item.quantity, item.unit_cost, item.unit_cost * item.quantity,
             currentQty, newQty,
             order.id, userId,
@@ -214,7 +214,7 @@ export class SalesService implements ISalesService {
           `UPDATE inventory.stock_levels SET quantity = $3, updated_at = NOW()
            WHERE product_id = $1 AND location_id = $4 AND tenant_id = $5
              AND ($2::uuid IS NULL AND variant_id IS NULL OR variant_id = $2)`,
-          [item.product_id, item.variant_id || null, newQty, dto.location_id, tenantId],
+          [item.product_id, item.variant_id || null, newQty, dto.warehouse_id, tenantId],
         );
       }
 
@@ -231,7 +231,7 @@ export class SalesService implements ISalesService {
       // ─── 11. Update customer stats ───────────────────
       if (dto.customer_id) {
         await client.query(
-          `UPDATE crm.customers SET 
+          `UPDATE sales.customers SET 
             total_orders = total_orders + 1,
             total_spent = total_spent + $3,
             last_order_at = NOW(),
@@ -244,7 +244,7 @@ export class SalesService implements ISalesService {
         const pointsEarned = Math.floor(finalTotal / 100); // 1 point per 1 EGP
         if (pointsEarned > 0) {
           await client.query(
-            `UPDATE crm.customers SET loyalty_points = loyalty_points + $3, updated_at = NOW()
+            `UPDATE sales.customers SET loyalty_points = loyalty_points + $3, updated_at = NOW()
              WHERE id = $1 AND tenant_id = $2`,
             [dto.customer_id, tenantId, pointsEarned],
           );
@@ -253,7 +253,7 @@ export class SalesService implements ISalesService {
         // Deduct loyalty points if used
         if (dto.loyalty_points_used > 0) {
           await client.query(
-            `UPDATE crm.customers SET loyalty_points = loyalty_points - $3, updated_at = NOW()
+            `UPDATE sales.customers SET loyalty_points = loyalty_points - $3, updated_at = NOW()
              WHERE id = $1 AND tenant_id = $2`,
             [dto.customer_id, tenantId, dto.loyalty_points_used],
           );
@@ -304,7 +304,7 @@ export class SalesService implements ISalesService {
   async cancelOrder(tenantId: string, userId: string, orderId: string, dto: TCancelOrder) {
     return this.db.transaction(async (client) => {
       const order = await client.query(
-        `SELECT * FROM sales.orders WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
+        `SELECT * FROM sales.sales_orders WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
         [orderId, tenantId],
       ).then(r => r.rows[0]);
 
@@ -321,7 +321,7 @@ export class SalesService implements ISalesService {
 
       // Cancel the order
       await client.query(
-        `UPDATE sales.orders SET status = 'cancelled', cancel_reason = $3, cancelled_at = NOW(), updated_at = NOW()
+        `UPDATE sales.sales_orders SET status = 'cancelled', cancel_reason = $3, cancelled_at = NOW(), updated_at = NOW()
          WHERE id = $1 AND tenant_id = $2`,
         [orderId, tenantId, dto.reason],
       );
@@ -382,7 +382,7 @@ export class SalesService implements ISalesService {
       // Restore customer stats
       if (order.customer_id) {
         await client.query(
-          `UPDATE crm.customers SET 
+          `UPDATE sales.customers SET 
             total_orders = GREATEST(total_orders - 1, 0),
             total_spent = GREATEST(total_spent - $3, 0),
             updated_at = NOW()
@@ -409,11 +409,11 @@ export class SalesService implements ISalesService {
   async getOrder(tenantId: string, orderId: string) {
     const order = await this.db.queryOne(
       `SELECT o.*, c.name as customer_name, c.phone as customer_phone,
-        l.name as location_name, u.display_name as created_by_name,
+        w.name as warehouse_name, u.display_name as created_by_name,
         sp.name as salesperson_name
-       FROM sales.orders o
-       LEFT JOIN crm.customers c ON c.id = o.customer_id
-       LEFT JOIN inventory.locations l ON l.id = o.location_id
+       FROM sales.sales_orders o
+       LEFT JOIN sales.customers c ON c.id = o.customer_id
+       LEFT JOIN inventory.warehouses w ON w.id = o.warehouse_id
        LEFT JOIN iam.users u ON u.id = o.created_by
        LEFT JOIN hr.salespersons sp ON sp.id = o.salesperson_id
        WHERE o.id = $1 AND o.tenant_id = $2`,
@@ -442,11 +442,11 @@ export class SalesService implements ISalesService {
     const offset = (page - 1) * limit;
 
     let sql = `
-      SELECT o.*, c.name as customer_name, l.name as location_name,
+      SELECT o.*, c.name as customer_name, w.name as warehouse_name,
         (SELECT COUNT(*) FROM sales.order_items oi WHERE oi.order_id = o.id) as item_count
-      FROM sales.orders o
-      LEFT JOIN crm.customers c ON c.id = o.customer_id
-      LEFT JOIN inventory.locations l ON l.id = o.location_id
+      FROM sales.sales_orders o
+      LEFT JOIN sales.customers c ON c.id = o.customer_id
+      LEFT JOIN inventory.warehouses w ON w.id = o.warehouse_id
       WHERE o.tenant_id = $1`;
     const params: any[] = [tenantId];
     let idx = 2;
@@ -464,7 +464,7 @@ export class SalesService implements ISalesService {
       params.push(query.customer_id);
     }
     if (query.location_id) {
-      sql += ` AND o.location_id = $${idx++}`;
+      sql += ` AND o.warehouse_id = $${idx++}`;
       params.push(query.location_id);
     }
     if (query.date_from) {
@@ -490,7 +490,7 @@ export class SalesService implements ISalesService {
 
   async recordPayment(tenantId: string, userId: string, orderId: string, payment: { method: string; amount: number; reference?: string }) {
     const order = await this.db.queryOne(
-      `SELECT * FROM sales.orders WHERE id = $1 AND tenant_id = $2`,
+      `SELECT * FROM sales.sales_orders WHERE id = $1 AND tenant_id = $2`,
       [orderId, tenantId],
     );
     if (!order) throw new NotFoundException('Order not found');
@@ -514,7 +514,7 @@ export class SalesService implements ISalesService {
 
     const result = await client.query(
       `SELECT COUNT(*) + 1 as next_num 
-       FROM sales.orders 
+       FROM sales.sales_orders 
        WHERE tenant_id = $1 AND created_at::date = CURRENT_DATE`,
       [tenantId],
     );

@@ -37,15 +37,15 @@ export class InventoryService implements IInventoryService {
 
     let sql = `
       SELECT sl.*, p.name as product_name, p.sku, p.image_url, p.barcode,
-        c.name as category_name, l.name as location_name,
+        c.name as category_name, w.name as location_name,
         v.name as variant_name, v.sku as variant_sku,
-        CASE WHEN sl.quantity <= sl.reorder_point THEN true ELSE false END as is_low_stock,
-        sl.quantity * COALESCE(sl.weighted_avg_cost, p.cost_price) as stock_value
+        CASE WHEN sl.qty_on_hand <= sl.reorder_point THEN true ELSE false END as is_low_stock,
+        sl.qty_on_hand * COALESCE(sl.weighted_avg_cost, p.cost_price) as stock_value
       FROM inventory.stock_levels sl
       INNER JOIN catalog.products p ON p.id = sl.product_id
       LEFT JOIN catalog.product_variants v ON v.id = sl.variant_id
       LEFT JOIN catalog.categories c ON c.id = p.category_id
-      INNER JOIN inventory.locations l ON l.id = sl.location_id
+      INNER JOIN inventory.warehouses w ON w.id = sl.location_id
       WHERE sl.tenant_id = $1`;
 
     const params: any[] = [tenantId];
@@ -62,7 +62,7 @@ export class InventoryService implements IInventoryService {
     }
 
     if (query.below_reorder === 'true') {
-      sql += ` AND sl.quantity <= sl.reorder_point`;
+      sql += ` AND sl.qty_on_hand <= sl.reorder_point`;
     }
 
     if (query.search) {
@@ -85,9 +85,9 @@ export class InventoryService implements IInventoryService {
   async getAvailableStock(tenantId: string, productId: string, variantId: string | null, locationId: string): Promise<number> {
     const result = await this.db.queryOne(
       `SELECT 
-        COALESCE(sl.quantity, 0) as on_hand,
-        COALESCE(sl.reserved_quantity, 0) as reserved,
-        COALESCE(sl.quantity, 0) - COALESCE(sl.reserved_quantity, 0) as available
+        COALESCE(sl.qty_on_hand, 0) as on_hand,
+        COALESCE(sl.qty_reserved, 0) as reserved,
+        COALESCE(sl.qty_on_hand, 0) - COALESCE(sl.qty_reserved, 0) as available
        FROM inventory.stock_levels sl
        WHERE sl.product_id = $1 AND sl.location_id = $3 AND sl.tenant_id = $4
          AND ($2::uuid IS NULL AND sl.variant_id IS NULL OR sl.variant_id = $2)`,
@@ -595,12 +595,12 @@ export class InventoryService implements IInventoryService {
     const offset = (page - 1) * limit;
 
     let sql = `
-      SELECT sm.*, p.name as product_name, p.sku, l.name as location_name,
+      SELECT sm.*, p.name as product_name, p.sku, w.name as location_name,
         v.name as variant_name, u.display_name as performed_by_name
       FROM inventory.stock_movements sm
       INNER JOIN catalog.products p ON p.id = sm.product_id
       LEFT JOIN catalog.product_variants v ON v.id = sm.variant_id
-      INNER JOIN inventory.locations l ON l.id = sm.location_id
+      INNER JOIN inventory.warehouses w ON w.id = sm.warehouse_id
       LEFT JOIN iam.users u ON u.id = sm.performed_by
       WHERE sm.tenant_id = $1`;
 
@@ -613,7 +613,7 @@ export class InventoryService implements IInventoryService {
     }
 
     if (query.location_id) {
-      sql += ` AND sm.location_id = $${idx++}`;
+      sql += ` AND sm.warehouse_id = $${idx++}`;
       params.push(query.location_id);
     }
 
@@ -646,14 +646,14 @@ export class InventoryService implements IInventoryService {
   async getInventoryValuation(tenantId: string, locationId?: string) {
     let sql = `
       SELECT sl.product_id, sl.variant_id, sl.location_id,
-        p.name as product_name, p.sku, v.name as variant_name, l.name as location_name,
-        sl.quantity, sl.weighted_avg_cost,
-        sl.quantity * sl.weighted_avg_cost as total_value
+        p.name as product_name, p.sku, v.name as variant_name, w.name as location_name,
+        sl.qty_on_hand, sl.weighted_avg_cost,
+        sl.qty_on_hand * sl.weighted_avg_cost as total_value
       FROM inventory.stock_levels sl
       INNER JOIN catalog.products p ON p.id = sl.product_id
       LEFT JOIN catalog.product_variants v ON v.id = sl.variant_id
-      INNER JOIN inventory.locations l ON l.id = sl.location_id
-      WHERE sl.tenant_id = $1 AND sl.quantity > 0`;
+      INNER JOIN inventory.warehouses w ON w.id = sl.location_id
+      WHERE sl.tenant_id = $1 AND sl.qty_on_hand > 0`;
     
     const params: any[] = [tenantId];
     

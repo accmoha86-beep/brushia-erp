@@ -372,7 +372,7 @@ export class SaleTransactionOrchestrator {
     // Generate receipt number: RCP-YYYYMMDD-XXXX
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const seqResult = await client.query(
-      `SELECT COUNT(*) + 1 as seq FROM sales.orders
+      `SELECT COUNT(*) + 1 as seq FROM sales.sales_orders
        WHERE tenant_id = $1 AND source = 'pos'
        AND created_at::date = CURRENT_DATE`,
       [input.tenantId]
@@ -381,7 +381,7 @@ export class SaleTransactionOrchestrator {
     const receiptNumber = `${RECEIPT_PREFIX}-${today}-${seq}`;
 
     const result = await client.query(
-      `INSERT INTO sales.orders
+      `INSERT INTO sales.sales_orders
        (id, tenant_id, order_number, source, status, customer_id, location_id,
         subtotal, discount_total, vat_amount, grand_total, cost_total,
         payment_status, notes, created_by)
@@ -583,7 +583,7 @@ export class SaleTransactionOrchestrator {
   ): Promise<number> {
     // Update customer stats
     await client.query(
-      `UPDATE crm.customers
+      `UPDATE sales.customers
        SET total_orders = total_orders + 1,
            total_spent = total_spent + $1,
            last_order_date = NOW(),
@@ -598,7 +598,7 @@ export class SaleTransactionOrchestrator {
     if (pointsEarned > 0) {
       // Add loyalty points
       await client.query(
-        `INSERT INTO crm.loyalty_points
+        `INSERT INTO crm.loyalty_transactions
          (id, tenant_id, customer_id, points, type, reference_type, reference_id, description)
          VALUES (gen_random_uuid(), $1, $2, $3, 'earn', 'sales_order', $4, $5)`,
         [tenantId, customerId, pointsEarned, orderId, `Earned from sale`]
@@ -606,7 +606,7 @@ export class SaleTransactionOrchestrator {
 
       // Update customer points balance
       await client.query(
-        `UPDATE crm.customers
+        `UPDATE sales.customers
          SET loyalty_points = loyalty_points + $1
          WHERE id = $2 AND tenant_id = $3`,
         [pointsEarned, customerId, tenantId]

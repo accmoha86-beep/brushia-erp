@@ -34,10 +34,10 @@ export class POSService {
 
   async listRegisters(tenantId: string, locationId?: string) {
     let sql = `
-      SELECT r.*, l.name as location_name,
+      SELECT r.*, w.name as warehouse_name,
         (SELECT COUNT(*) FROM pos.sessions s WHERE s.register_id = r.id AND s.status = 'open') as open_sessions
       FROM pos.registers r
-      INNER JOIN inventory.locations l ON l.id = r.location_id
+      INNER JOIN inventory.warehouses w ON w.id = r.location_id
       WHERE r.tenant_id = $1`;
     const params: any[] = [tenantId];
 
@@ -249,10 +249,10 @@ export class POSService {
 
   async getActiveSession(tenantId: string, userId: string) {
     const session = await this.db.queryOne(
-      `SELECT s.*, r.name as register_name, r.location_id, l.name as location_name
+      `SELECT s.*, r.name as register_name, r.location_id, w.name as warehouse_name
        FROM pos.sessions s
        INNER JOIN pos.registers r ON r.id = s.register_id
-       INNER JOIN inventory.locations l ON l.id = r.location_id
+       INNER JOIN inventory.warehouses w ON w.id = r.location_id
        WHERE s.cashier_id = $1 AND s.tenant_id = $2 AND s.status = 'open'`,
       [userId, tenantId],
     );
