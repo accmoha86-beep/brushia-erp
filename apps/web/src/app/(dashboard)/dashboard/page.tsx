@@ -23,15 +23,17 @@ export default function DashboardPage() {
       ]);
       const stockArr = stock?.data || [];
       const lowStock = stockArr.filter((s: any) => s.qty_on_hand <= (s.reorder_point || 10));
+      const prodArr = products?.data || [];
+      const prodTotal = products?.pagination?.total || prodArr.length;
       setData({
-        productCount: products?.total || (products?.data || []).length,
-        categoryCount: (categories?.data || []).length,
-        orderCount: (orders?.data || []).length,
+        productCount: prodTotal,
+        categoryCount: (categories?.data || categories || []).length,
+        orderCount: (orders?.data || orders || []).length,
         stockItems: stockArr.length,
-        totalUnits: stockArr.reduce((s: number, i: any) => s + (i.qty_on_hand || 0), 0),
-        accountCount: (accounts?.data || []).length,
+        totalUnits: stockArr.reduce((s: number, i: any) => s + (Number(i.qty_on_hand) || 0), 0),
+        accountCount: (accounts?.data || accounts || []).length,
         lowStock,
-        recentProducts: (products?.data || []).slice(0, 5),
+        recentProducts: prodArr.slice(0, 5).map((p: any) => ({ ...p, price: Number(p.base_price) || 0 })),
         customerStats: customers,
         activePromos: (promotions?.data || []).filter((p: any) => p.status === 'active').length,
       });
@@ -98,7 +100,7 @@ export default function DashboardPage() {
         <div className="space-y-2">
           {(data.recentProducts || []).map((p: any) => (
             <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-50">
-              <div className="flex items-center gap-3"><span className="text-xl">{'\U0001f484'}</span><div><p className="text-sm font-medium">{p.name}</p><p className="text-[10px] text-gray-400 font-mono">{p.sku}</p></div></div>
+              <div className="flex items-center gap-3"><span className="text-xl">{'💄'}</span><div><p className="text-sm font-medium">{p.name}</p><p className="text-[10px] text-gray-400 font-mono">{p.sku}</p></div></div>
               <p className="text-sm font-medium text-rose-600">{formatEGP(p.price)}</p>
             </div>
           ))}
