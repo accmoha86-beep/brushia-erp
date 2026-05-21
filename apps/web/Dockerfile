@@ -11,6 +11,7 @@ COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
 COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/
+COPY packages/eslint-config/package.json packages/eslint-config/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts
 
 # ── Build ──
