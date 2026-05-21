@@ -88,3 +88,73 @@ CREATE TABLE IF NOT EXISTS iam.api_keys (
 CREATE INDEX IF NOT EXISTS idx_permissions_module ON iam.permissions(module);
 CREATE INDEX IF NOT EXISTS idx_api_keys_tenant ON iam.api_keys(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON iam.api_keys(key_prefix);
+
+-- ============================================================
+-- CATALOG.BRANDS — missing columns
+-- ============================================================
+ALTER TABLE catalog.brands ADD COLUMN IF NOT EXISTS description TEXT;
+
+-- ============================================================
+-- CATALOG.PRODUCTS — missing columns
+-- ============================================================
+ALTER TABLE catalog.products ADD COLUMN IF NOT EXISTS allow_backorder BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE catalog.products ADD COLUMN IF NOT EXISTS created_by UUID;
+ALTER TABLE catalog.products ADD COLUMN IF NOT EXISTS updated_by UUID;
+ALTER TABLE catalog.products ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+
+-- ============================================================
+-- CATALOG.PRODUCT_VARIANTS — missing columns
+-- ============================================================
+ALTER TABLE catalog.product_variants ADD COLUMN IF NOT EXISTS attributes JSONB DEFAULT '{}';
+ALTER TABLE catalog.product_variants ADD COLUMN IF NOT EXISTS weight_grams INTEGER;
+ALTER TABLE catalog.product_variants ADD COLUMN IF NOT EXISTS barcode_type VARCHAR(20) DEFAULT 'EAN13';
+ALTER TABLE catalog.product_variants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+
+-- ============================================================
+-- CATALOG.PRODUCT_IMAGES — new table
+-- ============================================================
+CREATE TABLE IF NOT EXISTS catalog.product_images (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID NOT NULL REFERENCES catalog.products(id) ON DELETE CASCADE,
+  variant_id UUID REFERENCES catalog.product_variants(id) ON DELETE SET NULL,
+  url TEXT NOT NULL,
+  alt_text VARCHAR(255),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_primary BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_product_images_product ON catalog.product_images(product_id);
+
+-- ============================================================
+-- INVENTORY.WAREHOUSES — missing columns
+-- ============================================================
+ALTER TABLE inventory.warehouses ADD COLUMN IF NOT EXISTS manager_id UUID;
+
+-- ============================================================
+-- INVENTORY.STOCK_LEVELS — missing columns
+-- ============================================================
+ALTER TABLE inventory.stock_levels ADD COLUMN IF NOT EXISTS location_id UUID;
+ALTER TABLE inventory.stock_levels ADD COLUMN IF NOT EXISTS last_counted_at TIMESTAMPTZ;
+
+-- ============================================================
+-- INVENTORY.STOCK_MOVEMENTS — missing columns
+-- ============================================================
+ALTER TABLE inventory.stock_movements ADD COLUMN IF NOT EXISTS location_id UUID;
+
+-- ============================================================
+-- INVENTORY.STOCK_RESERVATIONS — new table
+-- ============================================================
+CREATE TABLE IF NOT EXISTS inventory.stock_reservations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL REFERENCES iam.tenants(id),
+  product_id UUID NOT NULL REFERENCES catalog.products(id),
+  variant_id UUID REFERENCES catalog.product_variants(id),
+  warehouse_id UUID NOT NULL REFERENCES inventory.warehouses(id),
+  quantity INTEGER NOT NULL,
+  reference_type VARCHAR(30) NOT NULL,
+  reference_id UUID NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'active',
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_stock_reservations_lookup ON inventory.stock_reservations(tenant_id, product_id, warehouse_id);
