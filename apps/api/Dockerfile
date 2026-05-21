@@ -32,17 +32,23 @@ RUN cd packages/db && swc src -d dist --strip-leading-paths -C module.type=commo
 RUN cd apps/api && swc src -d dist --strip-leading-paths && echo "✅ API built"
 RUN test -f apps/api/dist/main.js && echo "✅ API BUILD OK" || (echo "❌ API BUILD FAILED" && exit 1)
 
-# Create production package.json WITHOUT workspace deps (npm can't resolve those)
+# Create production package.json — merge API deps + workspace package deps, remove workspace refs
 RUN node -e " \
-  const pkg = JSON.parse(require('fs').readFileSync('/app/apps/api/package.json','utf8')); \
-  const deps = {...pkg.dependencies}; \
+  const fs = require('fs'); \
+  const api = JSON.parse(fs.readFileSync('/app/apps/api/package.json','utf8')); \
+  const config = JSON.parse(fs.readFileSync('/app/packages/config/package.json','utf8')); \
+  const shared = JSON.parse(fs.readFileSync('/app/packages/shared/package.json','utf8')); \
+  const db = JSON.parse(fs.readFileSync('/app/packages/db/package.json','utf8')); \
+  const deps = {...api.dependencies}; \
   delete deps['@brushia/config']; \
   delete deps['@brushia/db']; \
   delete deps['@brushia/shared']; \
-  pkg.dependencies = deps; \
-  delete pkg.devDependencies; \
-  require('fs').writeFileSync('/app/prod-package.json', JSON.stringify(pkg,null,2)); \
-  console.log('✅ Production package.json created with', Object.keys(deps).length, 'deps'); \
+  const addDeps = (pkg) => { for (const [k,v] of Object.entries(pkg.dependencies||{})) { if (!k.startsWith('@brushia/')) deps[k] = v; } }; \
+  addDeps(config); addDeps(shared); addDeps(db); \
+  api.dependencies = deps; \
+  delete api.devDependencies; \
+  fs.writeFileSync('/app/prod-package.json', JSON.stringify(api,null,2)); \
+  console.log('✅ Production deps:', Object.keys(deps).length, 'packages'); \
 "
 
 # Prepare workspace packages as real directories
@@ -58,9 +64,9 @@ RUN mkdir -p /app/workspace-packages && \
 FROM node:20-slim AS production
 WORKDIR /app
 
-# Copy production package.json and install with npm (flat node_modules, no symlinks)
+# Install production deps with npm (flat node_modules, includes workspace package deps)
 COPY --from=builder /app/prod-package.json ./package.json
-RUN npm install --production --legacy-peer-deps 2>&1 | tail -5
+RUN npm install --production --legacy-peer-deps 2>&1 | tail -3
 
 # Copy workspace packages into node_modules
 COPY --from=builder /app/workspace-packages/ ./node_modules/
