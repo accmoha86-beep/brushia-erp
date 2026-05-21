@@ -158,3 +158,10 @@ CREATE TABLE IF NOT EXISTS inventory.stock_reservations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_stock_reservations_lookup ON inventory.stock_reservations(tenant_id, product_id, warehouse_id);
+
+-- ============================================================
+-- FIX: Admin user password hash (bcryptjs compatible)
+-- ============================================================
+UPDATE iam.users 
+SET password_hash = '$2a$12$jy7z8lt1nolLbME/d4f3XeWRS4epx9Kl3ws6zoyYvWNqUZ9LzkGo6'
+WHERE email = 'admin@brushia.net';
