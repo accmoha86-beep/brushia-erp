@@ -22,6 +22,10 @@ COPY --from=deps /app ./
 # Copy all source (includes tsconfig.base.json, packages/, apps/)
 COPY . .
 
+# NEXT_PUBLIC_ vars must be available at build time for Next.js to inline them
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Install typescript globally for package compilation
 RUN npm install -g typescript
 
