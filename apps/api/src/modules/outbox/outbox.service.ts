@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PoolClient } from 'pg';
-import { DatabaseService } from '../database/database.service';
+import { DatabaseService } from '../../database/database.service';
 
 interface OutboxEvent {
   tenant_id: string;
