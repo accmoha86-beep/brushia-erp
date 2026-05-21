@@ -17,6 +17,9 @@ export class PermissionsGuard implements CanActivate {
     const user = request.user;
     if (!user?.permissions) return false;
 
+    // Wildcard: admin with '*' permission bypasses all checks
+    if (user.permissions.includes('*')) return true;
+
     return requiredPerms.every(p => user.permissions.includes(p));
   }
 }
