@@ -1,9 +1,30 @@
 'use client';
 
-import { useState } from 'react';
-
+import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, X, Edit, Trash2, Building2, Phone, Clock } from 'lucide-react';
+import { api } from '@/lib/api-client';
+import { Plus, X, Edit, Trash2, Building2, Clock, RefreshCw } from 'lucide-react';
+
+// ── API response types ──────────────────────────────────────────
+interface ApiVendor {
+  id: string;
+  name: string;
+  contact_person?: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  address?: string;
+  payment_terms?: string;
+  paymentTerms?: string;
+  lead_time_days?: number;
+  leadTimeDays?: number;
+  status?: string;
+  product_categories?: string[];
+  productCategories?: string[];
+  categories?: string[];
+}
 
 interface Vendor {
   id: string;
@@ -15,28 +36,60 @@ interface Vendor {
   city: string;
   paymentTerms: string;
   leadTimeDays: number;
-  status: 'active' | 'inactive';
+  status: string;
   productCategories: string[];
 }
 
-const vendors: Vendor[] = [
-  { id: '1', name: 'Shanghai Beauty Cosmetics Co.', contactPerson: 'Li Wei', email: 'li.wei@shbeauty.cn', phone: '+86-21-5555-0001', country: 'China', city: 'Shanghai', paymentTerms: 'Net 30', leadTimeDays: 45, status: 'active', productCategories: ['Makeup', 'Lip Products'] },
-  { id: '2', name: 'Qingdao Mink Lash Factory', contactPerson: 'Zhang Mei', email: 'zhang@qingdaolash.com', phone: '+86-532-8888-1234', country: 'China', city: 'Qingdao', paymentTerms: 'Net 30', leadTimeDays: 35, status: 'active', productCategories: ['Lashes'] },
-  { id: '3', name: 'Shenzhen Brush Master Ltd.', contactPerson: 'Wang Jun', email: 'sales@brushmaster.cn', phone: '+86-755-2666-5678', country: 'China', city: 'Shenzhen', paymentTerms: 'Net 45', leadTimeDays: 40, status: 'active', productCategories: ['Brushes', 'Brush Sets'] },
-  { id: '4', name: 'Cairo Packaging Solutions', contactPerson: 'Ahmed Nabil', email: 'ahmed@cairopack.eg', phone: '+20-2-2580-1234', country: 'Egypt', city: 'Cairo', paymentTerms: 'Net 15', leadTimeDays: 7, status: 'active', productCategories: ['Packaging'] },
-  { id: '5', name: 'Italian Cosmetics Lab', contactPerson: 'Marco Rossi', email: 'marco@italabcosmetics.it', phone: '+39-02-1234-5678', country: 'Italy', city: 'Milan', paymentTerms: 'Net 60', leadTimeDays: 60, status: 'active', productCategories: ['Makeup', 'Concealer'] },
-  { id: '6', name: 'Korean Beauty Ingredients', contactPerson: 'Park Soo-jin', email: 'park@kbeautyingr.kr', phone: '+82-2-1234-5678', country: 'South Korea', city: 'Seoul', paymentTerms: 'Net 30', leadTimeDays: 30, status: 'inactive', productCategories: ['Skincare'] },
-];
+function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
+}
 
 export default function VendorsPage() {
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+
+  const fetchVendors = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.get<ApiVendor[] | { data: ApiVendor[] }>('/purchasing/vendors');
+      const raw = Array.isArray(data) ? data : (data as { data: ApiVendor[] })?.data ?? [];
+      const mapped: Vendor[] = raw.map((v) => ({
+        id: v.id,
+        name: v.name || '—',
+        contactPerson: v.contact_person || v.contactPerson || '—',
+        email: v.email || '—',
+        phone: v.phone || '—',
+        country: v.country || '—',
+        city: v.city || '',
+        paymentTerms: v.payment_terms || v.paymentTerms || '—',
+        leadTimeDays: v.lead_time_days ?? v.leadTimeDays ?? 0,
+        status: v.status || 'active',
+        productCategories: v.product_categories || v.productCategories || v.categories || [],
+      }));
+      setVendors(mapped);
+    } catch (err) {
+      setError('Failed to load vendors');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchVendors();
+  }, [fetchVendors]);
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
-          <p className="text-sm text-gray-500 mt-1">{vendors.length} registered vendors</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {loading ? '…' : `${vendors.length} registered vendors`}
+          </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -46,6 +99,20 @@ export default function VendorsPage() {
           Add Vendor
         </button>
       </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-sm text-red-600 mb-3">{error}</p>
+          <button
+            onClick={fetchVendors}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -64,49 +131,74 @@ export default function VendorsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {vendors.map((vendor) => (
-                <tr key={vendor.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                        <Building2 className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{vendor.name}</p>
-                        <div className="flex gap-1 mt-0.5">
-                          {vendor.productCategories.map((cat) => (
-                            <span key={cat} className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{cat}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-gray-900">{vendor.contactPerson}</p>
-                    <p className="text-xs text-gray-400">{vendor.email}</p>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{vendor.country}, {vendor.city}</td>
-                  <td className="px-6 py-4 text-gray-600 font-mono text-xs">{vendor.phone}</td>
-                  <td className="px-6 py-4 text-gray-600">{vendor.paymentTerms}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center gap-1 text-gray-600">
-                      <Clock className="h-3 w-3" />
-                      {vendor.leadTimeDays}d
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', vendor.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600')}>
-                      {vendor.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><Edit className="h-4 w-4" /></button>
-                      <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
-                    </div>
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-6 py-4"><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-lg" /><div><Skeleton className="h-4 w-40 mb-1" /><Skeleton className="h-3 w-24" /></div></div></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-24 mb-1" /><Skeleton className="h-3 w-32" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-28" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-16" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-10 mx-auto" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-5 w-14 mx-auto rounded-full" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-12 ml-auto" /></td>
+                  </tr>
+                ))
+              ) : vendors.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <Building2 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-gray-500">No vendors yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Add your first vendor to get started</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                vendors.map((vendor) => (
+                  <tr key={vendor.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+                          <Building2 className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{vendor.name}</p>
+                          <div className="flex gap-1 mt-0.5">
+                            {vendor.productCategories.map((cat) => (
+                              <span key={cat} className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{cat}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-gray-900">{vendor.contactPerson}</p>
+                      <p className="text-xs text-gray-400">{vendor.email}</p>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {vendor.country}{vendor.city ? `, ${vendor.city}` : ''}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 font-mono text-xs">{vendor.phone}</td>
+                    <td className="px-6 py-4 text-gray-600">{vendor.paymentTerms}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center gap-1 text-gray-600">
+                        <Clock className="h-3 w-3" />
+                        {vendor.leadTimeDays}d
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', vendor.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600')}>
+                        {vendor.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><Edit className="h-4 w-4" /></button>
+                        <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

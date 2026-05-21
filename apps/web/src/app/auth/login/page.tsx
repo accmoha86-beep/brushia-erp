@@ -15,7 +15,7 @@ interface LoginResponse {
     email: string;
     firstName: string;
     lastName: string;
-    displayName: string;
+    displayName?: string;
     avatarUrl?: string;
     language: string;
     theme: string;
@@ -54,6 +54,7 @@ export default function LoginPage() {
       setAuth({
         user: {
           ...result.user,
+          displayName: result.user.displayName || `${result.user.firstName} ${result.user.lastName}`,
           permissions: [], // Will be populated from JWT decode
         },
         accessToken: result.accessToken,

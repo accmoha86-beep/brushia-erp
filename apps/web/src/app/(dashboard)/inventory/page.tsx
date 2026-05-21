@@ -1,8 +1,35 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatEGP, cn } from '@/lib/utils';
-import { Search, Filter, ArrowRightLeft, AlertTriangle, ChevronDown, ChevronRight, Warehouse, Package, TrendingDown, TrendingUp } from 'lucide-react';
+import { api } from '@/lib/api-client';
+import { Search, ArrowRightLeft, AlertTriangle, ChevronDown, ChevronRight, Warehouse, Package, RefreshCw } from 'lucide-react';
+
+// ── API response types ──────────────────────────────────────────
+interface PaginatedResponse<T> {
+  data: T[];
+  pagination: { total: number; page: number; limit: number };
+}
+
+interface ApiStockItem {
+  id: string;
+  product_id?: string;
+  product_name?: string;
+  product?: { name: string; sku: string };
+  sku?: string;
+  quantity_on_hand?: number;
+  on_hand?: number;
+  reserved?: number;
+  available?: number;
+  average_cost?: number;
+  avg_cost?: number;
+  reorder_point?: number;
+  min_quantity?: number;
+  warehouse_id?: string;
+  warehouse_name?: string;
+  warehouse?: { name: string };
+  location_name?: string;
+}
 
 interface InventoryItem {
   id: string;
@@ -14,47 +41,64 @@ interface InventoryItem {
   available: number;
   avgCost: number;
   reorderPoint: number;
-  movements?: { date: string; type: string; qty: number; note: string }[];
 }
 
-const inventory: InventoryItem[] = [
-  { id: '1', product: 'Brushia Matte Foundation - Light', sku: 'BRS-FND-001', warehouse: 'Main Warehouse', onHand: 120, reserved: 8, available: 112, avgCost: 18000, reorderPoint: 30, movements: [
-    { date: '2026-05-20', type: 'sale', qty: -3, note: 'Order ORD-2024-1846' },
-    { date: '2026-05-19', type: 'receipt', qty: 50, note: 'PO-2024-089' },
-    { date: '2026-05-18', type: 'sale', qty: -5, note: 'Order ORD-2024-1835' },
-  ]},
-  { id: '2', product: 'Brushia Matte Foundation - Light', sku: 'BRS-FND-001', warehouse: 'Showroom', onHand: 25, reserved: 2, available: 23, avgCost: 18000, reorderPoint: 10 },
-  { id: '3', product: 'Brushia Full Coverage Concealer', sku: 'BRS-CON-001', warehouse: 'Main Warehouse', onHand: 180, reserved: 12, available: 168, avgCost: 12000, reorderPoint: 40 },
-  { id: '4', product: 'Brushia Full Coverage Concealer', sku: 'BRS-CON-001', warehouse: 'Showroom', onHand: 30, reserved: 0, available: 30, avgCost: 12000, reorderPoint: 10 },
-  { id: '5', product: 'Mink Lashes - Natural', sku: 'BRS-LSH-001', warehouse: 'Main Warehouse', onHand: 280, reserved: 15, available: 265, avgCost: 5000, reorderPoint: 50 },
-  { id: '6', product: 'Mink Lashes - Dramatic', sku: 'BRS-LSH-002', warehouse: 'Main Warehouse', onHand: 3, reserved: 1, available: 2, avgCost: 6000, reorderPoint: 20 },
-  { id: '7', product: 'Brushia Setting Powder', sku: 'BRS-PWD-001', warehouse: 'Main Warehouse', onHand: 5, reserved: 2, available: 3, avgCost: 14000, reorderPoint: 15 },
-  { id: '8', product: 'Pro Foundation Brush', sku: 'BRS-BRU-001', warehouse: 'Main Warehouse', onHand: 72, reserved: 4, available: 68, avgCost: 5000, reorderPoint: 15 },
-  { id: '9', product: 'Pro Contour Brush', sku: 'BRS-BRU-002', warehouse: 'Main Warehouse', onHand: 4, reserved: 0, available: 4, avgCost: 4500, reorderPoint: 10 },
-  { id: '10', product: 'Pro Brush Set (12pc)', sku: 'BRS-SET-002', warehouse: 'Main Warehouse', onHand: 18, reserved: 3, available: 15, avgCost: 35000, reorderPoint: 8 },
-  { id: '11', product: 'Matte Lipstick - Ruby Red', sku: 'BRS-LIP-001', warehouse: 'Main Warehouse', onHand: 130, reserved: 6, available: 124, avgCost: 7500, reorderPoint: 25 },
-  { id: '12', product: 'Matte Lipstick - Ruby Red', sku: 'BRS-LIP-001', warehouse: 'Showroom', onHand: 26, reserved: 1, available: 25, avgCost: 7500, reorderPoint: 8 },
-  { id: '13', product: 'Lip Gloss - Clear Shine', sku: 'BRS-LIP-003', warehouse: 'Main Warehouse', onHand: 8, reserved: 3, available: 5, avgCost: 5500, reorderPoint: 25 },
-  { id: '14', product: 'Brushia Eyeshadow Palette', sku: 'BRS-EYE-001', warehouse: 'Main Warehouse', onHand: 38, reserved: 2, available: 36, avgCost: 20000, reorderPoint: 10 },
-  { id: '15', product: 'Brushia Mascara - Volume Max', sku: 'BRS-EYE-002', warehouse: 'Main Warehouse', onHand: 145, reserved: 8, available: 137, avgCost: 7000, reorderPoint: 30 },
-  { id: '16', product: 'Essential Brush Set (8pc)', sku: 'BRS-SET-001', warehouse: 'Main Warehouse', onHand: 28, reserved: 2, available: 26, avgCost: 22000, reorderPoint: 8 },
-];
-
-const warehouses = ['All Warehouses', 'Main Warehouse', 'Showroom'];
+function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
+}
 
 export default function InventoryPage() {
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('All Warehouses');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
+  const [totalStock, setTotalStock] = useState(0);
 
-  const filtered = useMemo(() => {
-    return inventory.filter((item) => {
-      const matchesSearch = search === '' || item.product.toLowerCase().includes(search.toLowerCase()) || item.sku.toLowerCase().includes(search.toLowerCase());
-      const matchesWarehouse = warehouseFilter === 'All Warehouses' || item.warehouse === warehouseFilter;
-      return matchesSearch && matchesWarehouse;
-    });
-  }, [search, warehouseFilter]);
+  const fetchInventory = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get<PaginatedResponse<ApiStockItem>>('/inventory/stock', { page: 1, limit: 50 });
+      const items = (res?.data ?? []).map((item): InventoryItem => {
+        const onHand = item.quantity_on_hand ?? item.on_hand ?? 0;
+        const reserved = item.reserved ?? 0;
+        return {
+          id: item.id,
+          product: item.product_name ?? item.product?.name ?? 'Unknown Product',
+          sku: item.sku ?? item.product?.sku ?? '—',
+          warehouse: item.warehouse_name ?? item.warehouse?.name ?? item.location_name ?? 'Default',
+          onHand,
+          reserved,
+          available: item.available ?? (onHand - reserved),
+          avgCost: item.average_cost ?? item.avg_cost ?? 0,
+          reorderPoint: item.reorder_point ?? item.min_quantity ?? 10,
+        };
+      });
+      setInventory(items);
+      setTotalStock(res?.pagination?.total ?? items.length);
+    } catch (err) {
+      setError('Failed to load inventory data');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
+
+  // Derive unique warehouses
+  const warehouses = ['All Warehouses', ...Array.from(new Set(inventory.map((i) => i.warehouse)))];
+
+  const filtered = inventory.filter((item) => {
+    const matchesSearch = search === '' || item.product.toLowerCase().includes(search.toLowerCase()) || item.sku.toLowerCase().includes(search.toLowerCase());
+    const matchesWarehouse = warehouseFilter === 'All Warehouses' || item.warehouse === warehouseFilter;
+    return matchesSearch && matchesWarehouse;
+  });
 
   const totalValue = filtered.reduce((sum, i) => sum + i.onHand * i.avgCost, 0);
   const lowStockCount = filtered.filter((i) => i.available <= i.reorderPoint).length;
@@ -65,7 +109,7 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {filtered.length} stock records · Total value: {formatEGP(totalValue)}
+            {loading ? '…' : `${totalStock} stock records · Total value: ${formatEGP(totalValue)}`}
           </p>
         </div>
         <button
@@ -77,6 +121,20 @@ export default function InventoryPage() {
         </button>
       </div>
 
+      {/* Error state */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-sm text-red-600 mb-3">{error}</p>
+          <button
+            onClick={fetchInventory}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -85,7 +143,11 @@ export default function InventoryPage() {
               <Package className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{filtered.reduce((s, i) => s + i.onHand, 0).toLocaleString()}</p>
+              {loading ? (
+                <Skeleton className="h-7 w-20 mb-1" />
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{filtered.reduce((s, i) => s + i.onHand, 0).toLocaleString()}</p>
+              )}
               <p className="text-sm text-gray-500">Total Units</p>
             </div>
           </div>
@@ -96,7 +158,11 @@ export default function InventoryPage() {
               <Warehouse className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{formatEGP(totalValue)}</p>
+              {loading ? (
+                <Skeleton className="h-7 w-28 mb-1" />
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{formatEGP(totalValue)}</p>
+              )}
               <p className="text-sm text-gray-500">Inventory Value</p>
             </div>
           </div>
@@ -107,7 +173,11 @@ export default function InventoryPage() {
               <AlertTriangle className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-red-600">{lowStockCount}</p>
+              {loading ? (
+                <Skeleton className="h-7 w-10 mb-1" />
+              ) : (
+                <p className="text-2xl font-bold text-red-600">{lowStockCount}</p>
+              )}
               <p className="text-sm text-gray-500">Low Stock Items</p>
             </div>
           </div>
@@ -154,63 +224,73 @@ export default function InventoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map((item) => {
-                const isLow = item.available <= item.reorderPoint;
-                const isExpanded = expandedRow === item.id;
-                return (
-                  <React.Fragment key={item.id}>
-                    <tr className={cn('hover:bg-gray-50 transition-colors', isLow && 'bg-red-50/30')}>
-                      <td className="px-4 py-3">
-                        {item.movements && (
+              {loading ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-10 ml-auto" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-8 ml-auto" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-10 ml-auto" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-20 ml-auto" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-5 w-10 mx-auto rounded-full" /></td>
+                  </tr>
+                ))
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="px-4 py-12 text-center">
+                    <Package className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-gray-500">No stock records found</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {search || warehouseFilter !== 'All Warehouses' ? 'Try changing your filters' : 'Stock data will appear as inventory is tracked'}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((item) => {
+                  const isLow = item.available <= item.reorderPoint;
+                  const isExpanded = expandedRow === item.id;
+                  return (
+                    <React.Fragment key={item.id}>
+                      <tr className={cn('hover:bg-gray-50 transition-colors', isLow && 'bg-red-50/30')}>
+                        <td className="px-4 py-3">
                           <button onClick={() => setExpandedRow(isExpanded ? null : item.id)} className="text-gray-400 hover:text-gray-600">
                             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                           </button>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">{item.product}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{item.sku}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.warehouse}</td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">{item.onHand}</td>
-                      <td className="px-4 py-3 text-right text-gray-500">{item.reserved}</td>
-                      <td className={cn('px-4 py-3 text-right font-medium', isLow ? 'text-red-600' : 'text-gray-900')}>{item.available}</td>
-                      <td className="px-4 py-3 text-right text-gray-600">{formatEGP(item.avgCost)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">{formatEGP(item.onHand * item.avgCost)}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={cn(
-                          'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          isLow ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                        )}>
-                          {isLow ? 'Low' : 'OK'}
-                        </span>
-                      </td>
-                    </tr>
-                    {isExpanded && item.movements && (
-                      <tr>
-                        <td colSpan={10} className="px-8 py-3 bg-gray-50/80">
-                          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Recent Movements</p>
-                          <div className="space-y-1.5">
-                            {item.movements.map((m, i) => (
-                              <div key={i} className="flex items-center gap-3 text-sm">
-                                {m.qty > 0 ? (
-                                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                                ) : (
-                                  <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-                                )}
-                                <span className="text-gray-500 w-20">{m.date}</span>
-                                <span className={cn('font-medium w-12 text-right', m.qty > 0 ? 'text-emerald-600' : 'text-red-600')}>
-                                  {m.qty > 0 ? `+${m.qty}` : m.qty}
-                                </span>
-                                <span className="text-gray-500 capitalize">{m.type}</span>
-                                <span className="text-gray-400">— {m.note}</span>
-                              </div>
-                            ))}
-                          </div>
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900">{item.product}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-gray-500">{item.sku}</td>
+                        <td className="px-4 py-3 text-gray-600">{item.warehouse}</td>
+                        <td className="px-4 py-3 text-right font-medium text-gray-900">{item.onHand}</td>
+                        <td className="px-4 py-3 text-right text-gray-500">{item.reserved}</td>
+                        <td className={cn('px-4 py-3 text-right font-medium', isLow ? 'text-red-600' : 'text-gray-900')}>{item.available}</td>
+                        <td className="px-4 py-3 text-right text-gray-600">{formatEGP(item.avgCost)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-gray-900">{formatEGP(item.onHand * item.avgCost)}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={cn(
+                            'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
+                            isLow ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                          )}>
+                            {isLow ? 'Low' : 'OK'}
+                          </span>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={10} className="px-8 py-3 bg-gray-50/80">
+                            <p className="text-xs text-gray-500">
+                              Reorder Point: {item.reorderPoint} units · Warehouse: {item.warehouse}
+                            </p>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -226,24 +306,26 @@ export default function InventoryPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
                 <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
                   <option>Select product...</option>
-                  <option>Brushia Matte Foundation - Light</option>
-                  <option>Mink Lashes - Natural</option>
-                  <option>Pro Foundation Brush</option>
+                  {inventory.map((item) => (
+                    <option key={item.id} value={item.id}>{item.product} ({item.sku})</option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
                   <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
-                    <option>Main Warehouse</option>
-                    <option>Showroom</option>
+                    {warehouses.filter((w) => w !== 'All Warehouses').map((w) => (
+                      <option key={w}>{w}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
                   <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
-                    <option>Showroom</option>
-                    <option>Main Warehouse</option>
+                    {warehouses.filter((w) => w !== 'All Warehouses').map((w) => (
+                      <option key={w}>{w}</option>
+                    ))}
                   </select>
                 </div>
               </div>

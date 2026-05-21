@@ -1,49 +1,49 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatEGP, cn } from '@/lib/utils';
-import { Search, Plus, Filter, ChevronLeft, ChevronRight, Package, Edit, Trash2, Eye, X } from 'lucide-react';
+import { api } from '@/lib/api-client';
+import { Search, Plus, ChevronLeft, ChevronRight, Package, Edit, Trash2, Eye, X, RefreshCw } from 'lucide-react';
+
+// ── API response types ──────────────────────────────────────────
+interface PaginatedResponse<T> {
+  data: T[];
+  pagination: { total: number; page: number; limit: number };
+}
+
+interface ApiProduct {
+  id: string;
+  sku: string;
+  name: string;
+  category_id?: string;
+  category_name?: string;
+  category?: { name: string };
+  base_price: number;
+  cost_price: number;
+  stock?: number;
+  quantity_on_hand?: number;
+  status: string;
+  image?: string;
+}
+
+interface ApiCategory {
+  id: string;
+  name: string;
+  slug: string;
+  product_count?: number;
+}
 
 interface Product {
   id: string;
   sku: string;
   name: string;
   category: string;
+  categoryId: string;
   price: number;
   cost: number;
   stock: number;
-  status: 'active' | 'inactive' | 'draft';
-  image?: string;
+  status: string;
 }
-
-const products: Product[] = [
-  { id: '1', sku: 'BRS-FND-001', name: 'Brushia Matte Foundation - Light', category: 'Makeup', price: 35000, cost: 18000, stock: 145, status: 'active' },
-  { id: '2', sku: 'BRS-FND-002', name: 'Brushia Matte Foundation - Medium', category: 'Makeup', price: 35000, cost: 18000, stock: 132, status: 'active' },
-  { id: '3', sku: 'BRS-FND-003', name: 'Brushia Matte Foundation - Dark', category: 'Makeup', price: 35000, cost: 18000, stock: 89, status: 'active' },
-  { id: '4', sku: 'BRS-CON-001', name: 'Brushia Full Coverage Concealer', category: 'Concealer', price: 25000, cost: 12000, stock: 210, status: 'active' },
-  { id: '5', sku: 'BRS-CON-002', name: 'Brushia Under Eye Concealer', category: 'Concealer', price: 22000, cost: 10000, stock: 178, status: 'active' },
-  { id: '6', sku: 'BRS-PWD-001', name: 'Brushia Setting Powder - Translucent', category: 'Makeup', price: 28000, cost: 14000, stock: 5, status: 'active' },
-  { id: '7', sku: 'BRS-LSH-001', name: 'Mink Lashes - Natural', category: 'Lashes', price: 15000, cost: 5000, stock: 320, status: 'active' },
-  { id: '8', sku: 'BRS-LSH-002', name: 'Mink Lashes - Dramatic', category: 'Lashes', price: 18000, cost: 6000, stock: 3, status: 'active' },
-  { id: '9', sku: 'BRS-LSH-003', name: 'Faux Mink Lashes - Everyday', category: 'Lashes', price: 12000, cost: 4000, stock: 245, status: 'active' },
-  { id: '10', sku: 'BRS-LSH-004', name: 'Magnetic Lashes - Glamour', category: 'Lashes', price: 22000, cost: 8000, stock: 67, status: 'active' },
-  { id: '11', sku: 'BRS-BRU-001', name: 'Pro Foundation Brush', category: 'Brushes', price: 12000, cost: 5000, stock: 89, status: 'active' },
-  { id: '12', sku: 'BRS-BRU-002', name: 'Pro Contour Brush', category: 'Brushes', price: 10000, cost: 4500, stock: 4, status: 'active' },
-  { id: '13', sku: 'BRS-BRU-003', name: 'Pro Powder Brush', category: 'Brushes', price: 11000, cost: 4800, stock: 52, status: 'active' },
-  { id: '14', sku: 'BRS-BRU-004', name: 'Pro Blending Brush', category: 'Brushes', price: 9500, cost: 4000, stock: 78, status: 'active' },
-  { id: '15', sku: 'BRS-SET-001', name: 'Essential Brush Set (8pc)', category: 'Brush Sets', price: 45000, cost: 22000, stock: 34, status: 'active' },
-  { id: '16', sku: 'BRS-SET-002', name: 'Pro Brush Set (12pc)', category: 'Brush Sets', price: 75000, cost: 35000, stock: 22, status: 'active' },
-  { id: '17', sku: 'BRS-LIP-001', name: 'Matte Lipstick - Ruby Red', category: 'Lip Products', price: 19000, cost: 7500, stock: 156, status: 'active' },
-  { id: '18', sku: 'BRS-LIP-002', name: 'Matte Lipstick - Nude Pink', category: 'Lip Products', price: 19000, cost: 7500, stock: 134, status: 'active' },
-  { id: '19', sku: 'BRS-LIP-003', name: 'Lip Gloss - Clear Shine', category: 'Lip Products', price: 15000, cost: 5500, stock: 8, status: 'active' },
-  { id: '20', sku: 'BRS-LIP-004', name: 'Lip Liner - Deep Rose', category: 'Lip Products', price: 12000, cost: 4000, stock: 198, status: 'active' },
-  { id: '21', sku: 'BRS-EYE-001', name: 'Brushia Eyeshadow Palette - Desert Rose', category: 'Makeup', price: 42000, cost: 20000, stock: 45, status: 'active' },
-  { id: '22', sku: 'BRS-EYE-002', name: 'Brushia Mascara - Volume Max', category: 'Makeup', price: 18000, cost: 7000, stock: 167, status: 'active' },
-  { id: '23', sku: 'BRS-EYE-003', name: 'Brushia Eyeliner - Jet Black', category: 'Makeup', price: 14000, cost: 5500, stock: 203, status: 'active' },
-  { id: '24', sku: 'BRS-SKN-001', name: 'Brushia Makeup Remover - Micellar', category: 'Makeup', price: 16000, cost: 6000, stock: 92, status: 'active' },
-];
-
-const categories = ['All', 'Makeup', 'Concealer', 'Lashes', 'Brushes', 'Brush Sets', 'Lip Products'];
 
 const ITEMS_PER_PAGE = 10;
 
@@ -53,25 +53,73 @@ const statusStyles: Record<string, string> = {
   draft: 'bg-yellow-100 text-yellow-700',
 };
 
+function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
+}
+
 export default function ProductsPage() {
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const filtered = useMemo(() => {
-    return products.filter((p) => {
-      const matchesSearch =
-        search === '' ||
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.sku.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [search, categoryFilter]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  // Fetch categories once on mount
+  useEffect(() => {
+    api.get<ApiCategory[]>('/catalog/categories')
+      .then((cats) => setCategories(Array.isArray(cats) ? cats : []))
+      .catch(() => setCategories([]));
+  }, []);
+
+  // Build a category name map
+  const categoryNameMap: Record<string, string> = {};
+  categories.forEach((c) => { categoryNameMap[c.id] = c.name; });
+
+  // Fetch products when search/category/page change
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, string | number | boolean | undefined> = {
+        page,
+        limit: ITEMS_PER_PAGE,
+      };
+      if (search) params.search = search;
+      if (categoryFilter !== 'all') params.category_id = categoryFilter;
+
+      const res = await api.get<PaginatedResponse<ApiProduct>>('/catalog/products', params);
+      const mapped: Product[] = (res?.data ?? []).map((p) => ({
+        id: p.id,
+        sku: p.sku || '—',
+        name: p.name,
+        category: p.category_name || p.category?.name || categoryNameMap[p.category_id ?? ''] || '—',
+        categoryId: p.category_id ?? '',
+        price: p.base_price ?? 0,
+        cost: p.cost_price ?? 0,
+        stock: p.stock ?? p.quantity_on_hand ?? 0,
+        status: p.status ?? 'active',
+      }));
+      setProducts(mapped);
+      setTotalProducts(res?.pagination?.total ?? mapped.length);
+    } catch (err) {
+      setError('Failed to load products');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, categoryFilter, page, categoryNameMap]);
+
+  useEffect(() => {
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, categoryFilter, page]);
+
+  const totalPages = Math.max(1, Math.ceil(totalProducts / ITEMS_PER_PAGE));
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -79,7 +127,9 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-500 mt-1">{products.length} products in catalog</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {loading ? '…' : `${totalProducts} products in catalog`}
+          </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -103,22 +153,47 @@ export default function ProductsPage() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => { setCategoryFilter('all'); setPage(1); }}
+            className={cn(
+              'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              categoryFilter === 'all'
+                ? 'bg-rose-500 text-white'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+            )}
+          >
+            All
+          </button>
           {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => { setCategoryFilter(cat); setPage(1); }}
+              key={cat.id}
+              onClick={() => { setCategoryFilter(cat.id); setPage(1); }}
               className={cn(
                 'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                categoryFilter === cat
+                categoryFilter === cat.id
                   ? 'bg-rose-500 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
               )}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-sm text-red-600 mb-3">{error}</p>
+          <button
+            onClick={fetchProducts}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -137,86 +212,116 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginated.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-rose-100 to-purple-100">
-                        <Package className="h-5 w-5 text-rose-500" />
-                      </div>
-                      <span className="font-medium text-gray-900">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{product.sku}</td>
-                  <td className="px-6 py-4 text-gray-600">{product.category}</td>
-                  <td className="px-6 py-4 text-right font-medium text-gray-900">{formatEGP(product.price)}</td>
-                  <td className="px-6 py-4 text-right text-gray-500">{formatEGP(product.cost)}</td>
-                  <td className="px-6 py-4 text-right">
-                    <span className={cn('font-medium', product.stock <= 10 ? 'text-red-600' : 'text-gray-900')}>
-                      {product.stock}
-                    </span>
-                    {product.stock <= 10 && (
-                      <span className="ml-1 text-xs text-red-500">Low</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[product.status]}`}>
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="View">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="Edit">
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500" title="Delete">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-6 py-4"><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-lg" /><Skeleton className="h-4 w-40" /></div></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-16" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-10 ml-auto" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-5 w-14 mx-auto rounded-full" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                  </tr>
+                ))
+              ) : products.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <Package className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-gray-500">No products found</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {search || categoryFilter !== 'all' ? 'Try changing your filters' : 'Add your first product to get started'}
+                    </p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                products.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-rose-100 to-purple-100">
+                          <Package className="h-5 w-5 text-rose-500" />
+                        </div>
+                        <span className="font-medium text-gray-900">{product.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{product.sku}</td>
+                    <td className="px-6 py-4 text-gray-600">{product.category}</td>
+                    <td className="px-6 py-4 text-right font-medium text-gray-900">{formatEGP(product.price)}</td>
+                    <td className="px-6 py-4 text-right text-gray-500">{formatEGP(product.cost)}</td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={cn('font-medium', product.stock <= 10 ? 'text-red-600' : 'text-gray-900')}>
+                        {product.stock}
+                      </span>
+                      {product.stock <= 10 && (
+                        <span className="ml-1 text-xs text-red-500">Low</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[product.status] || 'bg-gray-100 text-gray-600'}`}>
+                        {product.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="View">
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="Edit">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500" title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3">
-          <p className="text-sm text-gray-500">
-            Showing {(page - 1) * ITEMS_PER_PAGE + 1} to {Math.min(page * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} products
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="rounded-lg border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+        {!loading && products.length > 0 && (
+          <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3">
+            <p className="text-sm text-gray-500">
+              Showing {(page - 1) * ITEMS_PER_PAGE + 1} to {Math.min(page * ITEMS_PER_PAGE, totalProducts)} of {totalProducts} products
+            </p>
+            <div className="flex items-center gap-2">
               <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={cn(
-                  'h-8 w-8 rounded-lg text-sm font-medium transition-colors',
-                  p === page ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-                )}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-lg border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {p}
+                <ChevronLeft className="h-4 w-4" />
               </button>
-            ))}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="rounded-lg border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pageNum = totalPages <= 5 ? i + 1 : Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={cn(
+                      'h-8 w-8 rounded-lg text-sm font-medium transition-colors',
+                      pageNum === page ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-lg border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Add Product Modal */}
@@ -242,7 +347,7 @@ export default function ProductsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
-                    {categories.filter(c => c !== 'All').map(c => <option key={c}>{c}</option>)}
+                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
               </div>

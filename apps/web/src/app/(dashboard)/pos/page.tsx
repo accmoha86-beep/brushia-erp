@@ -1,10 +1,37 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatEGP, cn } from '@/lib/utils';
+import { api } from '@/lib/api-client';
 import { ArrowLeft, Search, Plus, Minus, CreditCard, Banknote, User, X, ShoppingCart, Receipt, Check } from 'lucide-react';
 
+// ── API response types ──────────────────────────────────────────
+interface ApiCategoryTree {
+  id: string;
+  name: string;
+  slug?: string;
+  children?: ApiCategoryTree[];
+}
+
+interface ApiProduct {
+  id: string;
+  name: string;
+  sku: string;
+  base_price: number;
+  cost_price?: number;
+  category_id?: string;
+  stock?: number;
+  quantity_on_hand?: number;
+  status?: string;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  pagination: { total: number; page: number; limit: number };
+}
+
+// ── Local types ─────────────────────────────────────────────────
 interface POSProduct {
   id: string;
   name: string;
@@ -19,41 +46,48 @@ interface CartItem {
   quantity: number;
 }
 
-const categories = [
+interface POSCategory {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+}
+
+const defaultCategories: POSCategory[] = [
   { id: 'all', name: 'All', emoji: '🛍️', color: 'from-gray-600 to-gray-700' },
-  { id: 'makeup', name: 'Makeup', emoji: '💄', color: 'from-rose-500 to-pink-500' },
-  { id: 'lashes', name: 'Lashes', emoji: '👁️', color: 'from-purple-500 to-violet-500' },
-  { id: 'concealer', name: 'Concealer', emoji: '✨', color: 'from-amber-500 to-orange-500' },
-  { id: 'brushes', name: 'Brushes', emoji: '🖌️', color: 'from-blue-500 to-cyan-500' },
-  { id: 'brush-sets', name: 'Sets', emoji: '🎨', color: 'from-emerald-500 to-teal-500' },
-  { id: 'lip', name: 'Lips', emoji: '💋', color: 'from-red-500 to-rose-500' },
 ];
 
-const products: POSProduct[] = [
-  { id: '1', name: 'Matte Foundation - Light', sku: 'BRS-FND-001', price: 35000, category: 'makeup', stock: 145 },
-  { id: '2', name: 'Matte Foundation - Medium', sku: 'BRS-FND-002', price: 35000, category: 'makeup', stock: 132 },
-  { id: '3', name: 'Matte Foundation - Dark', sku: 'BRS-FND-003', price: 35000, category: 'makeup', stock: 89 },
-  { id: '4', name: 'Full Coverage Concealer', sku: 'BRS-CON-001', price: 25000, category: 'concealer', stock: 210 },
-  { id: '5', name: 'Under Eye Concealer', sku: 'BRS-CON-002', price: 22000, category: 'concealer', stock: 178 },
-  { id: '6', name: 'Setting Powder', sku: 'BRS-PWD-001', price: 28000, category: 'makeup', stock: 5 },
-  { id: '7', name: 'Mink Lashes - Natural', sku: 'BRS-LSH-001', price: 15000, category: 'lashes', stock: 320 },
-  { id: '8', name: 'Mink Lashes - Dramatic', sku: 'BRS-LSH-002', price: 18000, category: 'lashes', stock: 3 },
-  { id: '9', name: 'Faux Mink - Everyday', sku: 'BRS-LSH-003', price: 12000, category: 'lashes', stock: 245 },
-  { id: '10', name: 'Magnetic Lashes - Glamour', sku: 'BRS-LSH-004', price: 22000, category: 'lashes', stock: 67 },
-  { id: '11', name: 'Foundation Brush', sku: 'BRS-BRU-001', price: 12000, category: 'brushes', stock: 89 },
-  { id: '12', name: 'Contour Brush', sku: 'BRS-BRU-002', price: 10000, category: 'brushes', stock: 4 },
-  { id: '13', name: 'Powder Brush', sku: 'BRS-BRU-003', price: 11000, category: 'brushes', stock: 52 },
-  { id: '14', name: 'Blending Brush', sku: 'BRS-BRU-004', price: 9500, category: 'brushes', stock: 78 },
-  { id: '15', name: 'Essential Set (8pc)', sku: 'BRS-SET-001', price: 45000, category: 'brush-sets', stock: 34 },
-  { id: '16', name: 'Pro Set (12pc)', sku: 'BRS-SET-002', price: 75000, category: 'brush-sets', stock: 22 },
-  { id: '17', name: 'Lipstick - Ruby Red', sku: 'BRS-LIP-001', price: 19000, category: 'lip', stock: 156 },
-  { id: '18', name: 'Lipstick - Nude Pink', sku: 'BRS-LIP-002', price: 19000, category: 'lip', stock: 134 },
-  { id: '19', name: 'Lip Gloss - Clear Shine', sku: 'BRS-LIP-003', price: 15000, category: 'lip', stock: 8 },
-  { id: '20', name: 'Lip Liner - Deep Rose', sku: 'BRS-LIP-004', price: 12000, category: 'lip', stock: 198 },
-  { id: '21', name: 'Eyeshadow - Desert Rose', sku: 'BRS-EYE-001', price: 42000, category: 'makeup', stock: 45 },
-  { id: '22', name: 'Mascara - Volume Max', sku: 'BRS-EYE-002', price: 18000, category: 'makeup', stock: 167 },
-  { id: '23', name: 'Eyeliner - Jet Black', sku: 'BRS-EYE-003', price: 14000, category: 'makeup', stock: 203 },
-  { id: '24', name: 'Makeup Remover', sku: 'BRS-SKN-001', price: 16000, category: 'makeup', stock: 92 },
+const categoryEmojiMap: Record<string, string> = {
+  makeup: '💄',
+  lashes: '👁️',
+  concealer: '✨',
+  brushes: '🖌️',
+  'brush-sets': '🎨',
+  sets: '🎨',
+  lip: '💋',
+  lips: '💋',
+  'lip-products': '💋',
+  skincare: '🧴',
+  tools: '🛠️',
+};
+
+const categoryColorMap: Record<string, string> = {
+  makeup: 'from-rose-500 to-pink-500',
+  lashes: 'from-purple-500 to-violet-500',
+  concealer: 'from-amber-500 to-orange-500',
+  brushes: 'from-blue-500 to-cyan-500',
+  'brush-sets': 'from-emerald-500 to-teal-500',
+  sets: 'from-emerald-500 to-teal-500',
+  lip: 'from-red-500 to-rose-500',
+  lips: 'from-red-500 to-rose-500',
+  'lip-products': 'from-red-500 to-rose-500',
+};
+
+const fallbackColors = [
+  'from-indigo-500 to-blue-500',
+  'from-pink-500 to-fuchsia-500',
+  'from-teal-500 to-green-500',
+  'from-orange-500 to-yellow-500',
 ];
 
 const VAT_RATE = 0.14;
@@ -67,13 +101,88 @@ export default function POSPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
+  const [categories, setCategories] = useState<POSCategory[]>(defaultCategories);
+  const [products, setProducts] = useState<POSProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Fetch categories from tree endpoint
+  useEffect(() => {
+    setLoadingCategories(true);
+    api.get<ApiCategoryTree[]>('/catalog/categories/tree')
+      .then((data) => {
+        const cats = Array.isArray(data) ? data : [];
+        const mapped: POSCategory[] = cats.map((cat, idx) => {
+          const slug = cat.slug?.toLowerCase() ?? cat.name.toLowerCase().replace(/\s+/g, '-');
+          return {
+            id: cat.id,
+            name: cat.name,
+            emoji: categoryEmojiMap[slug] || '📦',
+            color: categoryColorMap[slug] || fallbackColors[idx % fallbackColors.length],
+          };
+        });
+        setCategories([defaultCategories[0], ...mapped]);
+      })
+      .catch(() => {
+        // Fallback: try flat categories
+        api.get<ApiCategoryTree[]>('/catalog/categories')
+          .then((data) => {
+            const cats = Array.isArray(data) ? data : [];
+            const mapped: POSCategory[] = cats.map((cat, idx) => {
+              const slug = cat.slug?.toLowerCase() ?? cat.name.toLowerCase().replace(/\s+/g, '-');
+              return {
+                id: cat.id,
+                name: cat.name,
+                emoji: categoryEmojiMap[slug] || '📦',
+                color: categoryColorMap[slug] || fallbackColors[idx % fallbackColors.length],
+              };
+            });
+            setCategories([defaultCategories[0], ...mapped]);
+          })
+          .catch(() => {});
+      })
+      .finally(() => setLoadingCategories(false));
+  }, []);
+
+  // Fetch products — re-fetch when category changes
+  const fetchProducts = useCallback(async () => {
+    setLoadingProducts(true);
+    try {
+      const params: Record<string, string | number | boolean | undefined> = { limit: 50 };
+      if (selectedCategory !== 'all') params.category_id = selectedCategory;
+
+      const res = await api.get<PaginatedResponse<ApiProduct>>('/catalog/products', params);
+      const prods = (res?.data ?? []).map((p): POSProduct => {
+        const slug = categories.find((c) => c.id === p.category_id)?.name?.toLowerCase().replace(/\s+/g, '-') ?? '';
+        return {
+          id: p.id,
+          name: p.name,
+          sku: p.sku || '—',
+          price: p.base_price ?? 0,
+          category: slug,
+          stock: p.stock ?? p.quantity_on_hand ?? 999,
+        };
+      });
+      setProducts(prods);
+    } catch (err) {
+      console.error('Failed to fetch POS products', err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, [selectedCategory, categories]);
+
+  useEffect(() => {
+    if (!loadingCategories) {
+      fetchProducts();
+    }
+  }, [fetchProducts, loadingCategories]);
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
       const matchesSearch = search === '' || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase());
-      return matchesCategory && matchesSearch;
+      return matchesSearch;
     });
-  }, [selectedCategory, search]);
+  }, [products, search]);
 
   const addToCart = (product: POSProduct) => {
     setCart((prev) => {
@@ -111,7 +220,7 @@ export default function POSPage() {
   const total = subtotal + vat;
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handlePayment = (method: string) => {
+  const handlePayment = () => {
     setPaymentComplete(true);
     setTimeout(() => {
       setPaymentComplete(false);
@@ -176,44 +285,65 @@ export default function POSPage() {
 
         {/* Product grid */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filteredProducts.map((product) => {
-              const inCart = cart.find((c) => c.product.id === product.id);
-              const isLowStock = product.stock <= 5;
-              return (
-                <button
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  disabled={product.stock === 0}
-                  className={cn(
-                    'relative flex flex-col rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-rose-300 active:scale-[0.98]',
-                    inCart ? 'border-rose-500 ring-1 ring-rose-500/30' : 'border-gray-200',
-                    product.stock === 0 && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  {/* Product icon placeholder */}
-                  <div className="flex h-16 w-full items-center justify-center rounded-lg bg-gradient-to-br from-rose-50 to-purple-50 mb-2">
-                    <span className="text-2xl">
-                      {product.category === 'lashes' ? '👁️' : product.category === 'lip' ? '💋' : product.category === 'brushes' || product.category === 'brush-sets' ? '🖌️' : product.category === 'concealer' ? '✨' : '💄'}
-                    </span>
+          {loadingProducts ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="animate-pulse">
+                    <div className="h-16 w-full rounded-lg bg-gray-200 mb-2" />
+                    <div className="h-3 w-3/4 rounded bg-gray-200 mb-1" />
+                    <div className="h-2 w-1/2 rounded bg-gray-200 mb-2" />
+                    <div className="h-4 w-16 rounded bg-gray-200" />
                   </div>
-                  <p className="text-xs font-medium text-gray-900 leading-tight line-clamp-2">{product.name}</p>
-                  <p className="text-[10px] text-gray-400 font-mono mt-0.5">{product.sku}</p>
-                  <div className="mt-auto pt-2 flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-900">{formatEGP(product.price)}</span>
-                    {isLowStock && (
-                      <span className="text-[10px] font-medium text-red-500">{product.stock} left</span>
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <ShoppingCart className="h-12 w-12 mb-3 opacity-50" />
+              <p className="text-sm font-medium">No products found</p>
+              <p className="text-xs mt-1">Try a different search or category</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {filteredProducts.map((product) => {
+                const inCart = cart.find((c) => c.product.id === product.id);
+                const isLowStock = product.stock <= 5;
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    disabled={product.stock === 0}
+                    className={cn(
+                      'relative flex flex-col rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md hover:border-rose-300 active:scale-[0.98]',
+                      inCart ? 'border-rose-500 ring-1 ring-rose-500/30' : 'border-gray-200',
+                      product.stock === 0 && 'opacity-50 cursor-not-allowed'
                     )}
-                  </div>
-                  {inCart && (
-                    <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-xs font-bold text-white shadow-md">
-                      {inCart.quantity}
+                  >
+                    {/* Product icon placeholder */}
+                    <div className="flex h-16 w-full items-center justify-center rounded-lg bg-gradient-to-br from-rose-50 to-purple-50 mb-2">
+                      <span className="text-2xl">
+                        {product.category.includes('lash') ? '👁️' : product.category.includes('lip') ? '💋' : product.category.includes('brush') || product.category.includes('set') ? '🖌️' : product.category.includes('concealer') ? '✨' : '💄'}
+                      </span>
                     </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                    <p className="text-xs font-medium text-gray-900 leading-tight line-clamp-2">{product.name}</p>
+                    <p className="text-[10px] text-gray-400 font-mono mt-0.5">{product.sku}</p>
+                    <div className="mt-auto pt-2 flex items-center justify-between">
+                      <span className="text-sm font-bold text-gray-900">{formatEGP(product.price)}</span>
+                      {isLowStock && (
+                        <span className="text-[10px] font-medium text-red-500">{product.stock} left</span>
+                      )}
+                    </div>
+                    {inCart && (
+                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-xs font-bold text-white shadow-md">
+                        {inCart.quantity}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -364,21 +494,21 @@ export default function POSPage() {
                 </div>
                 <div className="space-y-3">
                   <button
-                    onClick={() => handlePayment('cash')}
+                    onClick={() => handlePayment()}
                     className="w-full flex items-center justify-center gap-3 rounded-xl bg-emerald-600 py-4 text-base font-semibold text-white hover:bg-emerald-700"
                   >
                     <Banknote className="h-5 w-5" />
                     Pay with Cash
                   </button>
                   <button
-                    onClick={() => handlePayment('card')}
+                    onClick={() => handlePayment()}
                     className="w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 py-4 text-base font-semibold text-white hover:from-rose-600 hover:to-purple-700"
                   >
                     <CreditCard className="h-5 w-5" />
                     Pay with Card
                   </button>
                   <button
-                    onClick={() => handlePayment('split')}
+                    onClick={() => handlePayment()}
                     className="w-full flex items-center justify-center gap-3 rounded-xl border-2 border-gray-300 py-4 text-base font-semibold text-gray-700 hover:bg-gray-50"
                   >
                     Split Payment
