@@ -204,13 +204,13 @@ export class CatalogService implements ICatalogService {
 
     const result = await this.db.query(
       `INSERT INTO catalog.products (
-        tenant_id, name, name_ar, slug, sku, barcode, category_id, brand,
+        tenant_id, name, name_ar, slug, sku, barcode, category_id, brand_id,
         description, description_ar, cost_price, selling_price, compare_at_price,
         product_type, weight_grams, tax_rate, is_taxable, is_active, image_url, tags
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
       RETURNING *`,
       [
-        tenantId, dto.name, dto.name_ar, dto.slug, dto.sku, dto.barcode, dto.category_id, dto.brand,
+        tenantId, dto.name, dto.name_ar, dto.slug, dto.sku, dto.barcode, dto.category_id, dto.brand_id,
         dto.description, dto.description_ar, dto.cost_price, dto.selling_price, dto.compare_at_price,
         dto.product_type, dto.weight_grams, dto.tax_rate, dto.is_taxable, dto.is_active, dto.image_url,
         dto.tags ? JSON.stringify(dto.tags) : null,
