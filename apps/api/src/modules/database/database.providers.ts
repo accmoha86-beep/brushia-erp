@@ -1,12 +1,9 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// Database Providers — Pool injection for NestJS DI
-// ═══════════════════════════════════════════════════════════════════════════
 import { Inject } from '@nestjs/common';
-
-export const DATABASE_POOL = 'DATABASE_POOL';
+import { DATABASE_CONNECTION } from '../../database/database.constants';
 
 /**
- * Decorator for injecting the PostgreSQL connection pool.
- * Usage: constructor(@InjectPool() private readonly pool: Pool) {}
+ * Alias — maps DATABASE_POOL to DATABASE_CONNECTION
+ * so the SaleTransactionOrchestrator can inject the pool.
  */
-export const InjectPool = () => Inject(DATABASE_POOL);
+export const DATABASE_POOL = DATABASE_CONNECTION;
+export const InjectPool = () => Inject(DATABASE_CONNECTION);
