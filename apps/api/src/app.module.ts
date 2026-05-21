@@ -39,6 +39,7 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { StockCountingModule } from './modules/stock-counting/stock-counting.module';
 import { ExhibitionModule } from './modules/exhibition/exhibition.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 // Middleware
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
@@ -94,6 +95,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     StockCountingModule,
     ExhibitionModule,
     WhatsAppModule,
+    SettingsModule,
   ],
 })
 export class AppModule implements NestModule {
