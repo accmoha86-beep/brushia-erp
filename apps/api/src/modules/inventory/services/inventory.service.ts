@@ -36,7 +36,7 @@ export class InventoryService implements IInventoryService {
     const offset = (page - 1) * limit;
 
     let sql = `
-      SELECT sl.*, p.name as product_name, p.sku, p.image_url, p.barcode,
+      SELECT sl.*, p.name as product_name, p.sku, COALESCE((p.images->0->>'url'), '') as image_url,
         c.name as category_name, w.name as location_name,
         v.name as variant_name, v.sku as variant_sku,
         CASE WHEN sl.qty_on_hand <= sl.reorder_point THEN true ELSE false END as is_low_stock,
@@ -45,14 +45,14 @@ export class InventoryService implements IInventoryService {
       INNER JOIN catalog.products p ON p.id = sl.product_id
       LEFT JOIN catalog.product_variants v ON v.id = sl.variant_id
       LEFT JOIN catalog.categories c ON c.id = p.category_id
-      INNER JOIN inventory.warehouses w ON w.id = sl.location_id
+      INNER JOIN inventory.warehouses w ON w.id = sl.warehouse_id
       WHERE sl.tenant_id = $1`;
 
     const params: any[] = [tenantId];
     let idx = 2;
 
     if (query.location_id) {
-      sql += ` AND sl.location_id = $${idx++}`;
+      sql += ` AND sl.warehouse_id = $${idx++}`;
       params.push(query.location_id);
     }
 
@@ -89,7 +89,7 @@ export class InventoryService implements IInventoryService {
         COALESCE(sl.qty_reserved, 0) as reserved,
         COALESCE(sl.qty_on_hand, 0) - COALESCE(sl.qty_reserved, 0) as available
        FROM inventory.stock_levels sl
-       WHERE sl.product_id = $1 AND sl.location_id = $3 AND sl.tenant_id = $4
+       WHERE sl.product_id = $1 AND sl.warehouse_id = $3 AND sl.tenant_id = $4
          AND ($2::uuid IS NULL AND sl.variant_id IS NULL OR sl.variant_id = $2)`,
       [productId, variantId, locationId, tenantId],
     );
@@ -645,20 +645,20 @@ export class InventoryService implements IInventoryService {
 
   async getInventoryValuation(tenantId: string, locationId?: string) {
     let sql = `
-      SELECT sl.product_id, sl.variant_id, sl.location_id,
+      SELECT sl.product_id, sl.variant_id, sl.warehouse_id,
         p.name as product_name, p.sku, v.name as variant_name, w.name as location_name,
         sl.qty_on_hand, sl.weighted_avg_cost,
         sl.qty_on_hand * sl.weighted_avg_cost as total_value
       FROM inventory.stock_levels sl
       INNER JOIN catalog.products p ON p.id = sl.product_id
       LEFT JOIN catalog.product_variants v ON v.id = sl.variant_id
-      INNER JOIN inventory.warehouses w ON w.id = sl.location_id
+      INNER JOIN inventory.warehouses w ON w.id = sl.warehouse_id
       WHERE sl.tenant_id = $1 AND sl.qty_on_hand > 0`;
     
     const params: any[] = [tenantId];
     
     if (locationId) {
-      sql += ` AND sl.location_id = $2`;
+      sql += ` AND sl.warehouse_id = $2`;
       params.push(locationId);
     }
 
