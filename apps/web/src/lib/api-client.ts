@@ -75,7 +75,8 @@ export async function apiClient<T = unknown>(
   const { accessToken, user } = useAuthStore.getState();
 
   // Build URL with query params
-  const url = new URL(path, API_BASE);
+  const fullPath = path.startsWith('/') ? API_BASE + path : API_BASE + '/' + path;
+  const url = new URL(fullPath);
   if (options.params) {
     Object.entries(options.params).forEach(([key, value]) => {
       if (value !== undefined) {
