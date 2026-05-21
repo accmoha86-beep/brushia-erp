@@ -34,6 +34,11 @@ import { WholesaleModule } from './modules/wholesale/wholesale.module';
 import { ShippingModule } from './modules/shipping/shipping.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
+import { CommissionModule } from './modules/commission/commission.module';
+import { LoyaltyModule } from './modules/loyalty/loyalty.module';
+import { StockCountingModule } from './modules/stock-counting/stock-counting.module';
+import { ExhibitionModule } from './modules/exhibition/exhibition.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 
 // Middleware
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
@@ -84,6 +89,11 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     ShippingModule,
     ReportingModule,
     WarehouseModule,
+    CommissionModule,
+    LoyaltyModule,
+    StockCountingModule,
+    ExhibitionModule,
+    WhatsAppModule,
   ],
 })
 export class AppModule implements NestModule {
