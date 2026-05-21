@@ -4,7 +4,7 @@ ENV HUSKY=0
 WORKDIR /app
 
 # ── Install ALL deps ──
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY .npmrc pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json apps/api/
 COPY packages/config/package.json packages/config/
 COPY packages/shared/package.json packages/shared/
