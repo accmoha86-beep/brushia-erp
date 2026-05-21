@@ -33,9 +33,9 @@ export class AccountingService implements IAccountingService {
     // Check code uniqueness
     const existing = await this.db.queryOne(
       `SELECT id FROM accounting.chart_of_accounts WHERE code = $1 AND tenant_id = $2`,
-      [dto.code, tenantId],
+      [dto.account_number || dto.code, tenantId],
     );
-    if (existing) throw new ConflictException(`Account code "${dto.code}" already exists`);
+    if (existing) throw new ConflictException(`Account code "${dto.account_number || dto.code}" already exists`);
 
     // Validate parent
     if (dto.parent_id) {
@@ -48,10 +48,10 @@ export class AccountingService implements IAccountingService {
 
     const result = await this.db.query(
       `INSERT INTO accounting.chart_of_accounts (
-        tenant_id, code, name, name_ar, account_type, parent_id,
+        tenant_id, account_number, name, name_ar, account_type, parent_id,
         description, is_bank_account, currency, is_active
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [tenantId, dto.code, dto.name, dto.name_ar, dto.account_type, dto.parent_id,
+      [tenantId, dto.account_number || dto.code, dto.name, dto.name_ar, dto.account_type, dto.parent_id,
        dto.description, dto.is_bank_account, dto.currency, dto.is_active],
     );
 
@@ -60,7 +60,7 @@ export class AccountingService implements IAccountingService {
       action: 'account.created',
       entity_type: 'chart_of_accounts',
       entity_id: result.rows[0].id,
-      new_values: { code: dto.code, name: dto.name },
+      new_values: { code: dto.account_number || dto.code, name: dto.name },
     });
 
     return result.rows[0];
