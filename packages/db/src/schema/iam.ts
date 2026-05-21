@@ -7,6 +7,7 @@
  */
 import {
   pgSchema,
+  jsonb,
   uuid,
   varchar,
   text,
@@ -115,6 +116,7 @@ export const roles = iamSchema.table('roles', {
   
   isSystem: boolean('is_system').notNull().default(false),
   isDefault: boolean('is_default').notNull().default(false),
+  permissions: jsonb('permissions').default([]),
   
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

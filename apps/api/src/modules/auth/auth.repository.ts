@@ -86,13 +86,37 @@ export class AuthRepository {
    * This is the core RBAC query.
    */
   async getUserPermissions(userId: string): Promise<string[]> {
-    const results = await this.db
-      .select({ code: schema.permissions.code })
+    // First check if any role has wildcard permissions via JSONB field
+    const roles = await this.db
+      .select({ permissions: schema.roles.permissions })
       .from(schema.userRoles)
-      .innerJoin(schema.rolePermissions, eq(schema.userRoles.roleId, schema.rolePermissions.roleId))
-      .innerJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
+      .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
       .where(eq(schema.userRoles.userId, userId));
 
-    return [...new Set(results.map((r) => r.code))];
+    for (const role of roles) {
+      if (role.permissions) {
+        const perms = typeof role.permissions === 'string' 
+          ? JSON.parse(role.permissions) 
+          : role.permissions;
+        if (Array.isArray(perms) && perms.includes('*')) {
+          return ['*'];
+        }
+      }
+    }
+
+    // Otherwise, check granular permissions via role_permissions join
+    try {
+      const results = await this.db
+        .select({ code: schema.permissions.code })
+        .from(schema.userRoles)
+        .innerJoin(schema.rolePermissions, eq(schema.userRoles.roleId, schema.rolePermissions.roleId))
+        .innerJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
+        .where(eq(schema.userRoles.userId, userId));
+
+      return [...new Set(results.map((r) => r.code).filter(Boolean))];
+    } catch {
+      // If permissions table query fails (e.g., during initial setup), return empty
+      return [];
+    }
   }
 }
