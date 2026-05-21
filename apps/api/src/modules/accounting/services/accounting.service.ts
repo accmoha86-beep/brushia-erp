@@ -190,7 +190,7 @@ export class AccountingService implements IAccountingService {
       for (let i = 0; i < dto.lines.length; i++) {
         const line = dto.lines[i];
         await c.query(
-          `INSERT INTO accounting.journal_entry_lines (
+          `INSERT INTO accounting.journal_lines (
             tenant_id, journal_entry_id, line_number, account_id,
             debit, credit, description, reference_type, reference_id
           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
@@ -280,7 +280,7 @@ export class AccountingService implements IAccountingService {
           'description', jel.description
         )) as lines
         FROM accounting.journal_entries je
-        INNER JOIN accounting.journal_entry_lines jel ON jel.journal_entry_id = je.id
+        INNER JOIN accounting.journal_lines jel ON jel.journal_entry_id = je.id
         WHERE je.id = $1 AND je.tenant_id = $2
         GROUP BY je.id`,
         [entryId, tenantId],
@@ -344,7 +344,7 @@ export class AccountingService implements IAccountingService {
 
     const lines = await this.db.query(
       `SELECT jel.*, coa.code as account_code, coa.name as account_name, coa.account_type
-       FROM accounting.journal_entry_lines jel
+       FROM accounting.journal_lines jel
        INNER JOIN accounting.chart_of_accounts coa ON coa.id = jel.account_id
        WHERE jel.journal_entry_id = $1 AND jel.tenant_id = $2
        ORDER BY jel.line_number ASC`,
@@ -362,7 +362,7 @@ export class AccountingService implements IAccountingService {
 
     let sql = `
       SELECT je.*, u.display_name as created_by_name,
-        (SELECT COUNT(*) FROM accounting.journal_entry_lines jel WHERE jel.journal_entry_id = je.id) as line_count
+        (SELECT COUNT(*) FROM accounting.journal_lines jel WHERE jel.journal_entry_id = je.id) as line_count
       FROM accounting.journal_entries je
       LEFT JOIN iam.users u ON u.id = je.created_by
       WHERE je.tenant_id = $1`;
@@ -406,7 +406,7 @@ export class AccountingService implements IAccountingService {
         COALESCE(SUM(jel.credit), 0) as total_credit,
         COALESCE(SUM(jel.debit), 0) - COALESCE(SUM(jel.credit), 0) as balance
        FROM accounting.chart_of_accounts coa
-       LEFT JOIN accounting.journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
+       LEFT JOIN accounting.journal_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
        LEFT JOIN accounting.journal_entries je ON je.id = jel.journal_entry_id 
          AND je.status = 'posted' AND je.entry_date <= $2
        WHERE coa.tenant_id = $1 AND coa.is_active = true
@@ -435,7 +435,7 @@ export class AccountingService implements IAccountingService {
         COALESCE(SUM(jel.debit), 0) as total_debit,
         COALESCE(SUM(jel.credit), 0) as total_credit
        FROM accounting.chart_of_accounts coa
-       INNER JOIN accounting.journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
+       INNER JOIN accounting.journal_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
        INNER JOIN accounting.journal_entries je ON je.id = jel.journal_entry_id 
          AND je.status = 'posted' AND je.entry_date BETWEEN $2 AND $3
        WHERE coa.tenant_id = $1 AND coa.account_type IN ('revenue', 'expense', 'contra_revenue', 'contra_expense')
@@ -473,7 +473,7 @@ export class AccountingService implements IAccountingService {
       `SELECT coa.id, coa.code, coa.name, coa.account_type,
         COALESCE(SUM(jel.debit), 0) - COALESCE(SUM(jel.credit), 0) as balance
        FROM accounting.chart_of_accounts coa
-       LEFT JOIN accounting.journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
+       LEFT JOIN accounting.journal_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
        LEFT JOIN accounting.journal_entries je ON je.id = jel.journal_entry_id 
          AND je.status = 'posted' AND je.entry_date <= $2
        WHERE coa.tenant_id = $1 AND coa.account_type IN ('asset', 'liability', 'equity', 'contra_asset', 'contra_liability')

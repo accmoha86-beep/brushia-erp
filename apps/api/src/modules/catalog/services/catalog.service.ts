@@ -72,7 +72,7 @@ export class CatalogService implements ICatalogService {
   async getCategoryTree(tenantId: string) {
     const result = await this.db.query(
       `WITH RECURSIVE cat_tree AS (
-        SELECT c.*, 0 as depth, ARRAY[c.sort_order, c.id::text] as path
+        SELECT c.*, 0 as depth, ARRAY[c.sort_order::text, c.id::text] as path
         FROM catalog.categories c
         WHERE c.tenant_id = $1 AND c.parent_id IS NULL
         UNION ALL
