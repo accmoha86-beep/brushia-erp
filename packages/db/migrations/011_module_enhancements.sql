@@ -1,6 +1,13 @@
 -- Migration 011: Module enhancements for new API endpoints
 -- Adds missing columns and seed data for customers, vendors, promotions, shipping
 
+-- ═══ Fix sales_orders table (missing columns used by sales/POS service) ═══
+ALTER TABLE sales.sales_orders ADD COLUMN IF NOT EXISTS source VARCHAR(20) DEFAULT 'pos';
+ALTER TABLE sales.sales_orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20);
+ALTER TABLE sales.sales_orders ADD COLUMN IF NOT EXISTS tax_rate INTEGER DEFAULT 1400;
+ALTER TABLE sales.sales_orders ADD COLUMN IF NOT EXISTS loyalty_discount BIGINT DEFAULT 0;
+ALTER TABLE sales.sales_orders ADD COLUMN IF NOT EXISTS grand_total BIGINT DEFAULT 0;
+
 -- ═══ Fix loyalty_transactions table ═══
 ALTER TABLE crm.loyalty_transactions ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'earn';
 ALTER TABLE crm.loyalty_transactions ADD COLUMN IF NOT EXISTS reason TEXT;
