@@ -83,5 +83,4 @@ DO $$ DECLARE t_id UUID; BEGIN
   END IF;
 END $$;
 
--- Track migration
-INSERT INTO public.migrations (name, executed_at) VALUES ('011_module_enhancements', NOW()) ON CONFLICT DO NOTHING;
+-- Migration tracking is handled automatically by the migration runner
