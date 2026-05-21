@@ -26,7 +26,7 @@ export class WhatsAppService {
     );
     const result = await this.db.query(
       `SELECT wc.*,
-        (SELECT COUNT(*)::int FROM whatsapp.messages m WHERE m.conversation_id = wc.id AND m.is_read = false AND m.direction = 'inbound') as unread_count
+        (SELECT COUNT(*)::int FROM whatsapp.messages m WHERE m.conversation_id = wc.id AND m.read_at IS NULL AND m.direction = 'inbound') as unread_count
        FROM whatsapp.conversations wc WHERE ${where}
        ORDER BY wc.last_message_at DESC NULLS LAST, wc.created_at DESC
        LIMIT $${idx} OFFSET $${idx + 1}`,
