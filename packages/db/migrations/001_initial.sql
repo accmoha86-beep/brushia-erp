@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS iam.tenants (
   timezone VARCHAR(50) NOT NULL DEFAULT 'Africa/Cairo', locale VARCHAR(10) NOT NULL DEFAULT 'ar-EG',
   vat_rate INTEGER NOT NULL DEFAULT 1400, fiscal_year_start INTEGER NOT NULL DEFAULT 1,
   max_users INTEGER NOT NULL DEFAULT 5, max_branches INTEGER NOT NULL DEFAULT 1,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS iam.users (
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS iam.users (
   last_login_at TIMESTAMPTZ, failed_login_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ,
   UNIQUE(tenant_id, email)
 );
 
@@ -147,7 +149,7 @@ CREATE TABLE IF NOT EXISTS inventory.stock_levels (
   qty_incoming INTEGER NOT NULL DEFAULT 0, weighted_avg_cost BIGINT NOT NULL DEFAULT 0,
   reorder_point INTEGER NOT NULL DEFAULT 10, reorder_qty INTEGER NOT NULL DEFAULT 50,
   last_movement_at TIMESTAMPTZ, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(tenant_id, product_id, COALESCE(variant_id, '00000000-0000-0000-0000-000000000000'), warehouse_id)
+  UNIQUE(tenant_id, product_id, variant_id, warehouse_id)
 );
 
 CREATE TABLE IF NOT EXISTS inventory.stock_movements (
