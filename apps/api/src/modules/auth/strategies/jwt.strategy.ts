@@ -15,13 +15,22 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   /**
-   * This is called after JWT verification succeeds.
-   * The returned object is attached to request.user.
+   * Called after JWT verification succeeds.
+   * Maps compact JWT claims to friendly property names for controllers.
    */
-  async validate(payload: JwtPayload): Promise<JwtPayload> {
+  async validate(payload: JwtPayload) {
     if (!payload.sub || !payload.tid) {
       throw new UnauthorizedException('Invalid token payload');
     }
-    return payload;
+    return {
+      // Friendly names for controllers
+      id: payload.sub,
+      tenantId: payload.tid,
+      email: payload.email,
+      permissions: payload.permissions,
+      // Also keep original JWT claim names
+      sub: payload.sub,
+      tid: payload.tid,
+    };
   }
 }
