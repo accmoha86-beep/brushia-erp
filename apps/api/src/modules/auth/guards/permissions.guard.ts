@@ -25,6 +25,11 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Insufficient permissions');
     }
 
+    // Wildcard: admin with '*' permission can access everything
+    if (user.permissions.includes('*')) {
+      return true;
+    }
+
     // Check if user has ALL required permissions
     const hasAllPermissions = requiredPermissions.every((perm) =>
       user.permissions.includes(perm),
