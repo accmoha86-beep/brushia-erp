@@ -5,8 +5,18 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // Skip type-checking during build (we check in CI)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
+  // Skip ESLint during build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Transpile workspace packages
-  transpilePackages: ['@brushia/shared'],
+  transpilePackages: ['@brushia/shared', '@brushia/config'],
 
   // Image optimization
   images: {

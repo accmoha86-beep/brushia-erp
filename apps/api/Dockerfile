@@ -17,13 +17,18 @@ RUN pnpm install --frozen-lockfile --ignore-scripts 2>/dev/null || pnpm install 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app ./
+
+# Copy root tsconfig (packages extend ../../tsconfig.base.json)
+COPY tsconfig.base.json ./
+
+# Copy all source
 COPY packages/ packages/
 COPY apps/api/ apps/api/
 
-# Install typescript and swc globally so all packages can use them
+# Install build tools globally (pnpm strict isolation prevents packages from finding tsc)
 RUN npm install -g typescript @swc/cli @swc/core
 
-# Build workspace packages (composite = tsc -b required)
+# Build workspace packages
 RUN cd packages/config && tsc -b --force && echo "✅ config built"
 RUN cd packages/shared && tsc -b --force && echo "✅ shared built"
 RUN cd packages/db && tsc -b --force && echo "✅ db built"
