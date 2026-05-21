@@ -1,174 +1,77 @@
 'use client';
 
-import { formatEGP } from '@/lib/utils';
-import { Warehouse, MapPin, Package, Box, BarChart3, ArrowRightLeft, Settings } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { api } from '@/lib/api-client';
+import { formatEGP, cn } from '@/lib/utils';
+import { Warehouse, MapPin, Package, Box, BarChart3, RefreshCw, Plus, X } from 'lucide-react';
 
-interface WarehouseData {
-  id: string;
-  name: string;
-  code: string;
-  city: string;
-  address: string;
-  type: 'main' | 'showroom' | 'returns';
-  totalSKUs: number;
-  totalUnits: number;
-  totalValue: number;
-  capacity: number;
-  utilizationPercent: number;
-  manager: string;
-  phone: string;
-}
+interface WarehouseData { id: string; code: string; name: string; name_ar?: string; warehouse_type: string; city?: string; governorate?: string; phone?: string; is_active: boolean; sku_count: number; total_units: number; total_value: number; }
 
-const warehouses: WarehouseData[] = [
-  {
-    id: '1', name: 'Main Warehouse', code: 'WH-MAIN', city: 'Cairo', address: '10th of Ramadan City, Industrial Zone A, Building 45', type: 'main',
-    totalSKUs: 24, totalUnits: 1542, totalValue: 28450000, capacity: 5000, utilizationPercent: 68, manager: 'Mohamed Hassan', phone: '+201012340001',
-  },
-  {
-    id: '2', name: 'Showroom', code: 'WH-SHOW', city: 'Cairo', address: 'Zamalek, 26 July Street, 3rd Floor', type: 'showroom',
-    totalSKUs: 18, totalUnits: 300, totalValue: 4890000, capacity: 800, utilizationPercent: 38, manager: 'Noha Adel', phone: '+201012340002',
-  },
-];
-
-const typeColors: Record<string, string> = {
-  main: 'bg-blue-100 text-blue-700',
-  showroom: 'bg-purple-100 text-purple-700',
-  returns: 'bg-orange-100 text-orange-700',
-};
+const typeColors: Record<string, string> = { standard: 'bg-blue-100 text-blue-700', showroom: 'bg-purple-100 text-purple-700', returns: 'bg-orange-100 text-orange-700' };
 
 export default function WarehousesPage() {
+  const [warehouses, setWarehouses] = useState<WarehouseData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
+  const [warehouseStock, setWarehouseStock] = useState<any[]>([]);
+
+  const fetchWarehouses = useCallback(async () => {
+    setLoading(true);
+    try { const res = await api.get<any>('/warehouses'); setWarehouses(res?.data || []); } catch { setWarehouses([]); } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchWarehouses(); }, [fetchWarehouses]);
+
+  const viewStock = async (wh: WarehouseData) => {
+    setSelectedWarehouse(wh);
+    try { const res = await api.get<any>(`/warehouses/${wh.id}/stock`); setWarehouseStock(res?.data || []); } catch { setWarehouseStock([]); }
+  };
+
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Warehouses</h1>
-        <p className="text-sm text-gray-500 mt-1">{warehouses.length} locations</p>
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div><h1 className="text-2xl font-bold text-gray-900">Warehouses</h1><p className="text-sm text-gray-500 mt-1">Manage storage locations and stock</p></div>
+        <button onClick={fetchWarehouses} className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50"><RefreshCw className="h-4 w-4" /></button>
       </div>
 
-      {/* Summary bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-              <Warehouse className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{warehouses.length}</p>
-              <p className="text-sm text-gray-500">Locations</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
-              <Box className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{warehouses.reduce((s, w) => s + w.totalSKUs, 0)}</p>
-              <p className="text-sm text-gray-500">Total SKUs</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
-              <Package className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{warehouses.reduce((s, w) => s + w.totalUnits, 0).toLocaleString()}</p>
-              <p className="text-sm text-gray-500">Total Units</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
-              <BarChart3 className="h-5 w-5 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{formatEGP(warehouses.reduce((s, w) => s + w.totalValue, 0))}</p>
-              <p className="text-sm text-gray-500">Total Value</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Warehouse Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {warehouses.map((wh) => (
-          <div key={wh.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
-                    <Warehouse className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{wh.name}</h3>
-                    <p className="text-sm text-gray-400 font-mono">{wh.code}</p>
-                  </div>
-                </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${typeColors[wh.type]}`}>
-                  {wh.type}
-                </span>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {loading ? Array.from({length:3}).map((_,i) => <div key={i} className="h-48 rounded-xl bg-gray-100 animate-pulse" />)
+        : warehouses.map(wh => (
+          <div key={wh.id} className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow cursor-pointer" onClick={() => viewStock(wh)}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100"><Warehouse className="h-5 w-5 text-blue-600" /></div>
+                <div><h3 className="font-semibold text-gray-900">{wh.name}</h3><p className="text-xs text-gray-400">{wh.code}</p></div>
               </div>
-              <div className="flex items-center gap-1 mt-3 text-sm text-gray-400">
-                <MapPin className="h-3.5 w-3.5" />
-                {wh.address}
-              </div>
+              <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', typeColors[wh.warehouse_type] || 'bg-gray-100 text-gray-600')}>{wh.warehouse_type}</span>
             </div>
-
-            {/* Stats */}
-            <div className="p-6">
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{wh.totalSKUs}</p>
-                  <p className="text-xs text-gray-500">SKUs</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{wh.totalUnits.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">Units</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{formatEGP(wh.totalValue)}</p>
-                  <p className="text-xs text-gray-500">Value</p>
-                </div>
-              </div>
-
-              {/* Capacity bar */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm text-gray-600">Capacity Utilization</span>
-                  <span className="text-sm font-semibold text-gray-900">{wh.utilizationPercent}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-gray-100">
-                  <div
-                    className={`h-2 rounded-full transition-all ${wh.utilizationPercent > 80 ? 'bg-red-500' : wh.utilizationPercent > 60 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${wh.utilizationPercent}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-1">{wh.totalUnits.toLocaleString()} of {wh.capacity.toLocaleString()} capacity</p>
-              </div>
-
-              {/* Manager */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{wh.manager}</p>
-                  <p className="text-xs text-gray-400">{wh.phone}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button className="rounded-lg border border-gray-300 p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700" title="Transfer">
-                    <ArrowRightLeft className="h-4 w-4" />
-                  </button>
-                  <button className="rounded-lg border border-gray-300 p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700" title="Settings">
-                    <Settings className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+            {wh.city && <div className="flex items-center gap-1 text-xs text-gray-500 mb-3"><MapPin className="h-3 w-3" />{wh.city}{wh.governorate ? `, ${wh.governorate}` : ''}</div>}
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
+              <div className="text-center"><p className="text-lg font-bold text-gray-900">{wh.sku_count}</p><p className="text-[10px] text-gray-500">SKUs</p></div>
+              <div className="text-center"><p className="text-lg font-bold text-gray-900">{wh.total_units?.toLocaleString()}</p><p className="text-[10px] text-gray-500">Units</p></div>
+              <div className="text-center"><p className="text-lg font-bold text-emerald-600">{formatEGP(wh.total_value || 0)}</p><p className="text-[10px] text-gray-500">Value</p></div>
             </div>
           </div>
         ))}
       </div>
+
+      {selectedWarehouse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between mb-4"><h3 className="text-lg font-semibold">{selectedWarehouse.name} — Stock</h3><button onClick={() => setSelectedWarehouse(null)}><X className="h-5 w-5 text-gray-400" /></button></div>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50"><tr><th className="text-left px-3 py-2">Product</th><th className="text-left px-3 py-2">SKU</th><th className="text-right px-3 py-2">On Hand</th><th className="text-right px-3 py-2">Reserved</th><th className="text-right px-3 py-2">Avg Cost</th></tr></thead>
+            <tbody className="divide-y">{warehouseStock.map((s: any, i: number) => (
+              <tr key={i} className={cn(s.qty_on_hand <= (s.reorder_point || 10) && 'bg-red-50')}>
+                <td className="px-3 py-2 font-medium">{s.product_name}</td>
+                <td className="px-3 py-2 text-gray-500 font-mono text-xs">{s.sku}</td>
+                <td className="px-3 py-2 text-right">{s.qty_on_hand}</td>
+                <td className="px-3 py-2 text-right text-gray-500">{s.qty_reserved || 0}</td>
+                <td className="px-3 py-2 text-right">{formatEGP(s.weighted_avg_cost || 0)}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div></div>
+      )}
     </div>
   );
 }
