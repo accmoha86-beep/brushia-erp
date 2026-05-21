@@ -121,7 +121,7 @@ export default function ExhibitionsPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await api.get('/inventory/warehouses', token);
+      const res = await api.get('/warehouses', token);
       const data = Array.isArray(res) ? res : res.data || [];
       setWarehouses(data);
     } catch (err) {

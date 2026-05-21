@@ -89,7 +89,7 @@ export default function BranchesPage() {
     if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/inventory/warehouses', token);
+      const res = await api.get('/warehouses', token);
       const data = Array.isArray(res) ? res : res.data || [];
       setBranches(data);
     } catch (err) {
@@ -105,7 +105,7 @@ export default function BranchesPage() {
     try {
       // Load stats from multiple endpoints
       const [branchRes, exhRes, waRes] = await Promise.allSettled([
-        api.get('/inventory/warehouses', token),
+        api.get('/warehouses', token),
         api.get('/exhibitions', token),
         api.get('/whatsapp/stats', token),
       ]);
@@ -126,7 +126,7 @@ export default function BranchesPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await api.get(`/inventory/warehouses/${branchId}/pos-registers`, token);
+      const res = await api.get(`/pos/registers?location_id=${branchId}`, token);
       const data = Array.isArray(res) ? res : res.data || [];
       setPosRegisters(data);
     } catch (err) {
@@ -148,7 +148,7 @@ export default function BranchesPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      await api.post('/inventory/warehouses', {
+      await api.post('/warehouses', {
         name: form.name,
         code: form.code,
         type: form.type,
@@ -172,9 +172,10 @@ export default function BranchesPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      await api.post(`/inventory/warehouses/${expandedBranch}/pos-registers`, {
+      await api.post('/pos/registers', {
         name: registerForm.name,
-        code: registerForm.code,
+        location_id: expandedBranch,
+        device_name: registerForm.code || undefined,
       }, token);
       setShowRegisterModal(false);
       setRegisterForm({ name: '', code: '' });

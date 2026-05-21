@@ -51,7 +51,7 @@ export default function PurchaseOrdersPage() {
         api.get<any>('/purchasing/stats'),
         api.get<any>('/purchasing/vendors'),
         api.get<any>('/catalog/products'),
-        api.get<any>('/inventory/warehouses').catch(() => []),
+        api.get<any>('/warehouses').catch(() => []),
       ]);
       setPOs(res?.data || []);
       setStats(s);
