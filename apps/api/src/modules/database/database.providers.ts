@@ -1,9 +1,8 @@
 import { Inject } from '@nestjs/common';
-import { DATABASE_CONNECTION } from '../../database/database.constants';
 
 /**
- * Alias — maps DATABASE_POOL to DATABASE_CONNECTION
- * so the SaleTransactionOrchestrator can inject the pool.
+ * Inject the raw pg.Pool from DATABASE_RAW_POOL provider.
+ * Used by SaleTransactionOrchestrator for direct SQL queries.
  */
-export const DATABASE_POOL = DATABASE_CONNECTION;
-export const InjectPool = () => Inject(DATABASE_CONNECTION);
+export const DATABASE_POOL = 'DATABASE_RAW_POOL';
+export const InjectPool = () => Inject('DATABASE_RAW_POOL');

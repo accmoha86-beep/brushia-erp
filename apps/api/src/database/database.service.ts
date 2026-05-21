@@ -1,10 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
-import { DATABASE_CONNECTION } from './database.constants';
 
 @Injectable()
 export class DatabaseService {
-  constructor(@Inject(DATABASE_CONNECTION) private readonly pool: Pool) {}
+  constructor(@Inject('DATABASE_RAW_POOL') private readonly pool: Pool) {}
 
   async query(text: string, params?: any[]) {
     return this.pool.query(text, params);
@@ -23,5 +22,9 @@ export class DatabaseService {
     } finally {
       client.release();
     }
+  }
+
+  getPool(): Pool {
+    return this.pool;
   }
 }

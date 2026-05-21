@@ -1,7 +1,5 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
-import { DATABASE_CONNECTION } from './database.constants';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -9,29 +7,29 @@ import * as path from 'path';
 export class MigrationService implements OnModuleInit {
   private readonly logger = new Logger(MigrationService.name);
 
-  constructor(@Inject(DATABASE_CONNECTION) private readonly pool: Pool) {}
+  constructor(@Inject('DATABASE_RAW_POOL') private readonly pool: Pool) {}
 
   async onModuleInit() {
     try {
       await this.runMigrations();
-    } catch (error) {
-      this.logger.error('Migration failed — app will continue but DB may not be ready', error);
+    } catch (error: any) {
+      this.logger.error(`Migration failed: ${error.message} — app will continue but DB may not be ready`);
     }
   }
 
   private async runMigrations() {
     this.logger.log('Running database migrations...');
 
-    // Find migrations directory
     const possiblePaths = [
-      path.join(__dirname, '../../../../packages/db/migrations'),
-      path.join(__dirname, '../../../packages/db/migrations'),
       path.join(process.cwd(), 'packages/db/migrations'),
       '/app/packages/db/migrations',
+      path.join(__dirname, '../../../../packages/db/migrations'),
+      path.join(__dirname, '../../../packages/db/migrations'),
     ];
 
     let migrationsDir = '';
     for (const p of possiblePaths) {
+      this.logger.log(`Checking migration path: ${p} → exists: ${fs.existsSync(p)}`);
       if (fs.existsSync(p)) {
         migrationsDir = p;
         break;
@@ -39,11 +37,13 @@ export class MigrationService implements OnModuleInit {
     }
 
     if (!migrationsDir) {
-      this.logger.warn('No migrations directory found. Skipping migrations.');
+      this.logger.warn('No migrations directory found. Paths checked: ' + possiblePaths.join(', '));
       return;
     }
 
-    // Ensure migrations tracking table exists
+    this.logger.log(`Using migrations from: ${migrationsDir}`);
+
+    // Ensure tracking table
     await this.pool.query(`
       CREATE TABLE IF NOT EXISTS public.migrations (
         id SERIAL PRIMARY KEY,
@@ -52,13 +52,11 @@ export class MigrationService implements OnModuleInit {
       )
     `);
 
-    // Get already-applied migrations
     const applied = await this.pool.query('SELECT name FROM public.migrations ORDER BY id');
     const appliedSet = new Set(applied.rows.map((r: any) => r.name));
 
-    // Find SQL files
     const files = fs.readdirSync(migrationsDir)
-      .filter(f => f.endsWith('.sql'))
+      .filter(f => f.endsWith('.sql') && !f.startsWith('seed'))
       .sort();
 
     for (const file of files) {
@@ -77,11 +75,31 @@ export class MigrationService implements OnModuleInit {
         await client.query(sql);
         await client.query('INSERT INTO public.migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [name]);
         await client.query('COMMIT');
-        this.logger.log(`✅ Migration ${name} applied successfully`);
-      } catch (error) {
+        this.logger.log(`✅ Migration ${name} applied`);
+      } catch (error: any) {
         await client.query('ROLLBACK');
-        this.logger.error(`❌ Migration ${name} failed:`, error);
+        this.logger.error(`❌ Migration ${name} failed: ${error.message}`);
         throw error;
+      } finally {
+        client.release();
+      }
+    }
+
+    // Run seed if exists and not yet seeded
+    const seedFile = path.join(migrationsDir, 'seed.sql');
+    if (fs.existsSync(seedFile) && !appliedSet.has('seed')) {
+      this.logger.log('Applying seed data...');
+      const seedSql = fs.readFileSync(seedFile, 'utf-8');
+      const client = await this.pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(seedSql);
+        await client.query('INSERT INTO public.migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', ['seed']);
+        await client.query('COMMIT');
+        this.logger.log('✅ Seed data applied');
+      } catch (error: any) {
+        await client.query('ROLLBACK');
+        this.logger.error(`❌ Seed failed: ${error.message}`);
       } finally {
         client.release();
       }
