@@ -9,6 +9,11 @@ export class DatabaseService {
     return this.pool.query(text, params);
   }
 
+  async queryOne(text: string, params?: any[]): Promise<any | null> {
+    const result = await this.pool.query(text, params);
+    return result.rows[0] || null;
+  }
+
   async transaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     try {
