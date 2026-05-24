@@ -156,19 +156,21 @@ export class SalesService implements ISalesService {
       // ─── 8. Record payments ──────────────────────────
       if (dto.payment_method === 'split' && dto.payments) {
         for (const payment of dto.payments) {
+          const splitPayNum = await this.generatePaymentNumber(client, tenantId);
           await client.query(
             `INSERT INTO sales.payments (
-              tenant_id, order_id, method, amount, reference, status
-            ) VALUES ($1,$2,$3,$4,$5,'completed')`,
-            [tenantId, order.id, payment.method, payment.amount, payment.reference],
+              tenant_id, order_id, payment_number, method, amount, reference, received_by, status
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,'completed')`,
+            [tenantId, order.id, splitPayNum, payment.method, payment.amount, payment.reference, userId],
           );
         }
       } else {
+        const singlePayNum = await this.generatePaymentNumber(client, tenantId);
         await client.query(
           `INSERT INTO sales.payments (
-            tenant_id, order_id, method, amount, status
-          ) VALUES ($1,$2,$3,$4,'completed')`,
-          [tenantId, order.id, dto.payment_method, finalTotal],
+            tenant_id, order_id, payment_number, method, amount, received_by, status
+          ) VALUES ($1,$2,$3,$4,$5,$6,'completed')`,
+          [tenantId, order.id, singlePayNum, dto.payment_method, finalTotal, userId],
         );
       }
 
@@ -497,10 +499,11 @@ export class SalesService implements ISalesService {
     );
     if (!order) throw new NotFoundException('Order not found');
 
+    const payNum = `PAY-${Date.now().toString(36).toUpperCase()}`;
     const result = await this.db.query(
-      `INSERT INTO sales.payments (tenant_id, order_id, method, amount, reference, status)
-       VALUES ($1, $2, $3, $4, $5, 'completed') RETURNING *`,
-      [tenantId, orderId, payment.method, payment.amount, payment.reference],
+      `INSERT INTO sales.payments (tenant_id, order_id, payment_number, method, amount, reference, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'completed') RETURNING *`,
+      [tenantId, orderId, payNum, payment.method, payment.amount, payment.reference],
     );
 
     return result.rows[0];
@@ -523,6 +526,15 @@ export class SalesService implements ISalesService {
 
     const num = String(result.rows[0].next_num).padStart(4, '0');
     return `${prefix}-${today}-${num}`;
+  }
+
+
+  private async generatePaymentNumber(client: any, tenantId: string): Promise<string> {
+    const result = await client.query(
+      `SELECT COUNT(*) + 1 as next_num FROM sales.payments WHERE tenant_id = $1`,
+      [tenantId],
+    );
+    return `PAY-${String(result.rows[0].next_num).padStart(6, '0')}`;
   }
 
   private computeLockKey(productId: string, locationId: string): number {
