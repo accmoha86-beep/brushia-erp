@@ -24,7 +24,12 @@ export class SalesController {
     @CurrentUser() user: any,
     @Body(new ZodValidationPipe(CreateSalesOrderDto)) dto: any,
   ) {
-    return this.salesService.createOrder(user.tenantId, user.id, dto);
+    try {
+      return await this.salesService.createOrder(user.tenantId, user.id, dto);
+    } catch (error) {
+      console.error('CREATE_ORDER_ERROR:', error);
+      throw error;
+    }
   }
 
   @Get('orders')
@@ -65,4 +70,26 @@ export class SalesController {
   ) {
     return this.salesService.recordPayment(user.tenantId, user.id, id, payment);
   }
+
+  @Post('test-sale')
+  @RequirePermissions('sales:create')
+  @ApiOperation({ summary: 'Test sale — returns detailed errors' })
+  async testSale(
+    @CurrentUser() user: any,
+    @Body() dto: any,
+  ) {
+    try {
+      const result = await this.salesService.createOrder(user.tenantId, user.id, dto);
+      return { success: true, result };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.message,
+        detail: error.detail,
+        code: error.code,
+        stack: error.stack?.split('\n').slice(0, 5),
+      };
+    }
+  }
+
 }
