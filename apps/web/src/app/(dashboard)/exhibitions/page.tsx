@@ -103,8 +103,6 @@ export default function ExhibitionsPage() {
   }, [exhibitions.length]);
 
   const loadExhibitions = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
       const res = await api.get('/exhibitions');
@@ -118,8 +116,6 @@ export default function ExhibitionsPage() {
   };
 
   const loadWarehouses = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       const res = await api.get('/warehouses');
       const data = Array.isArray(res) ? res : res.data || [];
@@ -130,8 +126,6 @@ export default function ExhibitionsPage() {
   };
 
   const loadExpenses = async (id: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       const res = await api.get(`/exhibitions/${id}/expenses`);
       const data = Array.isArray(res) ? res : res.data || [];
@@ -142,8 +136,6 @@ export default function ExhibitionsPage() {
   };
 
   const loadPnL = async (id: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       const res = await api.get(`/exhibitions/${id}/pnl`);
       setPnl(res.data || res);
@@ -153,8 +145,6 @@ export default function ExhibitionsPage() {
   };
 
   const handleCreate = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post('/exhibitions', {
         name: form.name,
@@ -178,8 +168,6 @@ export default function ExhibitionsPage() {
 
   const handleAddExpense = async () => {
     if (!selectedExhibition) return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post(`/exhibitions/${selectedExhibition.id}/expenses`, {
         category: expenseForm.category,

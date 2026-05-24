@@ -70,11 +70,9 @@ export default function LoyaltyPage() {
   }, []);
 
   const loadTiers = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/loyalty/tiers', token);
+      const res = await api.get('/loyalty/tiers');
       const data = Array.isArray(res) ? res : res.data || [];
       setTiers(data);
     } catch (err) {
@@ -85,11 +83,9 @@ export default function LoyaltyPage() {
   };
 
   const loadTransactions = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/loyalty/transactions', token);
+      const res = await api.get('/loyalty/transactions');
       const data = Array.isArray(res) ? res : res.data || [];
       setTransactions(data);
     } catch (err) {
@@ -100,11 +96,9 @@ export default function LoyaltyPage() {
   };
 
   const loadStats = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/loyalty/stats', token);
+      const res = await api.get('/loyalty/stats');
       setStats(res.data || res);
     } catch (err) {
       console.error(err);
@@ -120,8 +114,6 @@ export default function LoyaltyPage() {
   };
 
   const handleCreate = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post('/loyalty/tiers', {
         name: form.name,
@@ -129,7 +121,7 @@ export default function LoyaltyPage() {
         multiplier: parseFloat(form.multiplier),
         color: form.color,
         benefits: form.benefits.split('\n').filter(Boolean),
-      }, token);
+      });
       setShowModal(false);
       setForm({ name: '', min_points: '', multiplier: '', color: 'amber', benefits: '' });
       loadTiers();

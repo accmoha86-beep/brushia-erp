@@ -71,8 +71,6 @@ export default function StockCountsPage() {
   }, []);
 
   const loadCounts = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
       const res = await api.get('/stock-counts');
@@ -86,8 +84,6 @@ export default function StockCountsPage() {
   };
 
   const loadWarehouses = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       const res = await api.get('/warehouses');
       const data = Array.isArray(res) ? res : res.data || [];
@@ -98,8 +94,6 @@ export default function StockCountsPage() {
   };
 
   const loadCountItems = async (countId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setItemsLoading(true);
       const res = await api.get(`/stock-counts/${countId}/items`);
@@ -123,8 +117,6 @@ export default function StockCountsPage() {
   };
 
   const handleCreate = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post('/stock-counts', {
         warehouse_id: form.warehouse_id,
@@ -141,8 +133,6 @@ export default function StockCountsPage() {
 
   const handleSaveItems = async () => {
     if (!expandedId) return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setSaving(true);
       await api.put(`/stock-counts/${expandedId}/items`, {
@@ -161,8 +151,6 @@ export default function StockCountsPage() {
   };
 
   const handleComplete = async (id: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post(`/stock-counts/${id}/complete`, {});
       loadCounts();
@@ -173,8 +161,6 @@ export default function StockCountsPage() {
   };
 
   const handleCancel = async (id: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post(`/stock-counts/${id}/cancel`, {});
       loadCounts();

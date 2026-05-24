@@ -80,8 +80,6 @@ export default function CommissionsPage() {
   }, []);
 
   const loadSalespersons = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
       const res = await api.get('/commissions');
@@ -95,8 +93,6 @@ export default function CommissionsPage() {
   };
 
   const loadRules = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setLoading(true);
       const res = await api.get('/commissions/rules');
@@ -110,8 +106,6 @@ export default function CommissionsPage() {
   };
 
   const loadReport = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     if (!dateFrom || !dateTo) return;
     try {
       setLoading(true);
@@ -132,8 +126,6 @@ export default function CommissionsPage() {
   };
 
   const handleCreate = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await api.post('/commissions/salespersons', {
         employee_code: form.employee_code,
