@@ -38,9 +38,9 @@ DO $$ DECLARE t_id UUID; w_id UUID; u_id UUID; sc_id UUID; BEGIN
     SELECT id INTO sc_id FROM inventory.stock_counts WHERE tenant_id = t_id AND count_number = 'SC-20260520-001';
 
     IF sc_id IS NOT NULL THEN
-      INSERT INTO inventory.stock_count_items (tenant_id, stock_count_id, product_id, variant_id, system_qty, counted_qty, difference, unit_cost)
+      INSERT INTO inventory.stock_count_items (tenant_id, stock_count_id, product_id, variant_id, system_qty, counted_qty, variance, unit_cost)
       SELECT sl.tenant_id, sc_id, sl.product_id, sl.variant_id, sl.qty_on_hand,
-        -- Most items match, a few have small differences
+        -- Most items match, a few have small variances
         sl.qty_on_hand + (CASE
           WHEN sl.product_id IN (SELECT id FROM catalog.products WHERE tenant_id = t_id ORDER BY id LIMIT 3) THEN -1
           WHEN sl.product_id IN (SELECT id FROM catalog.products WHERE tenant_id = t_id ORDER BY id LIMIT 5 OFFSET 3) THEN 1
