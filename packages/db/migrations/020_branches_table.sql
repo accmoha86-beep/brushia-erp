@@ -4,7 +4,7 @@
 -- Create branches table
 CREATE TABLE IF NOT EXISTS pos.branches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES public.tenants(id),
+  tenant_id UUID NOT NULL REFERENCES iam.tenants(id),
   name VARCHAR(100) NOT NULL,
   code VARCHAR(20) NOT NULL,
   branch_type VARCHAR(20) NOT NULL DEFAULT 'permanent', -- permanent | exhibition | popup
