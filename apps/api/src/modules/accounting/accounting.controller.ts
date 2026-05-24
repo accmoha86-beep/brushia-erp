@@ -6,7 +6,6 @@ import { PermissionsGuard } from '../rbac/guards/permissions.guard';
 import { RequirePermissions } from '../rbac/decorators/require-permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { IdempotencyKey } from '../../common/decorators/idempotency.decorator';
 import {
   CreateAccountDto, UpdateAccountDto, CreateJournalEntryDto, VoidJournalEntryDto,
   TrialBalanceQueryDto, ProfitLossQueryDto, BalanceSheetQueryDto,
@@ -54,7 +53,6 @@ export class AccountingController {
   // ─── Journal Entries ───────────────────────────────────
   @Post('journal-entries')
   @RequirePermissions('accounting:write')
-  @IdempotencyKey()
   @ApiOperation({ summary: 'Create journal entry' })
   async createJournalEntry(
     @CurrentUser() user: any,

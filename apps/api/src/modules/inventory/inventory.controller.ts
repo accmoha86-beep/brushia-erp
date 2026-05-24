@@ -6,7 +6,6 @@ import { PermissionsGuard } from '../rbac/guards/permissions.guard';
 import { RequirePermissions } from '../rbac/decorators/require-permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { IdempotencyKey } from '../../common/decorators/idempotency.decorator';
 import {
   RecordMovementDto, BulkMovementDto, ReserveStockDto, ReleaseReservationDto,
   TransferStockDto, StockQueryDto, MovementQueryDto,
@@ -53,7 +52,6 @@ export class InventoryController {
   // ─── Movements ─────────────────────────────────────────
   @Post('movements')
   @RequirePermissions('inventory:write')
-  @IdempotencyKey()
   @ApiOperation({ summary: 'Record a single stock movement' })
   async recordMovement(
     @CurrentUser() user: any,
@@ -64,7 +62,6 @@ export class InventoryController {
 
   @Post('movements/bulk')
   @RequirePermissions('inventory:write')
-  @IdempotencyKey()
   @ApiOperation({ summary: 'Record multiple movements atomically' })
   async recordBulkMovements(
     @CurrentUser() user: any,
@@ -86,7 +83,6 @@ export class InventoryController {
   // ─── Reservations ──────────────────────────────────────
   @Post('reservations')
   @RequirePermissions('inventory:write')
-  @IdempotencyKey()
   @ApiOperation({ summary: 'Reserve stock for a pending order' })
   async reserveStock(
     @CurrentUser() user: any,
@@ -109,7 +105,6 @@ export class InventoryController {
   // ─── Transfers ─────────────────────────────────────────
   @Post('transfers')
   @RequirePermissions('inventory:write')
-  @IdempotencyKey()
   @ApiOperation({ summary: 'Transfer stock between locations' })
   async transferStock(
     @CurrentUser() user: any,

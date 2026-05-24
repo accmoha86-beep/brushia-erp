@@ -6,7 +6,6 @@ import { PermissionsGuard } from '../rbac/guards/permissions.guard';
 import { RequirePermissions } from '../rbac/decorators/require-permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { IdempotencyKey } from '../../common/decorators/idempotency.decorator';
 import {
   CreateRegisterDto, OpenSessionDto, CloseSessionDto,
   POSTransactionDto, HoldOrderDto, CashMovementDto,
@@ -72,7 +71,6 @@ export class POSController {
   // ─── Transactions ──────────────────────────────────────
   @Post('transactions')
   @RequirePermissions('pos:create')
-  @IdempotencyKey()
   @ApiOperation({ summary: 'Process a POS sale' })
   async processSale(
     @CurrentUser() user: any,

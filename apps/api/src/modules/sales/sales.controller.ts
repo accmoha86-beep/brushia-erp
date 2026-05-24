@@ -6,7 +6,6 @@ import { PermissionsGuard } from '../rbac/guards/permissions.guard';
 import { RequirePermissions } from '../rbac/decorators/require-permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { IdempotencyKey } from '../../common/decorators/idempotency.decorator';
 import { CreateSalesOrderDto, CancelOrderDto, OrderQueryDto } from './dto/sales.dto';
 
 @ApiTags('Sales')
@@ -18,7 +17,6 @@ export class SalesController {
 
   @Post('orders')
   @RequirePermissions('sales:create')
-  @IdempotencyKey()
   @ApiOperation({ summary: 'Create a sales order (POS, web, WhatsApp, wholesale)' })
   async createOrder(
     @CurrentUser() user: any,
