@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { WarehouseService } from './services/warehouse.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -35,6 +35,12 @@ export class WarehouseController {
   @RequirePermissions('inventory:write')
   async update(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
     return this.warehouseService.update(user.tenantId, id, dto);
+  }
+
+  @Delete(':id')
+  @RequirePermissions('inventory:write')
+  async remove(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.warehouseService.remove(user.tenantId, id);
   }
 
   @Get(':id/stock')

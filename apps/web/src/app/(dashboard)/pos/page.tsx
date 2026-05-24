@@ -25,13 +25,20 @@ interface Order { id: string; order_number?: string; receipt_number?: string; gr
 /* ─── constants ─── */
 const categoryEmojis: Record<string, string> = {
   'makeup': '💄', 'lashes': '👁️', 'concealer': '✨', 'brushes': '🖌️',
-  'brush-sets': '🎨', 'brush sets': '🎨', 'other-makeup': '💄', 'other makeup': '💄',
+  'brush-sets': '🎨', 'brush sets': '🎨', 'other-makeup': '💋', 'other makeup': '💋',
+  'lip-products': '💋', 'lip products': '💋', 'skin-care': '🧴', 'skin care': '🧴',
+  'skincare': '🧴', 'tools': '🧰', 'eyes': '👁️', 'face': '✨', 'sets': '📦',
 };
 const categoryGradients: Record<string, string> = {
-  'makeup': 'from-pink-400 to-rose-500', 'lashes': 'from-violet-400 to-purple-500',
-  'concealer': 'from-amber-300 to-orange-400', 'brushes': 'from-sky-400 to-blue-500',
-  'brush-sets': 'from-emerald-400 to-teal-500', 'brush sets': 'from-emerald-400 to-teal-500',
-  'other-makeup': 'from-fuchsia-400 to-pink-500', 'other makeup': 'from-fuchsia-400 to-pink-500',
+  'makeup': 'from-pink-500 via-rose-500 to-red-400', 'lashes': 'from-purple-500 via-violet-500 to-fuchsia-500',
+  'concealer': 'from-amber-400 via-orange-400 to-yellow-500', 'brushes': 'from-blue-400 via-sky-400 to-cyan-400',
+  'brush-sets': 'from-emerald-400 via-teal-400 to-cyan-400', 'brush sets': 'from-emerald-400 via-teal-400 to-cyan-400',
+  'other-makeup': 'from-fuchsia-500 via-pink-500 to-rose-400', 'other makeup': 'from-fuchsia-500 via-pink-500 to-rose-400',
+  'lip-products': 'from-orange-400 via-amber-500 to-yellow-400', 'lip products': 'from-orange-400 via-amber-500 to-yellow-400',
+  'skin-care': 'from-gray-400 via-gray-500 to-gray-600', 'skin care': 'from-gray-400 via-gray-500 to-gray-600',
+  'skincare': 'from-gray-400 via-gray-500 to-gray-600', 'tools': 'from-indigo-400 via-blue-500 to-violet-500',
+  'eyes': 'from-violet-400 via-purple-500 to-indigo-500', 'face': 'from-amber-300 via-yellow-400 to-orange-400',
+  'sets': 'from-teal-400 via-cyan-500 to-blue-400',
 };
 const VAT_RATE = 0.14;
 const PAY_METHODS = [
@@ -530,18 +537,29 @@ export default function POSPage() {
                     {filteredProducts.length === 0 && <p className="text-gray-500 col-span-full text-center py-8">No products found</p>}
                   </div>
                 ) : !selectedCategory ? (
-                  /* Level 1: categories */
+                  /* Level 1: categories — premium visual tiles */
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {categories.map(cat => (
-                      <button key={cat.id} onClick={() => setSelectedCategory(cat)}
-                        className={cn('bg-gradient-to-br rounded-2xl p-6 text-left transition hover:scale-[1.02] shadow-lg', gradientFor(cat.slug ?? cat.name))}>
-                        <span className="text-3xl">{emojiFor(cat.slug ?? cat.name)}</span>
-                        <p className="text-white font-bold mt-3 text-lg">{cat.name}</p>
-                        <p className="text-white/70 text-xs mt-1">
-                          {products.filter(p => p.category_id === cat.id).length} products
-                        </p>
-                      </button>
-                    ))}
+                    {categories.map(cat => {
+                      const count = products.filter(p => p.category_id === cat.id).length;
+                      return (
+                        <button key={cat.id} onClick={() => setSelectedCategory(cat)}
+                          className={cn(
+                            'relative bg-gradient-to-br rounded-2xl p-5 pb-4 text-left transition-all duration-200',
+                            'hover:scale-[1.03] hover:shadow-2xl hover:brightness-110',
+                            'shadow-lg min-h-[110px] flex flex-col justify-between overflow-hidden',
+                            gradientFor(cat.slug ?? cat.name)
+                          )}>
+                          {/* decorative circle */}
+                          <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
+                          <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-black/10 rounded-full" />
+                          <span className="text-3xl relative z-10 drop-shadow-md">{emojiFor(cat.slug ?? cat.name)}</span>
+                          <div className="relative z-10 mt-auto">
+                            <p className="text-white font-bold text-base leading-tight drop-shadow">{cat.name}</p>
+                            <p className="text-white/70 text-xs mt-0.5">{count} product{count !== 1 ? 's' : ''}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : selectedProduct ? (
                   /* Level 3: variant selection */

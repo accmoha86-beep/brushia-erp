@@ -49,6 +49,22 @@ export class WarehouseService {
     return result;
   }
 
+  async remove(tenantId: string, id: string) {
+    // Check if warehouse has stock
+    const stockCheck = await this.db.queryOne(
+      `SELECT COALESCE(SUM(qty_on_hand), 0) as total_stock FROM inventory.stock_levels WHERE warehouse_id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+    if (stockCheck && parseInt(stockCheck.total_stock) > 0) {
+      throw new Error('Cannot delete warehouse with existing stock. Transfer or zero out inventory first.');
+    }
+    await this.db.query(
+      `UPDATE inventory.warehouses SET is_active = false, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+    return { success: true, message: 'Branch deactivated' };
+  }
+
   async getStock(tenantId: string, warehouseId: string) {
     const result = await this.db.query(`
       SELECT sl.*, p.name as product_name, p.sku
