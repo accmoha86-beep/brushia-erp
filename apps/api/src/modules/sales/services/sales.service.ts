@@ -35,6 +35,17 @@ export class SalesService implements ISalesService {
    */
   async createOrder(tenantId: string, userId: string, dto: TCreateSalesOrder) {
     return this.db.transaction(async (client) => {
+      // Safety: ensure numeric defaults for optional fields
+      dto.order_discount_amount = dto.order_discount_amount ?? 0;
+      dto.order_discount_percentage = dto.order_discount_percentage ?? 0;
+      dto.shipping_amount = dto.shipping_amount ?? 0;
+      dto.loyalty_points_used = dto.loyalty_points_used ?? 0;
+      dto.tax_rate = dto.tax_rate ?? 14;
+      dto.is_taxable = dto.is_taxable ?? true;
+      (dto.items || []).forEach((item: any) => {
+        item.discount_amount = item.discount_amount ?? 0;
+        item.discount_percentage = item.discount_percentage ?? 0;
+      });
       // Resolve warehouse_id from either warehouse_id or location_id in the DTO
       const warehouseId = (dto as any).warehouse_id || dto.location_id;
       // ─── 1. Calculate line items ─────────────────────
@@ -222,15 +233,19 @@ export class SalesService implements ISalesService {
         );
       }
 
-      // ─── 10. Post accounting entry ───────────────────
-      await this.accounting.postSaleEntry(tenantId, userId, {
-        orderId: order.id,
-        totalAmount: finalTotal,
-        costOfGoods: totalCostOfGoods,
-        taxAmount,
-        paymentMethod: dto.payment_method === 'split' ? 'cash' : dto.payment_method,
-        entryDate: new Date().toISOString().split('T')[0],
-      }, client);
+      // ─── 10. Post accounting entry (non-blocking — sale succeeds even if accounting fails) ───
+      try {
+        await this.accounting.postSaleEntry(tenantId, userId, {
+          orderId: order.id,
+          totalAmount: finalTotal,
+          costOfGoods: totalCostOfGoods,
+          taxAmount,
+          paymentMethod: dto.payment_method === 'split' ? 'cash' : dto.payment_method,
+          entryDate: new Date().toISOString().split('T')[0],
+        }, client);
+      } catch (acctErr: any) {
+        console.error('[Sales] Accounting entry failed (non-blocking):', acctErr?.message);
+      }
 
       // ─── 11. Update customer stats ───────────────────
       if (dto.customer_id) {
