@@ -218,7 +218,7 @@ export default function ExhibitionsPage() {
 
   const totalEvents = exhibitions.length;
   const activeNow = exhibitions.filter((e) => e.status === 'active').length;
-  const totalRevenue = exhibitions.reduce((s, e) => s + (e.total_sales || 0), 0);
+  const totalRevenue = exhibitions.reduce((s, e) => s + Number(e.total_sales || 0), 0);
   const totalBudget = exhibitions.reduce((s, e) => s + (e.budget_amount || 0), 0);
   const totalActual = exhibitions.reduce((s, e) => s + (e.actual_cost || 0), 0);
   const budgetUtil = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;

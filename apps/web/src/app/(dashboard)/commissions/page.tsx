@@ -159,13 +159,13 @@ export default function CommissionsPage() {
 
   const totalSalespersons = salespersons.length;
   const activeSalespersons = salespersons.filter((s) => s.is_active).length;
-  const totalCommission = salespersons.reduce((sum, s) => sum + (s.total_commission || 0), 0);
+  const totalCommission = salespersons.reduce((sum, s) => sum + Number(s.total_commission || 0), 0);
 
   const reportSummary = {
-    total: report.reduce((s, r) => s + (r.commission_amount || 0), 0),
-    pending: report.filter((r) => r.status === 'pending').reduce((s, r) => s + (r.commission_amount || 0), 0),
-    approved: report.filter((r) => r.status === 'approved').reduce((s, r) => s + (r.commission_amount || 0), 0),
-    paid: report.filter((r) => r.status === 'paid').reduce((s, r) => s + (r.commission_amount || 0), 0),
+    total: report.reduce((s, r) => s + Number(r.commission_amount || 0), 0),
+    pending: report.filter((r) => r.status === 'pending').reduce((s, r) => s + Number(r.commission_amount || 0), 0),
+    approved: report.filter((r) => r.status === 'approved').reduce((s, r) => s + Number(r.commission_amount || 0), 0),
+    paid: report.filter((r) => r.status === 'paid').reduce((s, r) => s + Number(r.commission_amount || 0), 0),
   };
 
   const typeBadge = (type: string) => {

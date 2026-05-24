@@ -37,7 +37,7 @@ export default function WholesalePage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="rounded-xl border bg-white p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="h-5 w-5 text-emerald-500" /><p className="text-xs text-gray-500">Price Lists</p></div><p className="text-2xl font-bold">{priceLists.length}</p></div>
         <div className="rounded-xl border bg-white p-4"><div className="flex items-center gap-2 mb-2"><Users className="h-5 w-5 text-blue-500" /><p className="text-xs text-gray-500">Wholesale Customers</p></div><p className="text-2xl font-bold">{customers.length}</p></div>
-        <div className="rounded-xl border bg-white p-4"><div className="flex items-center gap-2 mb-2"><ShoppingBag className="h-5 w-5 text-purple-500" /><p className="text-xs text-gray-500">Total Revenue</p></div><p className="text-2xl font-bold text-emerald-600">{formatEGP(customers.reduce((s, c) => s + (c.total_spent || 0), 0))}</p></div>
+        <div className="rounded-xl border bg-white p-4"><div className="flex items-center gap-2 mb-2"><ShoppingBag className="h-5 w-5 text-purple-500" /><p className="text-xs text-gray-500">Total Revenue</p></div><p className="text-2xl font-bold text-emerald-600">{formatEGP(customers.reduce((s, c) => s + Number(c.total_spent || 0), 0))}</p></div>
       </div>
 
       <h2 className="text-lg font-semibold mb-3">Price Lists</h2>
