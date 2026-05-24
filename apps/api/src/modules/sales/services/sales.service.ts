@@ -74,7 +74,7 @@ export class SalesService implements ISalesService {
           ? item.discount_amount 
           : Math.round(lineSubtotal * (item.discount_percentage / 100));
         const lineTotal = lineSubtotal - itemDiscount;
-        const lineCost = parseInt(product.current_cost) * item.quantity;
+        const lineCost = safeNumber(product.current_cost) * item.quantity;
 
         subtotal += lineSubtotal;
         totalDiscount += itemDiscount;
@@ -86,14 +86,16 @@ export class SalesService implements ISalesService {
           discount_amount: itemDiscount,
           line_subtotal: lineSubtotal,
           line_total: lineTotal,
-          unit_cost: parseInt(product.current_cost),
+          unit_cost: safeNumber(product.current_cost),
           product_name: product.name,
           product_sku: product.sku,
         });
       }
 
       // ─── 2. Apply order-level discounts ──────────────
-      let orderDiscount = dto.order_discount_amount;
+      // NaN protection for optional fields
+      const safeNumber = (val: any, fallback = 0) => { const n = Number(val); return isNaN(n) ? fallback : n; };
+      let orderDiscount = safeNumber(dto.order_discount_amount);
       if (dto.order_discount_percentage > 0) {
         orderDiscount = Math.round(subtotal * (dto.order_discount_percentage / 100));
       }
