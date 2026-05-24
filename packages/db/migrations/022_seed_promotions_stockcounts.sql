@@ -49,7 +49,7 @@ DO $$ DECLARE t_id UUID; w_id UUID; u_id UUID; sc_id UUID; BEGIN
           WHEN sl.product_id IN (SELECT id FROM catalog.products WHERE tenant_id = t_id ORDER BY id LIMIT 3) THEN -1
           WHEN sl.product_id IN (SELECT id FROM catalog.products WHERE tenant_id = t_id ORDER BY id LIMIT 5 OFFSET 3) THEN 1
           ELSE 0 END,
-        COALESCE((SELECT pv.cost_price FROM catalog.product_variants pv WHERE pv.id = sl.variant_id LIMIT 1), 0)
+        COALESCE((SELECT p.cost_price FROM catalog.products p WHERE p.id = sl.product_id LIMIT 1), 0)
       FROM inventory.stock_levels sl
       WHERE sl.tenant_id = t_id AND sl.qty_on_hand > 0
       LIMIT 20
