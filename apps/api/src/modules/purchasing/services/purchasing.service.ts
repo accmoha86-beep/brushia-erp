@@ -262,7 +262,6 @@ export class PurchasingService {
       if (dto.warehouse_id) { updates.push(`warehouse_id = $${idx}`); params.push(dto.warehouse_id); idx++; }
 
       if (updates.length > 0) {
-        updates.push(`updated_at = NOW()`);
         params.push(id);
         await client.query(
           `UPDATE purchasing.goods_receipts SET ${updates.join(', ')} WHERE id = $${idx}`, params);
@@ -273,19 +272,19 @@ export class PurchasingService {
         for (const item of dto.items) {
           if (item.id && item.quantity_received !== undefined) {
             await client.query(
-              `UPDATE purchasing.goods_receipt_items SET quantity_received = $1, updated_at = NOW()
+              `UPDATE purchasing.goods_receipt_items SET quantity_received = $1
                WHERE id = $2 AND goods_receipt_id = $3`,
               [item.quantity_received, item.id, id]);
           }
           if (item.id && item.unit_cost !== undefined) {
             await client.query(
-              `UPDATE purchasing.goods_receipt_items SET unit_cost = $1, updated_at = NOW()
+              `UPDATE purchasing.goods_receipt_items SET unit_cost = $1
                WHERE id = $2 AND goods_receipt_id = $3`,
               [item.unit_cost, item.id, id]);
           }
           if (item.id && item.landed_unit_cost !== undefined) {
             await client.query(
-              `UPDATE purchasing.goods_receipt_items SET landed_unit_cost = $1, updated_at = NOW()
+              `UPDATE purchasing.goods_receipt_items SET landed_unit_cost = $1
                WHERE id = $2 AND goods_receipt_id = $3`,
               [item.landed_unit_cost, item.id, id]);
           }
