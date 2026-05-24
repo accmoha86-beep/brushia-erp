@@ -101,7 +101,7 @@ export default function ProductsPage() {
         categoryId: p.category_id ?? '',
         price: p.base_price ?? 0,
         cost: p.cost_price ?? 0,
-        stock: p.stock ?? p.quantity_on_hand ?? 0,
+        stock: Number(p.total_stock) || p.stock || p.quantity_on_hand || 0,
         status: p.status ?? 'active',
       }));
       setProducts(mapped);

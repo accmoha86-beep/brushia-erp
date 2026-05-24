@@ -27,7 +27,6 @@ const navigation = [
   { name: 'Inventory', href: '/inventory', icon: Warehouse },
   { name: 'Warehouses', href: '/warehouses', icon: Building2 },
   { name: 'Stock Counts', href: '/stock-counts', icon: ClipboardCheck },
-  { name: 'Exhibitions', href: '/exhibitions', icon: CalendarDays },
   { name: 'Shipping', href: '/shipping', icon: Truck },
   { type: 'separator' as const, label: 'Finance' },
   { name: 'Accounting', href: '/accounting', icon: BookOpen },

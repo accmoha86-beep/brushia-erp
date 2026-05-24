@@ -156,7 +156,8 @@ export async function apiClient<T = unknown>(
 
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    throw new ApiError(response.status, response.statusText, data);
+    const msg = (data as any)?.message || (data as any)?.errors?.map((e: any) => e.message || e.field).join(', ') || response.statusText || 'Request failed';
+    throw new ApiError(response.status, msg, data);
   }
 
   // Handle 204 No Content

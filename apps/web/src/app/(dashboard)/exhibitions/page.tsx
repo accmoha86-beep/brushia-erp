@@ -107,7 +107,7 @@ export default function ExhibitionsPage() {
     if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/exhibitions', token);
+      const res = await api.get('/exhibitions');
       const data = Array.isArray(res) ? res : res.data || [];
       setExhibitions(data);
     } catch (err) {
@@ -121,7 +121,7 @@ export default function ExhibitionsPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await api.get('/warehouses', token);
+      const res = await api.get('/warehouses');
       const data = Array.isArray(res) ? res : res.data || [];
       setWarehouses(data);
     } catch (err) {
@@ -133,7 +133,7 @@ export default function ExhibitionsPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await api.get(`/exhibitions/${id}/expenses`, token);
+      const res = await api.get(`/exhibitions/${id}/expenses`);
       const data = Array.isArray(res) ? res : res.data || [];
       setExpenses(data);
     } catch (err) {
@@ -145,7 +145,7 @@ export default function ExhibitionsPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await api.get(`/exhibitions/${id}/pnl`, token);
+      const res = await api.get(`/exhibitions/${id}/pnl`);
       setPnl(res.data || res);
     } catch (err) {
       console.error(err);
@@ -167,7 +167,7 @@ export default function ExhibitionsPage() {
         budget_amount: Math.round(parseFloat(form.budget_amount) * 100),
         warehouse_id: form.warehouse_id,
         notes: form.notes,
-      }, token);
+      });
       setShowModal(false);
       setForm({ name: '', event_code: '', venue: '', city: '', governorate: '', start_date: '', end_date: '', budget_amount: '', warehouse_id: '', notes: '' });
       loadExhibitions();
@@ -185,7 +185,7 @@ export default function ExhibitionsPage() {
         category: expenseForm.category,
         description: expenseForm.description,
         amount: Math.round(parseFloat(expenseForm.amount) * 100),
-      }, token);
+      });
       setShowExpenseModal(false);
       setExpenseForm({ category: 'booth', description: '', amount: '' });
       loadExpenses(selectedExhibition.id);

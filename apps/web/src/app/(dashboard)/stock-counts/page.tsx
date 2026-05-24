@@ -75,7 +75,7 @@ export default function StockCountsPage() {
     if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/stock-counts', token);
+      const res = await api.get('/stock-counts');
       const data = Array.isArray(res) ? res : res.data || [];
       setCounts(data);
     } catch (err) {
@@ -89,7 +89,7 @@ export default function StockCountsPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await api.get('/warehouses', token);
+      const res = await api.get('/warehouses');
       const data = Array.isArray(res) ? res : res.data || [];
       setWarehouses(data);
     } catch (err) {
@@ -102,7 +102,7 @@ export default function StockCountsPage() {
     if (!token) return;
     try {
       setItemsLoading(true);
-      const res = await api.get(`/stock-counts/${countId}/items`, token);
+      const res = await api.get(`/stock-counts/${countId}/items`);
       const data = Array.isArray(res) ? res : res.data || [];
       setCountItems(data);
     } catch (err) {
@@ -130,7 +130,7 @@ export default function StockCountsPage() {
         warehouse_id: form.warehouse_id,
         type: form.type,
         notes: form.notes,
-      }, token);
+      });
       setShowModal(false);
       setForm({ warehouse_id: '', type: 'full', notes: '' });
       loadCounts();
@@ -151,7 +151,7 @@ export default function StockCountsPage() {
           counted_qty: item.counted_qty,
           notes: item.notes,
         })),
-      }, token);
+      });
       loadCountItems(expandedId);
     } catch (err) {
       console.error(err);
@@ -164,7 +164,7 @@ export default function StockCountsPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      await api.post(`/stock-counts/${id}/complete`, {}, token);
+      await api.post(`/stock-counts/${id}/complete`, {});
       loadCounts();
       setExpandedId(null);
     } catch (err) {
@@ -176,7 +176,7 @@ export default function StockCountsPage() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      await api.post(`/stock-counts/${id}/cancel`, {}, token);
+      await api.post(`/stock-counts/${id}/cancel`, {});
       loadCounts();
       setExpandedId(null);
     } catch (err) {

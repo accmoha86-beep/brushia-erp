@@ -84,7 +84,7 @@ export default function CommissionsPage() {
     if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/commissions', token);
+      const res = await api.get('/commissions');
       const data = Array.isArray(res) ? res : res.data || [];
       setSalespersons(data);
     } catch (err) {
@@ -99,7 +99,7 @@ export default function CommissionsPage() {
     if (!token) return;
     try {
       setLoading(true);
-      const res = await api.get('/commissions/rules', token);
+      const res = await api.get('/commissions/rules');
       const data = Array.isArray(res) ? res : res.data || [];
       setRules(data);
     } catch (err) {
@@ -115,7 +115,7 @@ export default function CommissionsPage() {
     if (!dateFrom || !dateTo) return;
     try {
       setLoading(true);
-      const res = await api.get(`/commissions/report?from=${dateFrom}&to=${dateTo}`, token);
+      const res = await api.get(`/commissions/report?from=${dateFrom}&to=${dateTo}`);
       const data = Array.isArray(res) ? res : res.data || [];
       setReport(data);
     } catch (err) {
@@ -143,7 +143,7 @@ export default function CommissionsPage() {
         email: form.email,
         default_commission_rate: parseFloat(form.default_commission_rate),
         commission_type: form.commission_type,
-      }, token);
+      });
       setShowModal(false);
       setForm({ employee_code: '', first_name: '', last_name: '', phone: '+20', email: '', default_commission_rate: '', commission_type: 'percentage' });
       loadSalespersons();

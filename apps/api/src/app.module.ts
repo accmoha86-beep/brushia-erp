@@ -38,6 +38,7 @@ import { CommissionModule } from './modules/commission/commission.module';
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { StockCountingModule } from './modules/stock-counting/stock-counting.module';
 import { ExhibitionModule } from './modules/exhibition/exhibition.module';
+import { BranchModule } from './modules/branch/branch.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { SettingsModule } from './modules/settings/settings.module';
 
@@ -94,6 +95,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     LoyaltyModule,
     StockCountingModule,
     ExhibitionModule,
+    BranchModule,
     WhatsAppModule,
     SettingsModule,
   ],

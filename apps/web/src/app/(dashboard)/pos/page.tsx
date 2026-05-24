@@ -230,7 +230,10 @@ export default function POSPage() {
       const result = await api.post<any>('/pos/transactions', body);
       setReceiptData(result);
       setShowPayment(false);
-    } catch (e: any) { alert(e?.message ?? 'Transaction failed'); }
+    } catch (e: any) { 
+        const msg = e?.data?.message || e?.data?.errors?.map((x:any) => `${x.field}: ${x.message}`).join('\n') || e?.message || 'Transaction failed';
+        alert(msg); 
+      }
     setProcessing(false);
   };
 

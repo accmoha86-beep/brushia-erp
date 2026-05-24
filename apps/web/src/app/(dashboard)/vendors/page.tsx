@@ -18,7 +18,7 @@ export default function VendorsPage() {
 
   const fetchVendors = useCallback(async () => {
     setLoading(true);
-    try { const res = await api.get<any>('/purchasing/vendors'); setVendors(res?.data || []); } catch { setVendors([]); } finally { setLoading(false); }
+    try { const res = await api.get<any>('/purchasing/vendors'); setVendors(Array.isArray(res) ? res : (res?.data || [])); } catch { setVendors([]); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchVendors(); }, [fetchVendors]);
