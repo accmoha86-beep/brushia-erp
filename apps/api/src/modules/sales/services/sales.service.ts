@@ -296,7 +296,7 @@ export class SalesService implements ISalesService {
       });
 
       // ─── 13. Audit log ──────────────────────────────
-      await this.audit.logInTransaction(client, {
+      await this.audit.logWithinTransaction(client, {
         tenantId, userId,
         action: 'sales_order.created',
         entity_type: 'sales_order',

@@ -236,7 +236,7 @@ export class InventoryService implements IInventoryService {
       }
 
       // 9. Audit log
-      await this.audit.logInTransaction(client, {
+      await this.audit.logWithinTransaction(client, {
         tenantId, userId,
         action: `inventory.${dto.movement_type}`,
         entity_type: 'stock_movement',
