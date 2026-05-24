@@ -35,6 +35,8 @@ export class SalesService implements ISalesService {
    */
   async createOrder(tenantId: string, userId: string, dto: TCreateSalesOrder) {
     return this.db.transaction(async (client) => {
+      // Resolve warehouse_id from either warehouse_id or location_id in the DTO
+      const warehouseId = (dto as any).warehouse_id || dto.location_id;
       // ─── 1. Calculate line items ─────────────────────
       let subtotal = 0;
       let totalDiscount = 0;
@@ -50,7 +52,7 @@ export class SalesService implements ISalesService {
              LIMIT 1), p.cost_price
            ) as current_cost
            FROM catalog.products p WHERE p.id = $1 AND p.tenant_id = $2`,
-          [item.product_id, tenantId, dto.warehouse_id],
+          [item.product_id, tenantId, warehouseId],
         ).then(r => r.rows[0]);
 
         if (!product) throw new NotFoundException(`Product ${item.product_id} not found`);
@@ -125,7 +127,7 @@ export class SalesService implements ISalesService {
         ) VALUES ($1,$2,$3,$4,$5,'confirmed',$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
         RETURNING *`,
         [
-          tenantId, orderNumber, dto.customer_id, dto.warehouse_id, dto.source,
+          tenantId, orderNumber, dto.customer_id, warehouseId, dto.source,
           subtotal, totalDiscount, taxAmount, dto.tax_rate, dto.shipping_amount,
           loyaltyDiscount, finalTotal,
           dto.payment_method, dto.price_list_id, dto.salesperson_id, dto.notes, userId,
@@ -138,8 +140,8 @@ export class SalesService implements ISalesService {
         await client.query(
           `INSERT INTO sales.order_items (
             tenant_id, order_id, line_number, product_id, variant_id,
-            product_name, product_sku, quantity, unit_price, unit_cost,
-            discount_amount, tax_amount, line_total
+            name, sku, quantity, unit_price, cost_price,
+            discount_amount, tax_amount, total
           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
           [
             tenantId, order.id, i + 1, item.product_id, item.variant_id,
@@ -172,7 +174,7 @@ export class SalesService implements ISalesService {
 
       // ─── 9. Deduct inventory ─────────────────────────
       for (const item of orderItems) {
-        const lockKey = this.computeLockKey(item.product_id, dto.warehouse_id);
+        const lockKey = this.computeLockKey(item.product_id, warehouseId);
         await client.query(`SELECT pg_advisory_xact_lock($1)`, [lockKey]);
 
         // Get current stock
@@ -181,7 +183,7 @@ export class SalesService implements ISalesService {
            WHERE product_id = $1 AND warehouse_id = $2 AND tenant_id = $3
              AND ($4::uuid IS NULL AND variant_id IS NULL OR variant_id = $4)
            FOR UPDATE`,
-          [item.product_id, dto.warehouse_id, tenantId, item.variant_id || null],
+          [item.product_id, warehouseId, tenantId, item.variant_id || null],
         ).then(r => r.rows[0]);
 
         const currentQty = stockLevel ? parseInt(stockLevel.qty_on_hand) : 0;
@@ -198,23 +200,23 @@ export class SalesService implements ISalesService {
           `INSERT INTO inventory.stock_movements (
             tenant_id, product_id, variant_id, warehouse_id,
             movement_type, quantity, unit_cost, total_cost,
-            quantity_before, quantity_after,
+            balance_after, avg_cost_after,
             reference_type, reference_id, performed_by
           ) VALUES ($1,$2,$3,$4,'sale',$5,$6,$7,$8,$9,'sales_order',$10,$11)`,
           [
-            tenantId, item.product_id, item.variant_id || null, dto.warehouse_id,
+            tenantId, item.product_id, item.variant_id || null, warehouseId,
             -item.quantity, item.unit_cost, item.unit_cost * item.quantity,
-            currentQty, newQty,
+            newQty, 0,
             order.id, userId,
           ],
         );
 
         // Update stock level
         await client.query(
-          `UPDATE inventory.stock_levels SET quantity = $3, updated_at = NOW()
+          `UPDATE inventory.stock_levels SET qty_on_hand = $3, updated_at = NOW()
            WHERE product_id = $1 AND warehouse_id = $4 AND tenant_id = $5
              AND ($2::uuid IS NULL AND variant_id IS NULL OR variant_id = $2)`,
-          [item.product_id, item.variant_id || null, newQty, dto.warehouse_id, tenantId],
+          [item.product_id, item.variant_id || null, newQty, warehouseId, tenantId],
         );
       }
 
@@ -347,19 +349,19 @@ export class SalesService implements ISalesService {
             `INSERT INTO inventory.stock_movements (
               tenant_id, product_id, variant_id, warehouse_id,
               movement_type, quantity, unit_cost, total_cost,
-              quantity_before, quantity_after,
+              balance_after, avg_cost_after,
               reference_type, reference_id, notes, performed_by
             ) VALUES ($1,$2,$3,$4,'sale_return',$5,$6,$7,$8,$9,'sales_order',$10,$11,$12)`,
             [
               tenantId, item.product_id, item.variant_id, order.warehouse_id,
               parseInt(item.quantity), parseInt(item.unit_cost), parseInt(item.unit_cost) * parseInt(item.quantity),
-              currentQty, newQty,
+              newQty, 0,
               orderId, `Cancelled: ${dto.reason}`, userId,
             ],
           );
 
           await client.query(
-            `UPDATE inventory.stock_levels SET quantity = $3, updated_at = NOW()
+            `UPDATE inventory.stock_levels SET qty_on_hand = $3, updated_at = NOW()
              WHERE product_id = $1 AND warehouse_id = $4 AND tenant_id = $5
                AND ($2::uuid IS NULL AND variant_id IS NULL OR variant_id = $2)`,
             [item.product_id, item.variant_id, newQty, order.warehouse_id, tenantId],
