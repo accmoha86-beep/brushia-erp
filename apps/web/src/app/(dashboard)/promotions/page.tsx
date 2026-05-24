@@ -70,8 +70,8 @@ export default function PromotionsPage() {
   const stats = {
     total: promotions.length,
     active: promotions.filter(p => p.status === 'active').length,
-    totalUsage: promotions.reduce((s, p) => s + (p.usage_count || 0), 0),
-    avgDiscount: promotions.filter(p => p.type === 'percentage').length > 0 ? Math.round(promotions.filter(p => p.type === 'percentage').reduce((s, p) => s + p.value, 0) / promotions.filter(p => p.type === 'percentage').length) : 0,
+    totalUsage: promotions.reduce((s, p) => s + Number(p.usage_count || 0), 0),
+    avgDiscount: promotions.filter(p => p.type === 'percentage').length > 0 ? Math.round(promotions.filter(p => p.type === 'percentage').reduce((s, p) => s + Number(p.value || 0), 0) / promotions.filter(p => p.type === 'percentage').length) : 0,
   };
 
   return (
