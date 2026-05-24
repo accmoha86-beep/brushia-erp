@@ -48,6 +48,19 @@ export class PurchasingService {
     return r;
   }
 
+  async deleteVendor(tenantId: string, id: string) {
+    // Check for existing POs
+    const poCount = await this.db.queryOne(
+      'SELECT COUNT(*)::int as count FROM purchasing.purchase_orders WHERE vendor_id = $1', [id]);
+    if (poCount?.count > 0) {
+      throw new BadRequestException(`Cannot delete vendor — ${poCount.count} purchase order(s) linked`);
+    }
+    const r = await this.db.queryOne(
+      'DELETE FROM purchasing.vendors WHERE id = $1 AND tenant_id = $2 RETURNING id', [id, tenantId]);
+    if (!r) throw new NotFoundException('Vendor not found');
+    return { deleted: true };
+  }
+
   // ═══════════════════════════════════════════════════
   // PURCHASE ORDERS — actual columns: shipping_cost, customs_cost, other_costs, landed_cost_total
   // NEW columns (015): china_shipping_cost, china_agent_fee, egypt_customs_duty, egypt_clearance_fee, egypt_local_shipping, exchange_rate

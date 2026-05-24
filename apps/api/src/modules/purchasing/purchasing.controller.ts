@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PurchasingService } from './services/purchasing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -37,6 +37,13 @@ export class PurchasingController {
   @RequirePermissions('purchasing:write')
   async updateVendor(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
     return this.purchasingService.updateVendor(user.tenantId, id, dto);
+  }
+
+  @Delete('vendors/:id')
+  @RequirePermissions('purchasing:write')
+  @ApiOperation({ summary: 'Delete a vendor' })
+  async deleteVendor(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.purchasingService.deleteVendor(user.tenantId, id);
   }
 
   // ═══ Purchase Orders ═══════════════════════════════
