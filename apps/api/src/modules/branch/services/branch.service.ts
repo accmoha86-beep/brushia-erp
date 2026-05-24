@@ -67,10 +67,10 @@ export class BranchService {
     if (existing) throw new ConflictException('Branch code already exists');
 
     const branch = await this.db.queryOne(
-      `INSERT INTO pos.branches (tenant_id, name, code, branch_type, address_line1, city, governorate, phone, manager_name, warehouse_id, is_active, event_start_date, event_end_date, event_venue, event_notes, event_budget)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      `INSERT INTO pos.branches (tenant_id, name, code, branch_type, address_line1, city, governorate, phone, manager_name, warehouse_id, is_active, event_start_date, event_end_date, event_venue, event_notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *`,
-      [tenantId, dto.name, dto.code, dto.branch_type || 'permanent', dto.address_line1, dto.city, dto.governorate, dto.phone, dto.manager_name, dto.warehouse_id, dto.is_active ?? true, dto.event_start_date, dto.event_end_date, dto.event_venue, dto.event_notes, dto.event_budget || 0],
+      [tenantId, dto.name, dto.code, dto.branch_type || 'permanent', dto.address_line1 || null, dto.city || null, dto.governorate || null, dto.phone || null, dto.manager_name || null, dto.warehouse_id || null, dto.is_active ?? true, dto.event_start_date || null, dto.event_end_date || null, dto.event_venue || null, dto.event_notes || null],
     );
 
     this.logger.log(`Branch created: ${branch.name} (${branch.code}) type=${branch.branch_type}`);
@@ -78,7 +78,7 @@ export class BranchService {
   }
 
   async updateBranch(tenantId: string, id: string, dto: any) {
-    const allowed = ['name', 'address_line1', 'city', 'governorate', 'phone', 'manager_name', 'warehouse_id', 'is_active', 'branch_type', 'event_start_date', 'event_end_date', 'event_venue', 'event_notes', 'event_budget'];
+    const allowed = ['name', 'address_line1', 'city', 'governorate', 'phone', 'manager_name', 'warehouse_id', 'is_active', 'branch_type', 'event_start_date', 'event_end_date', 'event_venue', 'event_notes'];
     const sets: string[] = [];
     const vals: any[] = [id, tenantId];
     let idx = 3;
