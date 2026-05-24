@@ -153,19 +153,19 @@ export class AccountingService implements IAccountingService {
         throw new BadRequestException(`Cannot post to inactive accounts: ${inactiveAccounts.map((a: any) => a.code).join(', ')}`);
       }
 
-      // 2. Validate fiscal period is open (graceful if table missing)
-      try {
+      // 2. Validate fiscal period is open (safe — skips if table missing)
+      const fpExists = await c.query(
+        `SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema='accounting' AND table_name='fiscal_periods') as e`,
+      ).then((r: any) => r.rows[0]?.e);
+      if (fpExists) {
         const fiscalPeriod = await c.query(
           `SELECT id, status FROM accounting.fiscal_periods
            WHERE tenant_id = $1 AND start_date <= $2 AND end_date >= $2`,
           [tenantId, dto.entry_date],
         ).then((r: any) => r.rows[0]);
-
         if (fiscalPeriod && fiscalPeriod.status === 'closed') {
           throw new BadRequestException(`Cannot post to closed fiscal period for date ${dto.entry_date}`);
         }
-      } catch (e: any) {
-        if (e?.code !== '42P01') throw e; // re-throw unless table-missing
       }
 
       // 3. Generate entry number
