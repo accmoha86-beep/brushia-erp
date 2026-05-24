@@ -310,7 +310,7 @@ export default function GoodsReceivingPage() {
                 <p className="text-sm mt-1">Click "Receive Goods" to create your first GRN</p>
               </td></tr>
             ) : filtered.map(g => (
-              <tr key={g.id} className="hover:bg-rose-50/30 transition-colors group">
+              <tr key={g.id} onClick={() => viewGRN(g.id)} className="hover:bg-rose-50/30 transition-colors group cursor-pointer">
                 <td className="px-5 py-4">
                   <span className="font-mono font-bold text-rose-600 group-hover:text-rose-700">{g.receipt_number}</span>
                 </td>
@@ -338,15 +338,15 @@ export default function GoodsReceivingPage() {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => viewGRN(g.id)} className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors" title="View details">
+                    <button onClick={(e) => { e.stopPropagation(); viewGRN(g.id); }} className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors" title="View details">
                       <Eye className="h-4 w-4" />
                     </button>
                     {g.status === 'draft' && (
                       <>
-                        <button onClick={() => startEdit(g)} className="p-2 rounded-lg text-violet-500 hover:bg-violet-50 transition-colors" title="Edit GRN">
+                        <button onClick={(e) => { e.stopPropagation(); startEdit(g); }} className="p-2 rounded-lg text-violet-500 hover:bg-violet-50 transition-colors" title="Edit GRN">
                           <Edit3 className="h-4 w-4" />
                         </button>
-                        <button onClick={() => startInspect(g)} className="p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors" title="Inspect & Accept">
+                        <button onClick={(e) => { e.stopPropagation(); startInspect(g); }} className="p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors" title="Inspect & Accept">
                           <ClipboardCheck className="h-4 w-4" />
                         </button>
                       </>
