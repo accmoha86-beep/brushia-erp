@@ -100,9 +100,9 @@ export class POSService {
 
     const session = await this.db.query(
       `INSERT INTO pos.sessions (
-        tenant_id, register_id, session_number, cashier_id,
-        opening_cash, current_cash, status, notes
-      ) VALUES ($1, $2, $3, $4, $5, $5, 'open', $6) RETURNING *`,
+        tenant_id, register_id, session_number, cashier_id, user_id,
+        opening_cash, current_cash, opening_balance, status, notes
+      ) VALUES ($1, $2, $3, $4, $4, $5, $5, $5, 'open', $6) RETURNING *`,
       [tenantId, dto.register_id, sessionNumber, userId, dto.opening_cash, dto.notes],
     );
 
@@ -177,12 +177,12 @@ export class POSService {
         + parseInt(transactions.vodafone_sales) 
         + parseInt(transactions.instapay_sales);
 
-      // Close the session
+      // Close the session (set both old + new column names)
       await client.query(
         `UPDATE pos.sessions SET 
           status = 'closed',
-          closing_cash = $3,
-          expected_cash = $4,
+          closing_cash = $3, closing_balance = $3,
+          expected_cash = $4, expected_balance = $4,
           cash_difference = $5,
           total_sales = $6,
           total_transactions = $7,
@@ -320,13 +320,16 @@ export class POSService {
       // 4. Generate receipt number
       const receiptNumber = await this.generateReceiptNumber(client, tenantId, session.register_id);
 
-      // 5. Create POS transaction record
+      // 5. Create POS transaction record (set both old + new column names)
       const transaction = await client.query(
         `INSERT INTO pos.transactions (
-          tenant_id, session_id, order_id, receipt_number,
-          subtotal, discount_amount, tax_amount, grand_total,
+          tenant_id, session_id, order_id,
+          receipt_number, transaction_number,
+          subtotal, discount_amount, discount_total,
+          tax_amount, tax_total,
+          grand_total, total,
           status, cashier_id
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'completed',$9)
+        ) VALUES ($1,$2,$3,$4,$4,$5,$6,$6,$7,$7,$8,$8,'completed',$9)
         RETURNING *`,
         [
           tenantId, dto.session_id, order.id, receiptNumber,
