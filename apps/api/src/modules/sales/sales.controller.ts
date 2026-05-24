@@ -76,9 +76,24 @@ export class SalesController {
   @ApiOperation({ summary: 'Test sale — returns detailed errors' })
   async testSale(
     @CurrentUser() user: any,
-    @Body() dto: any,
+    @Body() rawDto: any,
   ) {
     try {
+      // Apply Zod defaults manually
+      const dto = {
+        ...rawDto,
+        order_discount_amount: rawDto.order_discount_amount ?? 0,
+        order_discount_percentage: rawDto.order_discount_percentage ?? 0,
+        shipping_amount: rawDto.shipping_amount ?? 0,
+        loyalty_points_used: rawDto.loyalty_points_used ?? 0,
+        is_taxable: rawDto.is_taxable ?? true,
+        tax_rate: rawDto.tax_rate ?? 14,
+        items: (rawDto.items || []).map((item: any) => ({
+          ...item,
+          discount_amount: item.discount_amount ?? 0,
+          discount_percentage: item.discount_percentage ?? 0,
+        })),
+      };
       const result = await this.salesService.createOrder(user.tenantId, user.id, dto);
       return { success: true, result };
     } catch (error: any) {
