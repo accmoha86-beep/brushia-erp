@@ -52,10 +52,17 @@ export class POSService {
   }
 
   async createRegister(tenantId: string, userId: string, dto: any) {
+    // Auto-generate code if not provided
+    const codeResult = await this.db.queryOne(
+      `SELECT COUNT(*) + 1 as next FROM pos.registers WHERE tenant_id = $1`,
+      [tenantId],
+    );
+    const code = dto.code || `POS-${String(codeResult.next).padStart(3, '0')}`;
+
     const result = await this.db.query(
-      `INSERT INTO pos.registers (tenant_id, name, location_id, device_name, receipt_header, receipt_footer)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [tenantId, dto.name, dto.location_id, dto.device_name, dto.receipt_header, dto.receipt_footer],
+      `INSERT INTO pos.registers (tenant_id, name, code, location_id, device_name, receipt_header, receipt_footer)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [tenantId, dto.name, code, dto.location_id, dto.device_name, dto.receipt_header, dto.receipt_footer],
     );
 
     await this.audit.log({
@@ -215,7 +222,7 @@ export class POSService {
         ],
       );
 
-      await this.audit.logInTransaction(client, {
+      await this.audit.logWithinTransaction(client, {
         tenantId, userId,
         action: 'pos_session.closed',
         entity_type: 'pos_session',
