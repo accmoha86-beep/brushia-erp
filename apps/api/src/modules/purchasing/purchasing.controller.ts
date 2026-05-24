@@ -111,6 +111,14 @@ export class PurchasingController {
     return this.purchasingService.createGRN(user.tenantId, user.id, dto);
   }
 
+
+  @Put('grn/:id')
+  @RequirePermissions('purchasing:write')
+  @ApiOperation({ summary: 'Update draft GRN (notes, item quantities)' })
+  async updateGRN(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+    return this.purchasingService.updateGRN(user.tenantId, id, dto);
+  }
+
   @Post('grn/:id/accept')
   @RequirePermissions('purchasing:write')
   @ApiOperation({ summary: 'Accept/reject GRN items — updates stock levels' })
