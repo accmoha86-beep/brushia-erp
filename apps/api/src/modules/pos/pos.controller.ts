@@ -81,6 +81,26 @@ export class POSController {
     return this.posService.processSale(user.tenantId, user.id, dto);
   }
 
+  @Post('test-transaction')
+  @RequirePermissions('pos:create')
+  @ApiOperation({ summary: 'Debug POS transaction' })
+  async testTransaction(
+    @CurrentUser() user: any,
+    @Body() dto: any,
+  ) {
+    try {
+      return await this.posService.processSale(user.tenantId, user.id, dto);
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+        detail: error.detail,
+        code: error.code,
+        stack: error.stack?.split('\n').slice(0, 5),
+      };
+    }
+  }
+
   // ─── Held Orders ───────────────────────────────────────
   @Post('held-orders')
   @RequirePermissions('pos:create')
