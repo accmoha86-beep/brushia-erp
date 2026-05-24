@@ -23,7 +23,7 @@ interface LoyaltyTier {
   min_points: number;
   multiplier: number;
   color: string;
-  benefits: string[];
+  benefits: string[] | string;
   member_count: number;
 }
 
@@ -137,6 +137,11 @@ export default function LoyaltyPage() {
     purple: { border: 'border-l-purple-500', bg: 'bg-purple-50', icon: 'text-purple-600' },
   };
 
+  const parseBenefits = (b: any): string[] => {
+    if (Array.isArray(b)) return b;
+    if (typeof b === 'string' && b) return b.split(','). map(s => s.trim()).filter(Boolean);
+    return [];
+  };
   const totalCustomers = tiers.reduce((s, t) => s + (t.member_count || 0), 0);
   const filteredTx = txFilter === 'all' ? transactions : transactions.filter((t) => t.type === txFilter);
 
@@ -229,11 +234,11 @@ export default function LoyaltyPage() {
                         <span className="text-gray-500">Members</span>
                         <span className="font-medium text-gray-900">{tier.member_count || 0}</span>
                       </div>
-                      {tier.benefits && tier.benefits.length > 0 && (
+                      {parseBenefits(tier.benefits).length > 0 && (
                         <div className="border-t pt-3">
                           <p className="text-xs font-medium text-gray-600 mb-1">Benefits</p>
                           <ul className="space-y-1">
-                            {tier.benefits.map((b, i) => (
+                            {parseBenefits(tier.benefits).map((b, i) => (
                               <li key={i} className="flex items-center gap-1.5 text-xs text-gray-600">
                                 <Gift className="h-3 w-3 text-rose-400" />
                                 {b}
