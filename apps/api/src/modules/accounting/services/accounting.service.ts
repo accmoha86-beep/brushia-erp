@@ -119,6 +119,103 @@ export class AccountingService implements IAccountingService {
 
   // ═══════════════════════════════════════════════════════
   // JOURNAL ENTRIES
+
+  async getAccountById(tenantId: string, accountId: string) {
+    const account = await this.db.queryOne(
+      `SELECT coa.*, p.name as parent_name, p.account_number as parent_code
+       FROM accounting.chart_of_accounts coa
+       LEFT JOIN accounting.chart_of_accounts p ON p.id = coa.parent_id
+       WHERE coa.id = $1 AND coa.tenant_id = $2`,
+      [accountId, tenantId],
+    );
+    if (!account) throw new NotFoundException('Account not found');
+    return account;
+  }
+
+  async updateAccount(tenantId: string, userId: string, accountId: string, dto: any) {
+    const existing = await this.getAccountById(tenantId, accountId);
+    if (existing.is_system) throw new BadRequestException('Cannot modify system account');
+
+    // Check code uniqueness if changing
+    if (dto.account_number && dto.account_number !== existing.account_number) {
+      const dup = await this.db.queryOne(
+        `SELECT id FROM accounting.chart_of_accounts WHERE account_number = $1 AND tenant_id = $2 AND id != $3`,
+        [dto.account_number, tenantId, accountId],
+      );
+      if (dup) throw new ConflictException(`Account code "${dto.account_number}" already exists`);
+    }
+
+    // Prevent circular parent reference
+    if (dto.parent_id === accountId) throw new BadRequestException('Account cannot be its own parent');
+
+    const result = await this.db.query(
+      `UPDATE accounting.chart_of_accounts SET
+        account_number = COALESCE($1, account_number),
+        name = COALESCE($2, name),
+        name_ar = COALESCE($3, name_ar),
+        account_type = COALESCE($4, account_type),
+        parent_id = $5,
+        description = COALESCE($6, description),
+        is_bank_account = COALESCE($7, is_bank_account),
+        is_active = COALESCE($8, is_active),
+        currency = COALESCE($9, currency),
+        code = COALESCE($1, code),
+        updated_at = NOW()
+      WHERE id = $10 AND tenant_id = $11 RETURNING *`,
+      [
+        dto.account_number, dto.name, dto.name_ar, dto.account_type,
+        dto.parent_id !== undefined ? dto.parent_id : existing.parent_id,
+        dto.description, dto.is_bank_account, dto.is_active, dto.currency,
+        accountId, tenantId,
+      ],
+    );
+
+    await this.audit.log({
+      tenantId, userId,
+      action: 'account.updated',
+      entity_type: 'chart_of_accounts',
+      entity_id: accountId,
+      old_values: { name: existing.name, code: existing.account_number },
+      new_values: { name: dto.name || existing.name, code: dto.account_number || existing.account_number },
+    });
+
+    return result.rows[0];
+  }
+
+  async deleteAccount(tenantId: string, userId: string, accountId: string) {
+    const existing = await this.getAccountById(tenantId, accountId);
+    if (existing.is_system) throw new BadRequestException('Cannot delete system account');
+
+    // Check if account has children
+    const children = await this.db.queryOne(
+      `SELECT COUNT(*) as count FROM accounting.chart_of_accounts WHERE parent_id = $1 AND tenant_id = $2`,
+      [accountId, tenantId],
+    );
+    if (Number(children?.count) > 0) throw new BadRequestException('Cannot delete account with child accounts. Delete children first.');
+
+    // Check if account has journal lines
+    const lines = await this.db.queryOne(
+      `SELECT COUNT(*) as count FROM accounting.journal_lines WHERE account_id = $1`,
+      [accountId],
+    );
+    if (Number(lines?.count) > 0) throw new BadRequestException('Cannot delete account with journal entries. Account has been used in transactions.');
+
+    await this.db.query(
+      `DELETE FROM accounting.chart_of_accounts WHERE id = $1 AND tenant_id = $2`,
+      [accountId, tenantId],
+    );
+
+    await this.audit.log({
+      tenantId, userId,
+      action: 'account.deleted',
+      entity_type: 'chart_of_accounts',
+      entity_id: accountId,
+      old_values: { name: existing.name, code: existing.account_number },
+    });
+
+    return { deleted: true, id: accountId };
+  }
+
   // ═══════════════════════════════════════════════════════
 
   /**

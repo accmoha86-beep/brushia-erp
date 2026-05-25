@@ -50,6 +50,31 @@ export class AccountingController {
     return this.accountingService.getAccountTree(user.tenantId);
   }
 
+  @Get("accounts/:id")
+  @RequirePermissions("accounting:read")
+  @ApiOperation({ summary: "Get account by ID" })
+  async getAccountById(@CurrentUser() user: any, @Param("id") id: string) {
+    return this.accountingService.getAccountById(user.tenantId, id);
+  }
+
+  @Put("accounts/:id")
+  @RequirePermissions("accounting:write")
+  @ApiOperation({ summary: "Update account" })
+  async updateAccount(
+    @CurrentUser() user: any,
+    @Param("id") id: string,
+    @Body() dto: any,
+  ) {
+    return this.accountingService.updateAccount(user.tenantId, user.id, id, dto);
+  }
+
+  @Delete("accounts/:id")
+  @RequirePermissions("accounting:write")
+  @ApiOperation({ summary: "Delete account" })
+  async deleteAccount(@CurrentUser() user: any, @Param("id") id: string) {
+    return this.accountingService.deleteAccount(user.tenantId, user.id, id);
+  }
+
   // ─── Journal Entries ───────────────────────────────────
   @Post('journal-entries')
   @RequirePermissions('accounting:write')
