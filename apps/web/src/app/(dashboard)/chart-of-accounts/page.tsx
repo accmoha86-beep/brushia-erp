@@ -186,8 +186,6 @@ function AccountFormModal({ isOpen, onClose, onSave, account, parentAccount, all
     }
   }, [account, parentAccount, isOpen]);
 
-  if (!isOpen) return null;
-
   const isEdit = !!account;
   const flatAccounts = useMemo(() => {
     const flat: Account[] = [];
@@ -195,6 +193,8 @@ function AccountFormModal({ isOpen, onClose, onSave, account, parentAccount, all
     walk(allAccounts);
     return flat;
   }, [allAccounts]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
