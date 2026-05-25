@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, ShoppingCart, Package, Grid3X3, ShoppingBag, Users, Building2, FileText, Warehouse, Truck, BookOpen, Calculator, BarChart3, Tag, Crown, Settings, LogOut, Menu, X, Heart, ClipboardCheck, CalendarDays, MessageCircle, Store, DollarSign, Shield, PackageCheck, Receipt, Target, TrendingUp, ScanBarcode, } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Grid3X3, ShoppingBag, Users, Building2, FileText, Warehouse, Truck, BookOpen, Calculator, BarChart3, Tag, Crown, Settings, LogOut, Menu, X, Heart, ClipboardCheck, CalendarDays, MessageCircle, Store, DollarSign, Shield, PackageCheck, Receipt, Target, TrendingUp, ScanBarcode, Bell, AlertTriangle, ShieldAlert, Calendar, ArrowDown, ChevronDown, }  from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -47,6 +47,168 @@ const navigation = [
   { name: 'Users & Roles', href: '/users', icon: Shield },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
+
+
+/* ── Notification Center ── */
+function NotificationCenter() {
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = useCallback(async () => {
+    setLoading(true);
+    const notifs: any[] = [];
+    const getToken = () => {
+      try {
+        const raw = localStorage.getItem('brushia-auth');
+        if (raw) return JSON.parse(raw)?.state?.accessToken;
+      } catch {}
+      return localStorage.getItem('token');
+    };
+    const token = getToken();
+    const headers: any = token ? { Authorization: 'Bearer ' + token } : {};
+
+    try {
+      // Low stock alerts
+      const stockRes = await fetch('/api/v1/inventory/stock-levels', { headers });
+      if (stockRes.ok) {
+        const stockData = await stockRes.json();
+        const levels = Array.isArray(stockData) ? stockData : stockData?.data ?? stockData?.rows ?? [];
+        const lowStock = levels.filter((s: any) => Number(s.qty_on_hand ?? s.quantity ?? 0) < 10);
+        lowStock.slice(0, 5).forEach((s: any) => {
+          notifs.push({
+            id: 'stock-' + s.product_id,
+            type: 'warning',
+            icon: '📦',
+            title: 'Low Stock Alert',
+            message: (s.product_name || 'Product') + ' — only ' + Number(s.qty_on_hand ?? s.quantity ?? 0) + ' left',
+            time: 'Now',
+          });
+        });
+        if (lowStock.length > 5) {
+          notifs.push({ id: 'stock-more', type: 'info', icon: '⚠️', title: 'More Low Stock', message: '+' + (lowStock.length - 5) + ' more products below threshold', time: 'Now' });
+        }
+      }
+    } catch {}
+
+    try {
+      // Pending orders
+      const ordersRes = await fetch('/api/v1/sales/orders', { headers });
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json();
+        const orders = Array.isArray(ordersData) ? ordersData : ordersData?.data ?? [];
+        const pending = orders.filter((o: any) => o.status === 'pending');
+        if (pending.length > 0) {
+          notifs.push({
+            id: 'orders-pending',
+            type: 'info',
+            icon: '🛒',
+            title: 'Pending Orders',
+            message: pending.length + ' order(s) awaiting confirmation',
+            time: 'Now',
+          });
+        }
+      }
+    } catch {}
+
+    try {
+      // Active promotions ending soon
+      const promoRes = await fetch('/api/v1/promotions', { headers });
+      if (promoRes.ok) {
+        const promos = await promoRes.json();
+        const promoList = Array.isArray(promos) ? promos : promos?.data ?? [];
+        const endingSoon = promoList.filter((p: any) => {
+          const end = new Date(p.ends_at || p.end_date);
+          const diff = end.getTime() - Date.now();
+          return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000; // within 7 days
+        });
+        if (endingSoon.length > 0) {
+          notifs.push({
+            id: 'promo-ending',
+            type: 'info',
+            icon: '🏷️',
+            title: 'Promotions Ending Soon',
+            message: endingSoon.length + ' promotion(s) ending within 7 days',
+            time: 'Soon',
+          });
+        }
+      }
+    } catch {}
+
+    if (notifs.length === 0) {
+      notifs.push({ id: 'none', type: 'success', icon: '✅', title: 'All Clear!', message: 'No urgent notifications', time: 'Now' });
+    }
+
+    setNotifications(notifs);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 5 * 60 * 1000); // refresh every 5 min
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const urgentCount = notifications.filter(n => n.type === 'warning' || n.type === 'error').length;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => { setOpen(!open); if (!open) fetchNotifications(); }}
+        className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition">
+        <Bell className="h-5 w-5" />
+        {urgentCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+            {urgentCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+          <div className="bg-gradient-to-r from-rose-500 to-pink-600 px-4 py-3 text-white">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Notifications</h3>
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{notifications.length}</span>
+            </div>
+          </div>
+          <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin h-5 w-5 border-2 border-rose-500 border-t-transparent rounded-full" />
+              </div>
+            ) : notifications.map(n => (
+              <div key={n.id} className={cn('px-4 py-3 hover:bg-gray-50 transition', n.type === 'warning' && 'bg-amber-50/50')}>
+                <div className="flex gap-3">
+                  <span className="text-lg flex-shrink-0">{n.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">{n.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
+                  </div>
+                  <span className="text-[10px] text-gray-400 whitespace-nowrap">{n.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t px-4 py-2 bg-gray-50">
+            <button onClick={() => fetchNotifications()} className="text-xs text-rose-500 hover:text-rose-600 font-medium w-full text-center">
+              Refresh
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -229,7 +391,8 @@ export default function DashboardLayout({
             </h2>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <NotificationCenter />
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               System Online
