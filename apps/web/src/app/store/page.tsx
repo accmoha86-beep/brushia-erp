@@ -11,9 +11,14 @@ interface Product {
 interface CartItem { product: Product; quantity: number; }
 
 async function publicFetch(path: string) {
-  const res = await fetch('/api/v1' + path);
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch('/api/v1' + path);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 function ProductCard({ product, onAddToCart, onQuickView }: { product: Product; onAddToCart: (p: Product) => void; onQuickView: (p: Product) => void }) {
@@ -445,13 +450,7 @@ export default function StorePage() {
         </div>
       )}
 
-      <style jsx global>{`
-        @keyframes slide-in-right {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
-      `}</style>
+
     </div>
   );
 }
