@@ -9,7 +9,7 @@ function getToken() {
     const raw = localStorage.getItem('brushia-auth');
     if (!raw) return '';
     const parsed = JSON.parse(raw);
-    return parsed?.state?.token || '';
+    return parsed?.state?.accessToken || parsed?.state?.token || localStorage.getItem('token') || '';
   } catch { return ''; }
 }
 
