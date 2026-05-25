@@ -1,27 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-// Direct fetch helper — bypasses api-client to avoid zustand rehydration race
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem('brushia-auth');
-    if (!raw) return null;
-    return JSON.parse(raw)?.state?.accessToken || null;
-  } catch { return null; }
-}
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const token = getToken();
-  const res = await fetch('/api/v1' + path, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
-}
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { formatEGP, cn } from '@/lib/utils';
 import {
   Package, Users, ShoppingBag, Wallet, AlertTriangle, TrendingUp,
@@ -57,73 +37,117 @@ function ProgressRing({ pct, size = 44, stroke = 4, color }: { pct: number; size
   );
 }
 
-export default function DashboardPage() {
-  const [data, setData] = useState<any>({});
-  const [loading, setLoading] = useState(true);
+interface DashData {
+  productCount: number;
+  categoryCount: number;
+  orderCount: number;
+  stockItems: number;
+  totalUnits: number;
+  lowStock: any[];
+  recentProducts: any[];
+  customerStats: any;
+  activePromos: any[];
+  totalRevenue: number;
+  avgOrderValue: number;
+  todayRevenue: number;
+  todaysOrders: any[];
+  statusCounts: Record<string, number>;
+  channelCounts: Record<string, number>;
+  channelRevenue: Record<string, number>;
+  paymentCounts: Record<string, number>;
+  last7: number[];
+  totalCommission: number;
+  commArr: any[];
+  branchArr: any[];
+  retailBranches: number;
+  exhibitionBranches: number;
+  warehouseBranches: number;
+  orderArr: any[];
+}
 
-  const fetchDashboard = useCallback(async () => {
+export default function DashboardPage() {
+  const [data, setData] = useState<DashData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboard = async () => {
     setLoading(true);
+    setError(null);
     try {
+      // Get token directly from localStorage
+      let token: string | null = null;
+      try {
+        const raw = localStorage.getItem('brushia-auth');
+        if (raw) token = JSON.parse(raw)?.state?.accessToken || null;
+      } catch {}
+
+      if (!token) {
+        setError('No auth token found');
+        setLoading(false);
+        return;
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+
+      const fetchJSON = async (path: string) => {
+        const res = await fetch(`/api/v1${path}`, { headers });
+        if (!res.ok) throw new Error(`${path} returned ${res.status}`);
+        return res.json();
+      };
+
       const [products, categories, stock, orders, customers, promotions, commissions, branches] = await Promise.all([
-        apiFetch<any>('/catalog/products?limit=10').catch(() => ({ data: [], total: 0 })),
-        apiFetch<any>('/catalog/categories').catch(() => ({ data: [] })),
-        apiFetch<any>('/inventory/stock?limit=200').catch(() => ({ data: [] })),
-        apiFetch<any>('/sales/orders').catch(() => ({ data: [] })),
-        apiFetch<any>('/customers/stats').catch(() => ({})),
-        apiFetch<any>('/promotions').catch(() => ({ data: [] })),
-        apiFetch<any>('/commissions').catch(() => ({ data: [] })),
-        apiFetch<any>('/branches').catch(() => ({ data: [] })),
+        fetchJSON('/catalog/products?limit=50').catch(() => ({ data: [], pagination: { total: 0 } })),
+        fetchJSON('/catalog/categories').catch(() => ({ data: [] })),
+        fetchJSON('/inventory/stock?limit=200').catch(() => ({ data: [] })),
+        fetchJSON('/sales/orders').catch(() => ({ data: [] })),
+        fetchJSON('/customers/stats').catch(() => ({})),
+        fetchJSON('/promotions').catch(() => ({ data: [] })),
+        fetchJSON('/commissions').catch(() => ({ data: [] })),
+        fetchJSON('/branches').catch(() => ({ data: [] })),
       ]);
 
-      const stockArr = stock?.data || [];
+      const stockArr = Array.isArray(stock?.data) ? stock.data : [];
       const lowStock = stockArr
         .filter((s: any) => Number(s.qty_on_hand) <= Math.max(Number(s.reorder_point) || 50, 50))
         .sort((a: any, b: any) => Number(a.qty_on_hand) - Number(b.qty_on_hand));
-      const prodArr = products?.data || [];
+      const prodArr = Array.isArray(products?.data) ? products.data : [];
       const prodTotal = products?.pagination?.total || prodArr.length;
-      const orderArr = orders?.data || orders || [];
-      const promoArr = promotions?.data || promotions || [];
-      const commArr = commissions?.data || commissions || [];
-      const branchArr = branches?.data || branches || [];
-      const catArr = categories?.data || categories || [];
+      const orderArr = Array.isArray(orders?.data) ? orders.data : Array.isArray(orders) ? orders : [];
+      const promoArr = Array.isArray(promotions?.data) ? promotions.data : Array.isArray(promotions) ? promotions : [];
+      const commArr = Array.isArray(commissions?.data) ? commissions.data : Array.isArray(commissions) ? commissions : [];
+      const branchArr = Array.isArray(branches?.data) ? branches.data : Array.isArray(branches) ? branches : [];
+      const catArr = Array.isArray(categories?.data) ? categories.data : Array.isArray(categories) ? categories : [];
 
-      // Revenue calculations
+      // Revenue (values from API are in piasters — bigint stored as string)
       const totalRevenue = orderArr.reduce((s: number, o: any) => s + (Number(o.paid_amount) || Number(o.grand_total) || 0), 0);
       const avgOrderValue = orderArr.length > 0 ? totalRevenue / orderArr.length : 0;
 
-      // Today's orders
       const today = new Date().toISOString().split('T')[0];
       const todaysOrders = orderArr.filter((o: any) => o.created_at?.startsWith(today));
       const todayRevenue = todaysOrders.reduce((s: number, o: any) => s + (Number(o.paid_amount) || Number(o.grand_total) || 0), 0);
 
-      // Orders by status
       const statusCounts = orderArr.reduce((acc: any, o: any) => {
-        acc[o.status] = (acc[o.status] || 0) + 1;
-        return acc;
-      }, {});
+        acc[o.status] = (acc[o.status] || 0) + 1; return acc;
+      }, {} as Record<string, number>);
 
-      // Orders by channel
       const channelCounts = orderArr.reduce((acc: any, o: any) => {
         const ch = o.channel || o.source || 'pos';
-        acc[ch] = (acc[ch] || 0) + 1;
-        return acc;
-      }, {});
+        acc[ch] = (acc[ch] || 0) + 1; return acc;
+      }, {} as Record<string, number>);
 
-      // Revenue by channel
       const channelRevenue = orderArr.reduce((acc: any, o: any) => {
         const ch = o.channel || o.source || 'pos';
-        acc[ch] = (acc[ch] || 0) + (Number(o.paid_amount) || Number(o.grand_total) || 0);
-        return acc;
-      }, {});
+        acc[ch] = (acc[ch] || 0) + (Number(o.paid_amount) || Number(o.grand_total) || 0); return acc;
+      }, {} as Record<string, number>);
 
-      // Payment method breakdown
       const paymentCounts = orderArr.reduce((acc: any, o: any) => {
-        const pm = o.payment_method || 'unknown';
-        acc[pm] = (acc[pm] || 0) + 1;
-        return acc;
-      }, {});
+        const pm = o.payment_method || o.method || 'unknown';
+        acc[pm] = (acc[pm] || 0) + 1; return acc;
+      }, {} as Record<string, number>);
 
-      // Generate daily revenue for last 7 days (mini chart)
       const last7 = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(); d.setDate(d.getDate() - (6 - i));
         const ds = d.toISOString().split('T')[0];
@@ -132,24 +156,19 @@ export default function DashboardPage() {
           .reduce((s: number, o: any) => s + (Number(o.paid_amount) || Number(o.grand_total) || 0), 0);
       });
 
-      // Total inventory value (using cost_price from products)
       const totalUnits = stockArr.reduce((s: number, i: any) => s + (Number(i.qty_on_hand) || 0), 0);
 
-      // Top products (by price for now — would be by sales qty in production)
       const topProducts = [...prodArr]
         .map((p: any) => ({ ...p, price: Number(p.base_price) || 0 }))
         .sort((a: any, b: any) => b.price - a.price)
         .slice(0, 6);
 
-      // Commission totals
       const totalCommission = commArr.reduce((s: number, c: any) => s + (Number(c.total_commission) || 0), 0);
 
-      // Active promos
       const activePromos = promoArr.filter((p: any) =>
         p.status === 'active' || p.is_active === true || p.is_active === 'true'
       );
 
-      // Branch breakdown
       const retailBranches = branchArr.filter((b: any) => b.type === 'retail').length;
       const exhibitionBranches = branchArr.filter((b: any) => b.type === 'exhibition').length;
       const warehouseBranches = branchArr.filter((b: any) => b.type === 'warehouse').length;
@@ -162,7 +181,7 @@ export default function DashboardPage() {
         totalUnits,
         lowStock,
         recentProducts: topProducts,
-        customerStats: customers,
+        customerStats: customers || {},
         activePromos,
         totalRevenue,
         avgOrderValue,
@@ -181,434 +200,413 @@ export default function DashboardPage() {
         warehouseBranches,
         orderArr,
       });
-    } catch (e) { console.error('Dashboard error', e); }
+    } catch (e: any) {
+      console.error('Dashboard fetch error:', e);
+      setError(e?.message || 'Failed to load dashboard');
+    }
     setLoading(false);
+  };
+
+  useEffect(() => {
+    // Small delay to allow zustand rehydration
+    const timer = setTimeout(() => fetchDashboard(), 300);
+    return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
-
   const paymentLabels: Record<string, { label: string; icon: any; color: string }> = {
-    cash: { label: 'Cash', icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
+    cash: { label: 'Cash', icon: Wallet, color: 'text-emerald-600 bg-emerald-50' },
     card: { label: 'Card', icon: CreditCard, color: 'text-blue-600 bg-blue-50' },
-    vodafone_cash: { label: 'Vodafone Cash', icon: Wallet, color: 'text-red-600 bg-red-50' },
-    instapay: { label: 'InstaPay', icon: Activity, color: 'text-purple-600 bg-purple-50' },
+    vodafone_cash: { label: 'Vodafone Cash', icon: DollarSign, color: 'text-red-600 bg-red-50' },
+    instapay: { label: 'InstaPay', icon: DollarSign, color: 'text-purple-600 bg-purple-50' },
     unknown: { label: 'Other', icon: DollarSign, color: 'text-gray-600 bg-gray-50' },
   };
 
-  const channelLabels: Record<string, { label: string; color: string; bg: string }> = {
-    pos: { label: 'POS', color: 'text-rose-700', bg: 'bg-rose-100' },
-    whatsapp: { label: 'WhatsApp', color: 'text-green-700', bg: 'bg-green-100' },
-    online: { label: 'E-commerce', color: 'text-blue-700', bg: 'bg-blue-100' },
-    exhibition: { label: 'Exhibition', color: 'text-amber-700', bg: 'bg-amber-100' },
+  const channelLabels: Record<string, { label: string; color: string }> = {
+    pos: { label: 'POS', color: 'bg-emerald-500' },
+    whatsapp: { label: 'WhatsApp', color: 'bg-green-500' },
+    exhibition: { label: 'Exhibition', color: 'bg-purple-500' },
+    ecommerce: { label: 'E-Commerce', color: 'bg-blue-500' },
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-3 border-rose-500 border-t-transparent mx-auto mb-4" />
-        <p className="text-sm text-gray-500 animate-pulse">Loading dashboard...</p>
-      </div>
-    </div>
-  );
-
-  const paidPct = data.orderCount > 0
+  const paidPct = data && data.orderCount > 0
     ? Math.round(((data.statusCounts?.confirmed || 0) + (data.statusCounts?.completed || 0)) / data.orderCount * 100)
     : 0;
 
+  // Safe formatEGP wrapper — values from API are in piasters (pennies)
+  const fmtMoney = (piasters: number | undefined | null) => {
+    const val = Number(piasters) || 0;
+    return formatEGP(val);
+  };
+
   return (
-    <div className="p-4 md:p-6 max-w-[1440px] mx-auto space-y-6">
-      {/* ═══ Header ═══ */}
-      <div className="flex items-center justify-between">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 via-white to-rose-50/30 p-6 lg:p-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-rose-500" /> Dashboard
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Welcome back to <span className="font-semibold text-rose-600">Brushia</span> ERP &mdash; {new Date().toLocaleDateString('en-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <p className="text-sm text-gray-500 mt-1">
+            Welcome back to <span className="text-rose-500 font-semibold">Brushia</span> ERP — {new Date().toLocaleDateString('en-EG', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={fetchDashboard} className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-            <RefreshCw className="h-4 w-4 text-gray-500" />
+        <div className="flex items-center gap-3">
+          <button onClick={fetchDashboard} disabled={loading} className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50">
+            <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
           </button>
-          <a href="/pos" className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 px-5 py-2.5 text-sm font-medium text-white hover:from-rose-600 hover:to-pink-600 shadow-lg shadow-rose-200 transition-all">
+          <Link href="/pos" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 text-white text-sm font-medium shadow-lg shadow-rose-200 hover:shadow-xl transition-all">
             <Sparkles className="h-4 w-4" /> Open POS
-          </a>
+          </Link>
         </div>
       </div>
 
-      {/* ═══ KPI Cards Row 1 — Revenue ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Revenue */}
-        <div className="rounded-2xl border bg-gradient-to-br from-rose-50 to-white p-5 relative overflow-hidden">
-          <div className="absolute top-3 right-3 opacity-10"><DollarSign className="h-16 w-16 text-rose-500" /></div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-xl bg-rose-100 flex items-center justify-center"><DollarSign className="h-5 w-5 text-rose-600" /></div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Revenue</span>
+      {/* Error state */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Dashboard Error</p>
+            <p className="text-xs text-red-600">{error}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{formatEGP(data.totalRevenue / 100)}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <MiniBarChart data={data.last7 || []} color="bg-rose-400" />
-            <span className="text-[10px] text-gray-400 ml-1">7-day trend</span>
-          </div>
+          <button onClick={fetchDashboard} className="ml-auto px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200">Retry</button>
         </div>
+      )}
 
-        {/* Today's Sales */}
-        <div className="rounded-2xl border bg-gradient-to-br from-emerald-50 to-white p-5 relative overflow-hidden">
-          <div className="absolute top-3 right-3 opacity-10"><TrendingUp className="h-16 w-16 text-emerald-500" /></div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-xl bg-emerald-100 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-emerald-600" /></div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Today&apos;s Sales</span>
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{formatEGP(data.todayRevenue / 100)}</p>
-          <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-            <ShoppingBag className="h-3 w-3" /> {data.todaysOrders?.length || 0} orders today
-          </p>
-        </div>
-
-        {/* Orders */}
-        <div className="rounded-2xl border bg-gradient-to-br from-blue-50 to-white p-5 relative overflow-hidden">
-          <div className="absolute top-3 right-3 opacity-10"><ShoppingBag className="h-16 w-16 text-blue-500" /></div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center"><ShoppingBag className="h-5 w-5 text-blue-600" /></div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Orders</span>
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{data.orderCount}</p>
-          <p className="text-xs text-gray-400 mt-2">Avg {formatEGP(data.avgOrderValue / 100)} / order</p>
-        </div>
-
-        {/* Customers */}
-        <div className="rounded-2xl border bg-gradient-to-br from-purple-50 to-white p-5 relative overflow-hidden">
-          <div className="absolute top-3 right-3 opacity-10"><Users className="h-16 w-16 text-purple-500" /></div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center"><Users className="h-5 w-5 text-purple-600" /></div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Customers</span>
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{data.customerStats?.total_customers || 0}</p>
-          <div className="flex items-center gap-3 mt-2 text-[10px]">
-            <span className="text-gray-400">{data.customerStats?.retail_count || 0} retail</span>
-            <span className="text-purple-500 font-medium">{data.customerStats?.wholesale_count || 0} wholesale</span>
-            <span className="text-amber-500 font-medium">⭐ {data.customerStats?.vip_count || 0} VIP</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ KPI Cards Row 2 — Operations ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Products */}
-        <div className="rounded-2xl border bg-white p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-pink-100 flex items-center justify-center"><Package className="h-4 w-4 text-pink-600" /></div>
-              <span className="text-xs font-medium text-gray-500">Products</span>
+      {/* Loading state */}
+      {loading && !data && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-24 mb-4" />
+              <div className="h-8 bg-gray-200 rounded w-32" />
             </div>
-            <a href="/products" className="text-rose-500 hover:text-rose-600"><ArrowRight className="h-4 w-4" /></a>
-          </div>
-          <p className="text-2xl font-bold">{data.productCount}</p>
-          <p className="text-[10px] text-gray-400 mt-1">{data.categoryCount} categories</p>
+          ))}
         </div>
+      )}
 
-        {/* Inventory */}
-        <div className="rounded-2xl border bg-white p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center"><Wallet className="h-4 w-4 text-emerald-600" /></div>
-              <span className="text-xs font-medium text-gray-500">Inventory</span>
-            </div>
-            <a href="/inventory" className="text-rose-500 hover:text-rose-600"><ArrowRight className="h-4 w-4" /></a>
-          </div>
-          <p className="text-2xl font-bold">{data.totalUnits?.toLocaleString()}</p>
-          <p className="text-[10px] text-gray-400 mt-1">{data.stockItems} stock records</p>
-        </div>
-
-        {/* Promotions */}
-        <div className="rounded-2xl border bg-white p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center"><Tag className="h-4 w-4 text-amber-600" /></div>
-              <span className="text-xs font-medium text-gray-500">Active Promos</span>
-            </div>
-            <a href="/promotions" className="text-rose-500 hover:text-rose-600"><ArrowRight className="h-4 w-4" /></a>
-          </div>
-          <p className="text-2xl font-bold">{data.activePromos?.length || 0}</p>
-          <p className="text-[10px] text-gray-400 mt-1">running campaigns</p>
-        </div>
-
-        {/* Branches */}
-        <div className="rounded-2xl border bg-white p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center"><MapPin className="h-4 w-4 text-indigo-600" /></div>
-              <span className="text-xs font-medium text-gray-500">Branches</span>
-            </div>
-            <a href="/settings" className="text-rose-500 hover:text-rose-600"><ArrowRight className="h-4 w-4" /></a>
-          </div>
-          <p className="text-2xl font-bold">{data.branchArr?.length || 0}</p>
-          <div className="flex items-center gap-2 mt-1 text-[10px]">
-            <span className="text-gray-400">{data.retailBranches} retail</span>
-            <span className="text-amber-500">{data.exhibitionBranches} exhibition</span>
-            <span className="text-blue-500">{data.warehouseBranches} warehouse</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ Middle Row: Low Stock + Sales by Channel + Payment Methods ═══ */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Low Stock Alerts */}
-        <div className="rounded-2xl border bg-white p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-500" /> Low Stock Alerts
-            </h3>
-            <span className={cn('text-xs px-2.5 py-1 rounded-full font-medium',
-              (data.lowStock?.length || 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')}>
-              {data.lowStock?.length || 0} items
-            </span>
-          </div>
-          {(data.lowStock || []).length === 0 ? (
-            <div className="text-center py-8">
-              <CheckCircle2 className="h-10 w-10 text-emerald-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">All stock levels healthy!</p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
-              {(data.lowStock || []).slice(0, 8).map((s: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-red-50/50 border border-red-100/50">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{s.product_name}</p>
-                      <p className="text-[10px] text-gray-400">{s.warehouse_name || 'Main Warehouse'}</p>
-                    </div>
-                  </div>
-                  <span className={cn('text-sm font-bold px-2 py-0.5 rounded-lg',
-                    Number(s.qty_on_hand) <= 10 ? 'text-red-700 bg-red-100' :
-                    Number(s.qty_on_hand) <= 30 ? 'text-amber-700 bg-amber-100' : 'text-orange-700 bg-orange-100')}>
-                    {Number(s.qty_on_hand)}
-                  </span>
+      {/* Data loaded */}
+      {data && (
+        <>
+          {/* KPI Row 1 — Primary Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Total Revenue */}
+            <div className="relative overflow-hidden bg-white rounded-2xl p-6 border border-rose-100 shadow-sm">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-100 to-rose-50 rounded-bl-[60px] opacity-60" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 rounded-lg bg-rose-50"><DollarSign className="h-4 w-4 text-rose-500" /></div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Revenue</span>
                 </div>
-              ))}
-            </div>
-          )}
-          <a href="/inventory" className="flex items-center justify-center gap-1 mt-3 text-xs text-rose-500 hover:text-rose-600 font-medium">
-            View All Inventory <ArrowRight className="h-3 w-3" />
-          </a>
-        </div>
-
-        {/* Sales by Channel */}
-        <div className="rounded-2xl border bg-white p-5">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-blue-500" /> Sales by Channel
-          </h3>
-          <div className="space-y-3">
-            {Object.entries(data.channelRevenue || {}).map(([ch, rev]: [string, any]) => {
-              const cfg = channelLabels[ch] || { label: ch, color: 'text-gray-700', bg: 'bg-gray-100' };
-              const pct = data.totalRevenue > 0 ? (rev / data.totalRevenue * 100) : 0;
-              return (
-                <div key={ch}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase', cfg.bg, cfg.color)}>{cfg.label}</span>
-                      <span className="text-xs text-gray-400">{data.channelCounts?.[ch] || 0} orders</span>
-                    </div>
-                    <span className="text-sm font-bold text-gray-800">{formatEGP(rev / 100)}</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={cn('h-full rounded-full transition-all duration-700', ch === 'pos' ? 'bg-rose-400' : ch === 'whatsapp' ? 'bg-green-400' : ch === 'online' ? 'bg-blue-400' : 'bg-amber-400')}
-                      style={{ width: `${Math.max(pct, 3)}%` }} />
-                  </div>
+                <p className="text-2xl font-bold text-gray-900">{fmtMoney(data.totalRevenue)}</p>
+                <div className="flex items-center gap-3 mt-3">
+                  <MiniBarChart data={data.last7 || []} color="bg-rose-400" />
                 </div>
-              );
-            })}
-            {Object.keys(data.channelRevenue || {}).length === 0 && (
-              <div className="text-center py-8">
-                <BarChart3 className="h-10 w-10 text-gray-200 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No sales data yet</p>
+                <p className="text-[10px] text-gray-400 mt-1">7-day trend</p>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Order Status Summary */}
-          <div className="mt-5 pt-4 border-t">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Order Status</h4>
-            <div className="flex items-center justify-center gap-2">
-              <div className="relative flex items-center justify-center">
-                <ProgressRing pct={paidPct} color="#10b981" />
-                <span className="absolute text-[10px] font-bold text-gray-700">{paidPct}%</span>
+            {/* Today's Sales */}
+            <div className="relative overflow-hidden bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-bl-[60px] opacity-60" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 rounded-lg bg-emerald-50"><TrendingUp className="h-4 w-4 text-emerald-500" /></div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Today&apos;s Sales</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{fmtMoney(data.todayRevenue)}</p>
+                <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                  <ShoppingBag className="h-3 w-3" /> {data.todaysOrders?.length || 0} orders today
+                </p>
               </div>
-              <div className="text-xs space-y-1 ml-2">
-                <div className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-emerald-500" /><span className="text-gray-600">{(data.statusCounts?.confirmed || 0) + (data.statusCounts?.completed || 0)} confirmed</span></div>
-                <div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-amber-500" /><span className="text-gray-600">{data.statusCounts?.pending || 0} pending</span></div>
-                <div className="flex items-center gap-1.5"><XCircle className="h-3 w-3 text-red-400" /><span className="text-gray-600">{data.statusCounts?.cancelled || 0} cancelled</span></div>
+            </div>
+
+            {/* Total Orders */}
+            <div className="relative overflow-hidden bg-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-50 rounded-bl-[60px] opacity-60" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 rounded-lg bg-blue-50"><ShoppingBag className="h-4 w-4 text-blue-500" /></div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Orders</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{data.orderCount}</p>
+                <p className="text-xs text-gray-400 mt-2">Avg {fmtMoney(data.avgOrderValue)} / order</p>
+              </div>
+            </div>
+
+            {/* Customers */}
+            <div className="relative overflow-hidden bg-white rounded-2xl p-6 border border-purple-100 shadow-sm">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-100 to-purple-50 rounded-bl-[60px] opacity-60" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 rounded-lg bg-purple-50"><Users className="h-4 w-4 text-purple-500" /></div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Customers</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{data.customerStats?.total_customers || 0}</p>
+                <div className="flex items-center gap-2 mt-2 text-xs flex-wrap">
+                  <span className="text-gray-400">{data.customerStats?.retail_count || 0} retail</span>
+                  <span className="text-purple-500 font-medium">{data.customerStats?.wholesale_count || 0} wholesale</span>
+                  <span className="text-amber-500 font-medium">⭐ {data.customerStats?.vip_count || 0} VIP</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Payment Methods */}
-        <div className="rounded-2xl border bg-white p-5">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-violet-500" /> Payment Methods
-          </h3>
-          <div className="space-y-3">
-            {Object.entries(data.paymentCounts || {}).map(([pm, count]: [string, any]) => {
-              const cfg = paymentLabels[pm] || paymentLabels.unknown;
-              const Icon = cfg.icon;
-              const pct = data.orderCount > 0 ? (count / data.orderCount * 100) : 0;
-              return (
-                <div key={pm} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-                  <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center', cfg.color.split(' ')[1])}>
-                    <Icon className={cn('h-4 w-4', cfg.color.split(' ')[0])} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">{cfg.label}</span>
-                      <span className="text-sm font-bold text-gray-900">{count}</span>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
-                      <div className="h-full bg-violet-400 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-medium w-10 text-right">{Math.round(pct)}%</span>
-                </div>
-              );
-            })}
-            {Object.keys(data.paymentCounts || {}).length === 0 && (
-              <div className="text-center py-8">
-                <CreditCard className="h-10 w-10 text-gray-200 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No payment data yet</p>
-              </div>
-            )}
-          </div>
-
-          {/* Commission Summary */}
-          {(data.commArr || []).length > 0 && (
-            <div className="mt-5 pt-4 border-t">
-              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1">
-                <Award className="h-3 w-3" /> Commission Summary
-              </h4>
+          {/* KPI Row 2 — Quick Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Link href="/products" className="group bg-white rounded-xl p-4 border border-gray-100 hover:border-rose-200 hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{data.commArr.length} salespersons</span>
-                <span className="text-sm font-bold text-violet-600">{formatEGP(data.totalCommission / 100)}</span>
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-rose-50"><Package className="h-3.5 w-3.5 text-rose-500" /></div>
+                  <span className="text-xs font-medium text-gray-500">Products</span>
+                </div>
+                <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-rose-400 transition-colors" />
+              </div>
+              <p className="text-2xl font-bold mt-2">{data.productCount}</p>
+              <p className="text-[10px] text-gray-400 mt-1">{data.categoryCount} categories</p>
+            </Link>
+
+            <Link href="/inventory" className="group bg-white rounded-xl p-4 border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-50"><Package className="h-3.5 w-3.5 text-emerald-500" /></div>
+                  <span className="text-xs font-medium text-gray-500">Inventory</span>
+                </div>
+                <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-emerald-400 transition-colors" />
+              </div>
+              <p className="text-2xl font-bold mt-2">{data.totalUnits?.toLocaleString()}</p>
+              <p className="text-[10px] text-gray-400 mt-1">{data.stockItems} stock records</p>
+            </Link>
+
+            <Link href="/promotions" className="group bg-white rounded-xl p-4 border border-gray-100 hover:border-amber-200 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-amber-50"><Tag className="h-3.5 w-3.5 text-amber-500" /></div>
+                  <span className="text-xs font-medium text-gray-500">Active Promos</span>
+                </div>
+                <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-amber-400 transition-colors" />
+              </div>
+              <p className="text-2xl font-bold mt-2">{data.activePromos?.length || 0}</p>
+              <p className="text-[10px] text-gray-400 mt-1">running campaigns</p>
+            </Link>
+
+            <Link href="/branches" className="group bg-white rounded-xl p-4 border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-blue-50"><MapPin className="h-3.5 w-3.5 text-blue-500" /></div>
+                  <span className="text-xs font-medium text-gray-500">Branches</span>
+                </div>
+                <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-blue-400 transition-colors" />
+              </div>
+              <p className="text-2xl font-bold mt-2">{data.branchArr?.length || 0}</p>
+              <div className="flex items-center gap-1.5 mt-1 text-[10px]">
+                <span className="text-gray-400">{data.retailBranches} retail</span>
+                <span className="text-amber-500">{data.exhibitionBranches} exhibition</span>
+                <span className="text-blue-500">{data.warehouseBranches} warehouse</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Row 3 — Details */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Low Stock Alerts */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" /> Low Stock Alerts
+                </h3>
+                <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full',
+                  (data.lowStock?.length || 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')}>
+                  {data.lowStock?.length || 0} items
+                </span>
+              </div>
+              {(data.lowStock?.length || 0) > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {data.lowStock.slice(0, 8).map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 text-xs">
+                      <span className="font-medium text-gray-700 truncate flex-1">{item.product_name || item.name || 'Product'}</span>
+                      <span className={cn('font-bold ml-2', Number(item.qty_on_hand) <= 10 ? 'text-red-600' : 'text-amber-600')}>
+                        {item.qty_on_hand} units
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-300 mb-2" />
+                  <p className="text-sm">All stock levels healthy!</p>
+                </div>
+              )}
+              <Link href="/inventory" className="flex items-center gap-1 text-xs text-rose-500 font-medium mt-4 hover:text-rose-600">
+                View All Inventory <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            {/* Sales by Channel */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-4">
+                <BarChart3 className="h-4 w-4 text-blue-500" /> Sales by Channel
+              </h3>
+              {Object.keys(data.channelCounts || {}).length > 0 ? (
+                <div className="space-y-3">
+                  {Object.entries(data.channelCounts).map(([ch, count]) => {
+                    const info = channelLabels[ch] || { label: ch, color: 'bg-gray-500' };
+                    const rev = data.channelRevenue?.[ch] || 0;
+                    const pct = data.orderCount > 0 ? Math.round((Number(count) / data.orderCount) * 100) : 0;
+                    return (
+                      <div key={ch}>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-medium text-gray-700">{info.label}</span>
+                          <span className="text-gray-400">{String(count)} orders · {fmtMoney(Number(rev))}</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={cn('h-full rounded-full transition-all', info.color)} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                  <BarChart3 className="h-10 w-10 text-gray-200 mb-2" />
+                  <p className="text-sm">No sales data yet</p>
+                </div>
+              )}
+              <div className="border-t border-gray-100 mt-4 pt-4">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Order Status</p>
+                <div className="flex items-center gap-3">
+                  <ProgressRing pct={paidPct} color="#10b981" />
+                  <div className="text-xs space-y-0.5">
+                    <p className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-500" /> {data.statusCounts?.confirmed || 0} confirmed</p>
+                    <p className="flex items-center gap-1"><Clock className="h-3 w-3 text-amber-500" /> {data.statusCounts?.pending || 0} pending</p>
+                    <p className="flex items-center gap-1"><XCircle className="h-3 w-3 text-red-400" /> {data.statusCounts?.cancelled || 0} cancelled</p>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* ═══ Bottom: Recent Orders + Quick Actions + Top Products ═══ */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Orders */}
-        <div className="lg:col-span-2 rounded-2xl border bg-white p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-blue-500" /> Recent Orders
-            </h3>
-            <a href="/orders" className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 font-medium">
-              View All <ArrowRight className="h-3 w-3" />
-            </a>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-xs text-gray-500 uppercase">
-                  <th className="text-left pb-3 font-medium">Order #</th>
-                  <th className="text-left pb-3 font-medium">Channel</th>
-                  <th className="text-left pb-3 font-medium">Payment</th>
-                  <th className="text-right pb-3 font-medium">Amount</th>
-                  <th className="text-left pb-3 font-medium">Status</th>
-                  <th className="text-left pb-3 font-medium">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {(data.orderArr || []).slice(0, 6).map((o: any) => {
-                  const ch = o.channel || o.source || 'pos';
-                  const cfg = channelLabels[ch] || channelLabels.pos;
-                  const pmCfg = paymentLabels[o.payment_method] || paymentLabels.unknown;
-                  return (
-                    <tr key={o.id} className="hover:bg-gray-50/50">
-                      <td className="py-3 font-mono text-xs font-bold text-rose-600">{o.order_number}</td>
-                      <td className="py-3"><span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase', cfg.bg, cfg.color)}>{cfg.label}</span></td>
-                      <td className="py-3"><span className="text-xs text-gray-600">{pmCfg.label}</span></td>
-                      <td className="py-3 text-right font-bold text-gray-900">{formatEGP((Number(o.paid_amount) || Number(o.grand_total) || 0) / 100)}</td>
-                      <td className="py-3">
-                        <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full',
-                          o.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
-                          o.payment_status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600')}>
-                          {o.payment_status}
-                        </span>
-                      </td>
-                      <td className="py-3 text-xs text-gray-400">
-                        {new Date(o.created_at).toLocaleDateString('en-EG', { month: 'short', day: 'numeric' })}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {(data.orderArr || []).length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-gray-400 text-sm">No orders yet — open POS to start selling!</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Quick Actions + Top Products */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="rounded-2xl border bg-white p-5">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-rose-500" /> Quick Actions
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { href: '/pos', label: 'Open POS', icon: Sparkles, color: 'bg-gradient-to-r from-rose-50 to-pink-50 text-rose-600 hover:from-rose-100 hover:to-pink-100 border border-rose-100' },
-                { href: '/orders', label: 'Orders', icon: ShoppingBag, color: 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100' },
-                { href: '/inventory', label: 'Stock', icon: Package, color: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100' },
-                { href: '/customers', label: 'Customers', icon: Users, color: 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-100' },
-                { href: '/promotions', label: 'Promos', icon: Tag, color: 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-100' },
-                { href: '/reports', label: 'Reports', icon: BarChart3, color: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100' },
-                { href: '/shipping', label: 'Shipping', icon: Truck, color: 'bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100' },
-                { href: '/purchase-orders', label: 'Purchases', icon: TrendingUp, color: 'bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-100' },
-              ].map(a => (
-                <a key={a.href} href={a.href} className={cn('flex items-center gap-2 rounded-xl p-2.5 text-xs font-medium transition-all', a.color)}>
-                  <a.icon className="h-3.5 w-3.5" />{a.label}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Top Products */}
-          <div className="rounded-2xl border bg-white p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Star className="h-4 w-4 text-amber-500" /> Top Products
+            {/* Payment Methods */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-4">
+                <CreditCard className="h-4 w-4 text-purple-500" /> Payment Methods
               </h3>
-              <a href="/products" className="text-xs text-rose-500 hover:text-rose-600 font-medium flex items-center gap-1">
-                All <ArrowRight className="h-3 w-3" />
-              </a>
-            </div>
-            <div className="space-y-2">
-              {(data.recentProducts || []).map((p: any, i: number) => (
-                <div key={p.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                  <span className={cn('h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold',
-                    i === 0 ? 'bg-amber-100 text-amber-700' :
-                    i === 1 ? 'bg-gray-100 text-gray-600' :
-                    i === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400')}>
-                    {i + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">{p.sku}</p>
-                  </div>
-                  <span className="text-sm font-bold text-rose-600">{formatEGP(p.price / 100)}</span>
+              {Object.keys(data.paymentCounts || {}).length > 0 ? (
+                <div className="space-y-3">
+                  {Object.entries(data.paymentCounts).map(([pm, count]) => {
+                    const info = paymentLabels[pm] || paymentLabels.unknown;
+                    const Icon = info.icon;
+                    return (
+                      <div key={pm} className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50">
+                        <div className={cn('p-1.5 rounded-lg', info.color)}>
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-medium text-gray-700">{info.label}</p>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">{String(count)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                  <CreditCard className="h-10 w-10 text-gray-200 mb-2" />
+                  <p className="text-sm">No payment data yet</p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </div>
+
+          {/* Row 4 — Recent Orders + Quick Links */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Recent Orders */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4 text-rose-500" /> Recent Orders
+                </h3>
+                <Link href="/orders" className="text-xs text-rose-500 font-medium hover:text-rose-600">View All</Link>
+              </div>
+              {(data.orderArr?.length || 0) > 0 ? (
+                <div className="space-y-2">
+                  {data.orderArr.slice(0, 5).map((order: any) => (
+                    <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">{order.order_number}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {order.created_at ? new Date(order.created_at).toLocaleDateString('en-EG') : '—'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-gray-900">{fmtMoney(Number(order.paid_amount) || Number(order.grand_total) || 0)}</p>
+                        <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                          order.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                          order.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
+                        )}>{order.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                  <ShoppingBag className="h-10 w-10 text-gray-200 mb-2" />
+                  <p className="text-sm">No orders yet</p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-4">
+                <Activity className="h-4 w-4 text-purple-500" /> Quick Actions
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Link href="/pos" className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-100 hover:shadow-md transition-all group">
+                  <div className="p-2 rounded-lg bg-rose-100"><Sparkles className="h-4 w-4 text-rose-500" /></div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">Open POS</p>
+                    <p className="text-[10px] text-gray-400">Start selling</p>
+                  </div>
+                </Link>
+                <Link href="/orders" className="flex items-center gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100 hover:shadow-md transition-all group">
+                  <div className="p-2 rounded-lg bg-blue-100"><ShoppingBag className="h-4 w-4 text-blue-500" /></div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">Orders</p>
+                    <p className="text-[10px] text-gray-400">{data.orderCount} total</p>
+                  </div>
+                </Link>
+                <Link href="/products" className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100 hover:shadow-md transition-all group">
+                  <div className="p-2 rounded-lg bg-amber-100"><Package className="h-4 w-4 text-amber-500" /></div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">Products</p>
+                    <p className="text-[10px] text-gray-400">{data.productCount} items</p>
+                  </div>
+                </Link>
+                <Link href="/reports" className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100 hover:shadow-md transition-all group">
+                  <div className="p-2 rounded-lg bg-emerald-100"><BarChart3 className="h-4 w-4 text-emerald-500" /></div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">Reports</p>
+                    <p className="text-[10px] text-gray-400">Analytics</p>
+                  </div>
+                </Link>
+              </div>
+
+              {/* Commission Summary */}
+              {data.totalCommission > 0 && (
+                <div className="mt-4 p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Award className="h-4 w-4 text-amber-600" />
+                      <span className="text-xs font-medium text-gray-700">Total Commissions</span>
+                    </div>
+                    <span className="text-sm font-bold text-amber-700">{fmtMoney(data.totalCommission)}</span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">{data.commArr?.length || 0} salespersons</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
