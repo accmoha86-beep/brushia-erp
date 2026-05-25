@@ -53,16 +53,44 @@ export default function DashboardLayout({
   const { user, isAuthenticated, clearAuth } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Wait for zustand persist to finish rehydrating from localStorage
+    // before checking auth — prevents redirect race condition
+    const checkHydration = () => {
+      if (useAuthStore.persist?.hasHydrated?.()) {
+        setHydrated(true);
+      } else {
+        // Fallback: check localStorage directly
+        try {
+          const raw = localStorage.getItem('brushia-auth');
+          if (raw && JSON.parse(raw)?.state?.accessToken) {
+            setHydrated(true);
+            return;
+          }
+        } catch {}
+        // If not hydrated yet, check again in 100ms (max 2s)
+        setTimeout(checkHydration, 100);
+      }
+    };
+    checkHydration();
   }, []);
 
   useEffect(() => {
-    if (mounted && !isAuthenticated) {
+    if (mounted && hydrated && !isAuthenticated) {
+      // Double-check localStorage before redirecting
+      try {
+        const raw = localStorage.getItem('brushia-auth');
+        if (raw && JSON.parse(raw)?.state?.accessToken) {
+          // Token exists in localStorage but zustand hasn't synced — wait
+          return;
+        }
+      } catch {}
       router.push('/auth/login');
     }
-  }, [mounted, isAuthenticated, router]);
+  }, [mounted, hydrated, isAuthenticated, router]);
 
   // Hide sidebar on POS page
   const isPOS = pathname === '/pos';
