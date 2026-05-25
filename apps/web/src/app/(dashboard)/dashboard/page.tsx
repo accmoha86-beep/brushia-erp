@@ -1,7 +1,27 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api-client';
+// Direct fetch helper — bypasses api-client to avoid zustand rehydration race
+function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('brushia-auth');
+    if (!raw) return null;
+    return JSON.parse(raw)?.state?.accessToken || null;
+  } catch { return null; }
+}
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const token = getToken();
+  const res = await fetch('/api/v1' + path, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+    },
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
 import { formatEGP, cn } from '@/lib/utils';
 import {
   Package, Users, ShoppingBag, Wallet, AlertTriangle, TrendingUp,
@@ -45,14 +65,14 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [products, categories, stock, orders, customers, promotions, commissions, branches] = await Promise.all([
-        api.get<any>('/catalog/products', { limit: 10 }).catch(() => ({ data: [], total: 0 })),
-        api.get<any>('/catalog/categories').catch(() => ({ data: [] })),
-        api.get<any>('/inventory/stock', { limit: 200 }).catch(() => ({ data: [] })),
-        api.get<any>('/sales/orders').catch(() => ({ data: [] })),
-        api.get<any>('/customers/stats').catch(() => ({})),
-        api.get<any>('/promotions').catch(() => ({ data: [] })),
-        api.get<any>('/commissions').catch(() => ({ data: [] })),
-        api.get<any>('/branches').catch(() => ({ data: [] })),
+        apiFetch<any>('/catalog/products?limit=10').catch(() => ({ data: [], total: 0 })),
+        apiFetch<any>('/catalog/categories').catch(() => ({ data: [] })),
+        apiFetch<any>('/inventory/stock?limit=200').catch(() => ({ data: [] })),
+        apiFetch<any>('/sales/orders').catch(() => ({ data: [] })),
+        apiFetch<any>('/customers/stats').catch(() => ({})),
+        apiFetch<any>('/promotions').catch(() => ({ data: [] })),
+        apiFetch<any>('/commissions').catch(() => ({ data: [] })),
+        apiFetch<any>('/branches').catch(() => ({ data: [] })),
       ]);
 
       const stockArr = stock?.data || [];
