@@ -49,3 +49,71 @@
     @apply bg-white/80 dark:bg-dark/80 backdrop-blur-lg;
   }
 }
+
+/* ── Mobile Responsive Enhancements ── */
+@media (max-width: 640px) {
+  /* Tables become scrollable */
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+  
+  /* Smaller padding on mobile */
+  .p-6 { padding: 1rem; }
+  .px-6 { padding-left: 1rem; padding-right: 1rem; }
+  .py-6 { padding-top: 1rem; padding-bottom: 1rem; }
+  
+  /* Stack grid items on mobile */
+  .grid-cols-2 { grid-template-columns: 1fr !important; }
+  .grid-cols-3 { grid-template-columns: 1fr !important; }
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  
+  /* Full-width buttons on mobile */
+  .mobile-full { width: 100% !important; }
+  
+  /* Hide non-essential elements */
+  .mobile-hide { display: none !important; }
+  
+  /* Adjust font sizes */
+  h1 { font-size: 1.25rem !important; }
+  
+  /* Fix sidebar overlay */
+  .sidebar-overlay { z-index: 50; }
+  
+  /* Better touch targets */
+  button, a { min-height: 44px; }
+  
+  /* POS layout adjustments */
+  .pos-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 768px) {
+  .md\:grid-cols-2 { grid-template-columns: 1fr !important; }
+  .md\:grid-cols-3 { grid-template-columns: 1fr !important; }
+  .md\:grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .gap-2 > * + * { margin-right: 0; }
+[dir="rtl"] table { direction: rtl; }
+[dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .mr-auto { margin-right: 0; margin-left: auto; }
+
+/* Print styles */
+@media print {
+  nav, header, button, .no-print { display: none !important; }
+  body { background: white !important; }
+  main { padding: 0 !important; }
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
