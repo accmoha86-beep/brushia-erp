@@ -285,4 +285,30 @@ export class AccountingController {
   async updateBankAccount(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
     return this.accountingService.updateBankAccount(user.tenantId, id, dto);
   }
+
+  // ─── VAT Report ────────────────────────────────────────────
+
+  @Get('reports/vat')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'VAT Report (14% Egypt)' })
+  async getVATReport(
+    @CurrentUser() user: any,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string,
+  ) {
+    return this.accountingService.getVATReport(
+      user.tenantId,
+      startDate || '2026-01-01',
+      endDate || new Date().toISOString().split('T')[0],
+    );
+  }
+
+  // ─── Budget Report ─────────────────────────────────────────
+
+  @Get('reports/budget')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'Budget vs Actual by cost center' })
+  async getBudgetReport(@CurrentUser() user: any) {
+    return this.accountingService.getBudgetReport(user.tenantId);
+  }
 }

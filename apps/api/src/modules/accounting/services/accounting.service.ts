@@ -920,4 +920,95 @@ export class AccountingService implements IAccountingService {
     if (!result) throw new NotFoundException('Bank account not found');
     return result;
   }
+
+  // ─── VAT Report (تقرير ضريبة القيمة المضافة) ──────────────
+
+  async getVATReport(tenantId: string, startDate: string, endDate: string) {
+    // Get sales with VAT (14%)
+    const salesResult = await this.db.query(
+      `SELECT 
+        COUNT(*) as order_count,
+        COALESCE(SUM(so.total), 0) as total_sales,
+        COALESCE(SUM(so.tax_amount), 0) as output_vat,
+        COALESCE(SUM(so.subtotal), 0) as net_sales
+       FROM sales.sales_orders so
+       WHERE so.tenant_id = $1 AND so.created_at >= $2 AND so.created_at <= $3`,
+      [tenantId, startDate, endDate + 'T23:59:59Z'],
+    );
+
+    // Get purchases with VAT
+    const purchasesResult = await this.db.query(
+      `SELECT 
+        COUNT(*) as po_count,
+        COALESCE(SUM(po.total), 0) as total_purchases,
+        COALESCE(SUM(po.tax_amount), 0) as input_vat,
+        COALESCE(SUM(po.subtotal), 0) as net_purchases
+       FROM purchasing.purchase_orders po
+       WHERE po.tenant_id = $1 AND po.created_at >= $2 AND po.created_at <= $3`,
+      [tenantId, startDate, endDate + 'T23:59:59Z'],
+    );
+
+    const sales = salesResult.rows[0] || {};
+    const purchases = purchasesResult.rows[0] || {};
+
+    const outputVAT = Number(sales.output_vat || 0);
+    const inputVAT = Number(purchases.input_vat || 0);
+    const netVAT = outputVAT - inputVAT;
+
+    return {
+      period: { start: startDate, end: endDate },
+      vatRate: 14,
+      sales: {
+        orderCount: Number(sales.order_count || 0),
+        totalSales: Number(sales.total_sales || 0),
+        netSales: Number(sales.net_sales || 0),
+        outputVAT,
+      },
+      purchases: {
+        poCount: Number(purchases.po_count || 0),
+        totalPurchases: Number(purchases.total_purchases || 0),
+        netPurchases: Number(purchases.net_purchases || 0),
+        inputVAT,
+      },
+      netVATPayable: netVAT,
+      vatPosition: netVAT > 0 ? 'payable' : netVAT < 0 ? 'refundable' : 'zero',
+    };
+  }
+
+  // ─── Budget vs Actual ─────────────────────────────────────
+
+  async getBudgetReport(tenantId: string) {
+    const result = await this.db.query(
+      `SELECT 
+        cc.id, cc.code, cc.name, cc.name_ar, cc.type, cc.budget_amount,
+        COALESCE(SUM(CASE WHEN coa.account_type = 'expense' THEN jl.debit ELSE 0 END), 0) as actual_spent,
+        COALESCE(SUM(CASE WHEN coa.account_type = 'revenue' THEN jl.credit ELSE 0 END), 0) as actual_revenue
+       FROM accounting.cost_centers cc
+       LEFT JOIN accounting.journal_lines jl ON cc.id = jl.cost_center_id
+       LEFT JOIN accounting.journal_entries je ON jl.entry_id = je.id AND je.status = 'posted'
+       LEFT JOIN accounting.chart_of_accounts coa ON jl.account_id = coa.id
+       WHERE cc.tenant_id = $1 AND cc.is_active = true
+       GROUP BY cc.id, cc.code, cc.name, cc.name_ar, cc.type, cc.budget_amount
+       ORDER BY cc.budget_amount DESC, cc.name`,
+      [tenantId],
+    );
+
+    const data = result.rows.map((r: any) => ({
+      ...r,
+      budget_amount: Number(r.budget_amount || 0),
+      actual_spent: Number(r.actual_spent || 0),
+      actual_revenue: Number(r.actual_revenue || 0),
+      variance: Number(r.budget_amount || 0) - Number(r.actual_spent || 0),
+      utilization: Number(r.budget_amount || 0) > 0
+        ? Math.round((Number(r.actual_spent || 0) / Number(r.budget_amount || 0)) * 100)
+        : 0,
+    }));
+
+    return {
+      data,
+      totalBudget: data.reduce((s: number, r: any) => s + r.budget_amount, 0),
+      totalSpent: data.reduce((s: number, r: any) => s + r.actual_spent, 0),
+      totalRevenue: data.reduce((s: number, r: any) => s + r.actual_revenue, 0),
+    };
+  }
 }
