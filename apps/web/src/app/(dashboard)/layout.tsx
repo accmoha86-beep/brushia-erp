@@ -31,6 +31,7 @@ const navigation = [
   { type: 'separator' as const, label: 'Finance' },
   { name: 'Accounting', href: '/accounting', icon: BookOpen },
   { name: 'Cost Centers', href: '/accounting/cost-centers', icon: Target },
+  { name: 'Sub-Ledgers', href: '/accounting/sub-ledgers', icon: Receipt },
   { name: 'Commissions', href: '/commissions', icon: Calculator },
   { name: 'Cost Tracking', href: '/cost-tracking', icon: DollarSign },
   { type: 'separator' as const, label: 'Marketing' },

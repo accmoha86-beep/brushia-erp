@@ -783,4 +783,141 @@ export class AccountingService implements IAccountingService {
 
     return { data: dataResult.rows, total: dataResult.rows.length };
   }
+
+  // ─── Auxiliary Accounts (حسابات مساعدة) ────────────────────
+
+  async getAuxiliaryAccounts(tenantId: string, filters?: { entity_type?: string; account_id?: string }) {
+    let query = `SELECT aa.*, coa.name as account_name, coa.account_number
+      FROM accounting.auxiliary_accounts aa
+      JOIN accounting.chart_of_accounts coa ON aa.account_id = coa.id
+      WHERE aa.tenant_id = $1`;
+    const params: any[] = [tenantId];
+    let idx = 2;
+
+    if (filters?.entity_type) { query += ` AND aa.entity_type = $${idx++}`; params.push(filters.entity_type); }
+    if (filters?.account_id) { query += ` AND aa.account_id = $${idx++}`; params.push(filters.account_id); }
+    query += ` ORDER BY aa.entity_type, aa.entity_name`;
+
+    const result = await this.db.query(query, params);
+    return { data: result.rows, total: result.rows.length };
+  }
+
+  async getAuxiliaryAccountById(tenantId: string, id: string) {
+    const acc = await this.db.queryOne(
+      `SELECT aa.*, coa.name as account_name, coa.account_number
+       FROM accounting.auxiliary_accounts aa
+       JOIN accounting.chart_of_accounts coa ON aa.account_id = coa.id
+       WHERE aa.id = $1 AND aa.tenant_id = $2`,
+      [id, tenantId],
+    );
+    if (!acc) throw new NotFoundException('Auxiliary account not found');
+    return acc;
+  }
+
+  async getAuxiliaryStatement(tenantId: string, id: string, startDate?: string, endDate?: string) {
+    const acc = await this.getAuxiliaryAccountById(tenantId, id);
+
+    let dateFilter = '';
+    const params: any[] = [id, tenantId];
+    let idx = 3;
+    if (startDate) { dateFilter += ` AND je.date >= $${idx++}`; params.push(startDate); }
+    if (endDate) { dateFilter += ` AND je.date <= $${idx++}`; params.push(endDate); }
+
+    const transactions = await this.db.query(
+      `SELECT je.entry_number, je.date, je.description, je.reference_type,
+        jl.debit, jl.credit, jl.description as line_description,
+        coa.account_number, coa.name as account_name
+       FROM accounting.journal_lines jl
+       JOIN accounting.journal_entries je ON jl.entry_id = je.id
+       JOIN accounting.chart_of_accounts coa ON jl.account_id = coa.id
+       WHERE jl.auxiliary_account_id = $1 AND je.tenant_id = $2 ${dateFilter}
+       ORDER BY je.date, je.entry_number`,
+      params,
+    );
+
+    const totals = await this.db.queryOne(
+      `SELECT COALESCE(SUM(jl.debit), 0) as total_debit, COALESCE(SUM(jl.credit), 0) as total_credit
+       FROM accounting.journal_lines jl
+       JOIN accounting.journal_entries je ON jl.entry_id = je.id
+       WHERE jl.auxiliary_account_id = $1 AND je.tenant_id = $2 ${dateFilter}`,
+      params,
+    );
+
+    return {
+      account: acc,
+      transactions: transactions.rows,
+      totalDebit: Number(totals?.total_debit || 0),
+      totalCredit: Number(totals?.total_credit || 0),
+      netBalance: Number(acc.opening_balance || 0) + Number(totals?.total_debit || 0) - Number(totals?.total_credit || 0),
+    };
+  }
+
+  async createAuxiliaryAccount(tenantId: string, dto: any) {
+    return this.db.queryOne(
+      `INSERT INTO accounting.auxiliary_accounts (tenant_id, account_id, entity_type, entity_id, entity_name, entity_name_ar, code, opening_balance, credit_limit, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [tenantId, dto.account_id, dto.entity_type, dto.entity_id || require('crypto').randomUUID(), 
+       dto.entity_name, dto.entity_name_ar || null, dto.code || null,
+       dto.opening_balance || 0, dto.credit_limit || 0, dto.notes || null],
+    );
+  }
+
+  async updateAuxiliaryAccount(tenantId: string, id: string, dto: any) {
+    const fields: string[] = [];
+    const values: any[] = [id, tenantId];
+    let idx = 3;
+    for (const key of ['entity_name', 'entity_name_ar', 'code', 'opening_balance', 'current_balance', 'credit_limit', 'is_active', 'notes']) {
+      if (dto[key] !== undefined) { fields.push(`${key} = $${idx++}`); values.push(dto[key]); }
+    }
+    if (fields.length === 0) throw new BadRequestException('No fields to update');
+    fields.push('updated_at = NOW()');
+
+    const result = await this.db.queryOne(
+      `UPDATE accounting.auxiliary_accounts SET ${fields.join(', ')} WHERE id = $1 AND tenant_id = $2 RETURNING *`,
+      values,
+    );
+    if (!result) throw new NotFoundException('Auxiliary account not found');
+    return result;
+  }
+
+  // ─── Bank Accounts ────────────────────────────────────────
+
+  async getBankAccounts(tenantId: string) {
+    const result = await this.db.query(
+      `SELECT ba.*, aa.code as aux_code, aa.current_balance as ledger_balance
+       FROM accounting.bank_accounts ba
+       LEFT JOIN accounting.auxiliary_accounts aa ON aa.entity_type = 'bank' AND aa.entity_id = ba.id AND aa.tenant_id = ba.tenant_id
+       WHERE ba.tenant_id = $1 ORDER BY ba.bank_name`,
+      [tenantId],
+    );
+    return { data: result.rows, total: result.rows.length };
+  }
+
+  async createBankAccount(tenantId: string, dto: any) {
+    return this.db.queryOne(
+      `INSERT INTO accounting.bank_accounts (tenant_id, bank_name, bank_name_ar, account_number, iban, swift_code, branch_name, currency, account_type, opening_balance)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [tenantId, dto.bank_name, dto.bank_name_ar || null, dto.account_number,
+       dto.iban || null, dto.swift_code || null, dto.branch_name || null,
+       dto.currency || 'EGP', dto.account_type || 'current', dto.opening_balance || 0],
+    );
+  }
+
+  async updateBankAccount(tenantId: string, id: string, dto: any) {
+    const fields: string[] = [];
+    const values: any[] = [id, tenantId];
+    let idx = 3;
+    for (const key of ['bank_name', 'bank_name_ar', 'account_number', 'iban', 'swift_code', 'branch_name', 'currency', 'account_type', 'current_balance', 'is_active']) {
+      if (dto[key] !== undefined) { fields.push(`${key} = $${idx++}`); values.push(dto[key]); }
+    }
+    if (fields.length === 0) throw new BadRequestException('No fields to update');
+    fields.push('updated_at = NOW()');
+
+    const result = await this.db.queryOne(
+      `UPDATE accounting.bank_accounts SET ${fields.join(', ')} WHERE id = $1 AND tenant_id = $2 RETURNING *`,
+      values,
+    );
+    if (!result) throw new NotFoundException('Bank account not found');
+    return result;
+  }
 }

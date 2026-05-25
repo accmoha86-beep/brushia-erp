@@ -216,4 +216,73 @@ export class AccountingController {
   ) {
     return this.accountingService.deleteCostCenter(user.tenantId, id);
   }
+
+  // ─── Auxiliary Accounts (حسابات مساعدة) ────────────────────
+
+  @Get('auxiliary-accounts')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'List auxiliary accounts (sub-ledgers)' })
+  async getAuxiliaryAccounts(
+    @CurrentUser() user: any,
+    @Query('entity_type') entityType?: string,
+    @Query('account_id') accountId?: string,
+  ) {
+    return this.accountingService.getAuxiliaryAccounts(user.tenantId, { entity_type: entityType, account_id: accountId });
+  }
+
+  @Get('auxiliary-accounts/:id')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'Get auxiliary account details' })
+  async getAuxiliaryAccountById(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.accountingService.getAuxiliaryAccountById(user.tenantId, id);
+  }
+
+  @Get('auxiliary-accounts/:id/statement')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'Get auxiliary account statement' })
+  async getAuxiliaryStatement(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    return this.accountingService.getAuxiliaryStatement(user.tenantId, id, startDate, endDate);
+  }
+
+  @Post('auxiliary-accounts')
+  @RequirePermissions('accounting:write')
+  @ApiOperation({ summary: 'Create auxiliary account' })
+  async createAuxiliaryAccount(@CurrentUser() user: any, @Body() dto: any) {
+    return this.accountingService.createAuxiliaryAccount(user.tenantId, dto);
+  }
+
+  @Put('auxiliary-accounts/:id')
+  @RequirePermissions('accounting:write')
+  @ApiOperation({ summary: 'Update auxiliary account' })
+  async updateAuxiliaryAccount(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+    return this.accountingService.updateAuxiliaryAccount(user.tenantId, id, dto);
+  }
+
+  // ─── Bank Accounts ────────────────────────────────────────
+
+  @Get('bank-accounts')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'List bank accounts' })
+  async getBankAccounts(@CurrentUser() user: any) {
+    return this.accountingService.getBankAccounts(user.tenantId);
+  }
+
+  @Post('bank-accounts')
+  @RequirePermissions('accounting:write')
+  @ApiOperation({ summary: 'Create bank account' })
+  async createBankAccount(@CurrentUser() user: any, @Body() dto: any) {
+    return this.accountingService.createBankAccount(user.tenantId, dto);
+  }
+
+  @Put('bank-accounts/:id')
+  @RequirePermissions('accounting:write')
+  @ApiOperation({ summary: 'Update bank account' })
+  async updateBankAccount(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+    return this.accountingService.updateBankAccount(user.tenantId, id, dto);
+  }
 }
