@@ -11,7 +11,11 @@
 
 import { useAuthStore } from '@/stores/auth.store';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/api/v1';
+// Use relative path — Next.js rewrites proxy /api/v1/* to the backend at runtime
+// This avoids the NEXT_PUBLIC_* build-time baking requirement
+const API_BASE = typeof window !== 'undefined'
+  ? '/api/v1'   // Browser: relative path, proxied by Next.js rewrites
+  : ((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/api/v1'); // SSR: direct
 
 // Track if we're currently refreshing to prevent parallel refreshes
 let isRefreshing = false;
@@ -95,7 +99,9 @@ export async function apiClient<T = unknown>(
 
   // Build URL with query params
   const fullPath = path.startsWith('/') ? API_BASE + path : API_BASE + '/' + path;
-  const url = new URL(fullPath);
+  // For relative paths (browser), use window.location.origin as base
+  const base = typeof window !== 'undefined' ? window.location.origin : undefined;
+  const url = base ? new URL(fullPath, base) : new URL(fullPath);
   if (options.params) {
     Object.entries(options.params).forEach(([key, value]) => {
       if (value !== undefined) {

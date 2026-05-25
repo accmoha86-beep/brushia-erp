@@ -43,6 +43,17 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Rewrites — proxy API calls to backend (runtime env var, no build-time baking needed)
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${apiUrl}/api/v1/:path*`,
+      },
+    ];
+  },
+
   // Redirects
   async redirects() {
     return [
