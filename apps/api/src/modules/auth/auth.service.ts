@@ -27,7 +27,7 @@ export interface JwtPayload {
 
 @Injectable()
 export class AuthService {
-  private readonly ACCESS_TOKEN_EXPIRY = 15 * 60; // 15 minutes in seconds
+  private readonly ACCESS_TOKEN_EXPIRY = 2 * 60 * 60; // 2 hours
 
   constructor(
     private readonly authRepo: AuthRepository,
