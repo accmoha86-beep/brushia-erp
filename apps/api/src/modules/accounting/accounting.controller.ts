@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AccountingService } from './services/accounting.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -135,5 +135,85 @@ export class AccountingController {
     @Query('as_of_date') asOfDate: string,
   ) {
     return this.accountingService.getBalanceSheet(user.tenantId, asOfDate);
+  }
+
+  // ─── Cost Centers (مراكز التكلفة) ────────────────────────
+
+  @Get('cost-centers')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'List cost centers' })
+  async getCostCenters(
+    @CurrentUser() user: any,
+    @Query('type') type?: string,
+    @Query('is_active') isActive?: string,
+  ) {
+    return this.accountingService.getCostCenters(user.tenantId, {
+      type,
+      is_active: isActive === undefined ? undefined : isActive === 'true',
+    });
+  }
+
+  @Get('cost-centers/comparison')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'Compare cost centers side by side' })
+  async getCostCenterComparison(
+    @CurrentUser() user: any,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    return this.accountingService.getCostCenterComparison(user.tenantId, startDate, endDate);
+  }
+
+  @Get('cost-centers/:id')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'Get cost center details' })
+  async getCostCenterById(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+  ) {
+    return this.accountingService.getCostCenterById(user.tenantId, id);
+  }
+
+  @Get('cost-centers/:id/report')
+  @RequirePermissions('accounting:read')
+  @ApiOperation({ summary: 'Get cost center P&L report' })
+  async getCostCenterReport(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    return this.accountingService.getCostCenterReport(user.tenantId, id, startDate, endDate);
+  }
+
+  @Post('cost-centers')
+  @RequirePermissions('accounting:write')
+  @ApiOperation({ summary: 'Create cost center' })
+  async createCostCenter(
+    @CurrentUser() user: any,
+    @Body() dto: any,
+  ) {
+    return this.accountingService.createCostCenter(user.tenantId, dto);
+  }
+
+  @Put('cost-centers/:id')
+  @RequirePermissions('accounting:write')
+  @ApiOperation({ summary: 'Update cost center' })
+  async updateCostCenter(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ) {
+    return this.accountingService.updateCostCenter(user.tenantId, id, dto);
+  }
+
+  @Delete('cost-centers/:id')
+  @RequirePermissions('accounting:write')
+  @ApiOperation({ summary: 'Delete cost center' })
+  async deleteCostCenter(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+  ) {
+    return this.accountingService.deleteCostCenter(user.tenantId, id);
   }
 }

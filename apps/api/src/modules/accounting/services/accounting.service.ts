@@ -617,4 +617,169 @@ export class AccountingService implements IAccountingService {
     if (!result) throw new NotFoundException(`Account with code "${code}" not found. Run seed migration first.`);
     return result.id;
   }
+
+  // ─── Cost Centers (مراكز التكلفة) ────────────────────────
+
+  async getCostCenters(tenantId: string, filters?: { type?: string; is_active?: boolean }) {
+    let query = `SELECT cc.*, b.name as branch_name, b.code as branch_code,
+      (SELECT COUNT(*) FROM accounting.journal_lines jl WHERE jl.cost_center_id = cc.id) as transaction_count,
+      (SELECT COALESCE(SUM(jl.debit), 0) FROM accounting.journal_lines jl WHERE jl.cost_center_id = cc.id) as total_debits,
+      (SELECT COALESCE(SUM(jl.credit), 0) FROM accounting.journal_lines jl WHERE jl.cost_center_id = cc.id) as total_credits
+    FROM accounting.cost_centers cc
+    LEFT JOIN pos.branches b ON cc.branch_id = b.id
+    WHERE cc.tenant_id = $1`;
+    const params: any[] = [tenantId];
+    let idx = 2;
+
+    if (filters?.type) {
+      query += ` AND cc.type = $${idx++}`;
+      params.push(filters.type);
+    }
+    if (filters?.is_active !== undefined) {
+      query += ` AND cc.is_active = $${idx++}`;
+      params.push(filters.is_active);
+    }
+    query += ` ORDER BY cc.type, cc.code`;
+
+    const rows = await this.db.query(query, params);
+    return { data: rows, total: rows.length };
+  }
+
+  async getCostCenterById(tenantId: string, id: string) {
+    const cc = await this.db.queryOne(
+      `SELECT cc.*, b.name as branch_name, b.code as branch_code
+       FROM accounting.cost_centers cc
+       LEFT JOIN pos.branches b ON cc.branch_id = b.id
+       WHERE cc.id = $1 AND cc.tenant_id = $2`,
+      [id, tenantId],
+    );
+    if (!cc) throw new NotFoundException('Cost center not found');
+    return cc;
+  }
+
+  async createCostCenter(tenantId: string, dto: any) {
+    const result = await this.db.queryOne(
+      `INSERT INTO accounting.cost_centers (tenant_id, code, name, name_ar, type, parent_id, branch_id, is_active, budget_amount, description)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [tenantId, dto.code, dto.name, dto.name_ar || null, dto.type || 'branch',
+       dto.parent_id || null, dto.branch_id || null, dto.is_active !== false,
+       dto.budget_amount || 0, dto.description || null],
+    );
+    return result;
+  }
+
+  async updateCostCenter(tenantId: string, id: string, dto: any) {
+    const fields: string[] = [];
+    const values: any[] = [id, tenantId];
+    let idx = 3;
+
+    for (const key of ['code', 'name', 'name_ar', 'type', 'parent_id', 'branch_id', 'is_active', 'budget_amount', 'description']) {
+      if (dto[key] !== undefined) {
+        fields.push(`${key} = $${idx++}`);
+        values.push(dto[key]);
+      }
+    }
+    if (fields.length === 0) throw new BadRequestException('No fields to update');
+
+    fields.push(`updated_at = NOW()`);
+    const result = await this.db.queryOne(
+      `UPDATE accounting.cost_centers SET ${fields.join(', ')} WHERE id = $1 AND tenant_id = $2 RETURNING *`,
+      values,
+    );
+    if (!result) throw new NotFoundException('Cost center not found');
+    return result;
+  }
+
+  async deleteCostCenter(tenantId: string, id: string) {
+    const txnCount = await this.db.queryOne(
+      `SELECT COUNT(*) as cnt FROM accounting.journal_lines WHERE cost_center_id = $1`,
+      [id],
+    );
+    if (Number(txnCount?.cnt) > 0) {
+      throw new BadRequestException('Cannot delete cost center with existing transactions. Deactivate it instead.');
+    }
+    const result = await this.db.queryOne(
+      `DELETE FROM accounting.cost_centers WHERE id = $1 AND tenant_id = $2 RETURNING id`,
+      [id, tenantId],
+    );
+    if (!result) throw new NotFoundException('Cost center not found');
+    return { message: 'Cost center deleted' };
+  }
+
+  async getCostCenterReport(tenantId: string, costCenterId: string, startDate?: string, endDate?: string) {
+    // Verify cost center exists
+    const cc = await this.getCostCenterById(tenantId, costCenterId);
+
+    let dateFilter = '';
+    const params: any[] = [costCenterId, tenantId];
+    let idx = 3;
+    if (startDate) { dateFilter += ` AND je.date >= $${idx++}`; params.push(startDate); }
+    if (endDate) { dateFilter += ` AND je.date <= $${idx++}`; params.push(endDate); }
+
+    // Get income vs expense breakdown
+    const summary = await this.db.query(
+      `SELECT 
+        coa.account_type,
+        COUNT(DISTINCT je.id) as entry_count,
+        COALESCE(SUM(jl.debit), 0) as total_debit,
+        COALESCE(SUM(jl.credit), 0) as total_credit
+       FROM accounting.journal_lines jl
+       JOIN accounting.journal_entries je ON jl.entry_id = je.id
+       JOIN accounting.chart_of_accounts coa ON jl.account_id = coa.id
+       WHERE jl.cost_center_id = $1 AND je.tenant_id = $2 AND je.status = 'posted' ${dateFilter}
+       GROUP BY coa.account_type
+       ORDER BY coa.account_type`,
+      params,
+    );
+
+    // Get recent transactions
+    const recentTxns = await this.db.query(
+      `SELECT je.entry_number, je.date, je.description, jl.debit, jl.credit,
+        coa.account_number, coa.name as account_name
+       FROM accounting.journal_lines jl
+       JOIN accounting.journal_entries je ON jl.entry_id = je.id
+       JOIN accounting.chart_of_accounts coa ON jl.account_id = coa.id
+       WHERE jl.cost_center_id = $1 AND je.tenant_id = $2 ${dateFilter}
+       ORDER BY je.date DESC, je.entry_number DESC
+       LIMIT 50`,
+      [costCenterId, tenantId, ...(startDate ? [startDate] : []), ...(endDate ? [endDate] : [])],
+    );
+
+    return {
+      costCenter: cc,
+      summary,
+      recentTransactions: recentTxns,
+      budgetAmount: Number(cc.budget_amount || 0),
+      totalSpent: summary.reduce((sum: number, r: any) => sum + Number(r.total_debit || 0), 0),
+    };
+  }
+
+  async getCostCenterComparison(tenantId: string, startDate?: string, endDate?: string) {
+    let dateFilter = '';
+    const params: any[] = [tenantId];
+    let idx = 2;
+    if (startDate) { dateFilter += ` AND je.date >= $${idx++}`; params.push(startDate); }
+    if (endDate) { dateFilter += ` AND je.date <= $${idx++}`; params.push(endDate); }
+
+    const data = await this.db.query(
+      `SELECT 
+        cc.id, cc.code, cc.name, cc.name_ar, cc.type, cc.budget_amount,
+        COUNT(DISTINCT je.id) as transaction_count,
+        COALESCE(SUM(jl.debit), 0) as total_debits,
+        COALESCE(SUM(jl.credit), 0) as total_credits,
+        COALESCE(SUM(CASE WHEN coa.account_type = 'revenue' THEN jl.credit ELSE 0 END), 0) as revenue,
+        COALESCE(SUM(CASE WHEN coa.account_type = 'expense' THEN jl.debit ELSE 0 END), 0) as expenses
+       FROM accounting.cost_centers cc
+       LEFT JOIN accounting.journal_lines jl ON cc.id = jl.cost_center_id
+       LEFT JOIN accounting.journal_entries je ON jl.entry_id = je.id AND je.status = 'posted' ${dateFilter}
+       LEFT JOIN accounting.chart_of_accounts coa ON jl.account_id = coa.id
+       WHERE cc.tenant_id = $1 AND cc.is_active = true
+       GROUP BY cc.id, cc.code, cc.name, cc.name_ar, cc.type, cc.budget_amount
+       ORDER BY revenue DESC`,
+      params,
+    );
+
+    return { data, total: data.length };
+  }
 }
