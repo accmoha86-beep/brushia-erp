@@ -1,5 +1,6 @@
 'use client';
 
+import { LanguageToggle, useI18n } from '@/lib/i18n';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -42,6 +43,7 @@ const navigation = [
   { name: 'Loyalty Program', href: '/loyalty', icon: Heart },
   { type: 'separator' as const, label: 'Analytics' },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: 'Advanced Analytics', href: '/analytics', icon: TrendingUp },
   { name: 'Barcode Labels', href: '/barcode-labels', icon: ScanBarcode },
   { type: 'separator' as const, label: 'System' },
   { name: 'Users & Roles', href: '/users', icon: Shield },
@@ -392,6 +394,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageToggle />
             <NotificationCenter />
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
