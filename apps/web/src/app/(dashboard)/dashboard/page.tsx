@@ -117,8 +117,8 @@ export default function DashboardPage() {
       const prodTotal = products?.pagination?.total || prodArr.length;
       const orderArr = Array.isArray(orders?.data) ? orders.data : Array.isArray(orders) ? orders : [];
       const promoArr = Array.isArray(promotions?.data) ? promotions.data : Array.isArray(promotions) ? promotions : [];
-      const commArr = Array.isArray(commissions?.data) ? commissions.data : Array.isArray(commissions) ? commissions : [];
-      const branchArr = Array.isArray(branches?.data) ? branches.data : Array.isArray(branches) ? branches : [];
+      const commArr = Array.isArray(commissions?.data?.rows) ? commissions.data.rows : Array.isArray(commissions?.data) ? commissions.data : Array.isArray(commissions) ? commissions : [];
+      const branchArr = Array.isArray(branches?.data?.rows) ? branches.data.rows : Array.isArray(branches?.data) ? branches.data : Array.isArray(branches) ? branches : [];
       const catArr = Array.isArray(categories?.data) ? categories.data : Array.isArray(categories) ? categories : [];
 
       // Revenue (values from API are in piasters — bigint stored as string)
@@ -169,9 +169,10 @@ export default function DashboardPage() {
         p.status === 'active' || p.is_active === true || p.is_active === 'true'
       );
 
-      const retailBranches = branchArr.filter((b: any) => b.type === 'retail').length;
-      const exhibitionBranches = branchArr.filter((b: any) => b.type === 'exhibition').length;
-      const warehouseBranches = branchArr.filter((b: any) => b.type === 'warehouse').length;
+      const bType = (b: any) => b.branch_type || b.type || '';
+      const retailBranches = branchArr.filter((b: any) => bType(b) === 'permanent' || bType(b) === 'retail').length;
+      const exhibitionBranches = branchArr.filter((b: any) => bType(b) === 'exhibition' || bType(b) === 'popup').length;
+      const warehouseBranches = branchArr.filter((b: any) => bType(b) === 'warehouse').length;
 
       setData({
         productCount: prodTotal,
