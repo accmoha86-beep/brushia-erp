@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
-import { Search, Eye, X, Package, Truck, CheckCircle2, Clock, XCircle, RefreshCw, ShoppingBag, CreditCard, Banknote, Hash } from 'lucide-react';
+import { Search, Eye, X, Package, Truck, CheckCircle2, Clock, XCircle, RefreshCw, ShoppingBag, CreditCard, Banknote, Hash, Printer, Receipt, FileText } from 'lucide-react';
+import { printA4Invoice, printThermalReceipt } from '@/lib/print-invoice';
 
 interface Order {
   id: string; order_number: string; customer_id?: string; customer_name?: string;
@@ -35,6 +36,32 @@ const channelLabels: Record<string, string> = {
 function safeEGP(val: any): string {
   const num = Number(val);
   return isNaN(num) ? 'EGP 0.00' : formatEGP(num);
+}
+
+
+function buildInvoiceData(order: any, items: any[]) {
+  return {
+    order_number: order.order_number || order.id.slice(0, 8),
+    receipt_number: order.receipt_number,
+    date: new Date(order.created_at).toLocaleDateString('en-EG', { year: 'numeric', month: 'long', day: 'numeric' }),
+    customer_name: order.customer_name,
+    items: items.map((i: any) => ({
+      name: i.name || 'Item',
+      sku: i.sku,
+      quantity: Number(i.quantity),
+      unit_price: Number(i.unit_price),
+      total: Number(i.total),
+    })),
+    subtotal: Number(order.subtotal || 0),
+    discount: Number(order.discount_amount || 0),
+    tax: Number(order.tax_amount || 0),
+    shipping: Number(order.shipping_amount || 0),
+    total: Number(order.grand_total || order.total || 0),
+    paid: Number(order.paid_amount || 0),
+    payment_method: order.payment_method || order.method,
+    channel: order.channel,
+    notes: order.notes,
+  };
 }
 
 export default function OrdersPage() {
@@ -198,7 +225,13 @@ export default function OrdersPage() {
                 <h2 className="font-bold text-lg">{selectedOrder.order_number}</h2>
                 <p className="text-sm text-gray-500">{formatDate(selectedOrder.created_at)}</p>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="h-5 w-5" /></button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => printThermalReceipt(buildInvoiceData(selectedOrder, orderItems))} title="Print Receipt"
+                  className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition"><Receipt className="h-4 w-4" /></button>
+                <button onClick={() => printA4Invoice(buildInvoiceData(selectedOrder, orderItems))} title="Print Invoice"
+                  className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition"><Printer className="h-4 w-4" /></button>
+                <button onClick={() => setSelectedOrder(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="h-5 w-5" /></button>
+              </div>
             </div>
             <div className="p-6 space-y-6">
               {/* Status Row */}

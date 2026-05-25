@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api-client';
+import { printThermalReceipt, printA4Invoice } from '@/lib/print-invoice';
 import { formatEGP, cn } from '@/lib/utils';
 import {
   ArrowLeft, Search, Trash2, Plus, Minus, ShoppingCart, CreditCard, Banknote,
@@ -596,9 +597,28 @@ export default function POSPage() {
           )}
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={() => window.print()} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-xl font-medium transition">
-            Print Receipt
-          </button>
+          <button onClick={() => printThermalReceipt({
+              order_number: receiptData.order_number || '',
+              receipt_number: receiptData.receipt_number || '',
+              date: new Date().toLocaleDateString('en-EG', { year: 'numeric', month: 'short', day: 'numeric' }),
+              customer_name: customer?.name,
+              items: (receiptData.items || cart).map((i: any) => ({ name: i.name || i.product?.name || 'Item', sku: i.sku, quantity: Number(i.quantity), unit_price: Number(i.unit_price), total: Number(i.unit_price) * Number(i.quantity) })),
+              subtotal: subtotal, discount: discountAmount, tax: vatAmount, shipping: 0,
+              total: receiptData.grand_total ?? grandTotal, paid: receiptData.grand_total ?? grandTotal, payment_method: payMethod,
+            })} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2">
+              🧾 Receipt
+            </button>
+            <button onClick={() => printA4Invoice({
+              order_number: receiptData.order_number || '',
+              receipt_number: receiptData.receipt_number || '',
+              date: new Date().toLocaleDateString('en-EG', { year: 'numeric', month: 'long', day: 'numeric' }),
+              customer_name: customer?.name,
+              items: (receiptData.items || cart).map((i: any) => ({ name: i.name || i.product?.name || 'Item', sku: i.sku, quantity: Number(i.quantity), unit_price: Number(i.unit_price), total: Number(i.unit_price) * Number(i.quantity) })),
+              subtotal: subtotal, discount: discountAmount, tax: vatAmount, shipping: 0,
+              total: receiptData.grand_total ?? grandTotal, paid: receiptData.grand_total ?? grandTotal, payment_method: payMethod,
+            })} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2">
+              📄 Invoice
+            </button>
           <button onClick={newSale} className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl font-medium transition">
             New Sale
           </button>
