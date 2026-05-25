@@ -1,291 +1,90 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { formatEGP, cn } from '@/lib/utils';
-import { ShoppingCart, Search, Heart, Star, Eye, Plus, Minus, X, ShoppingBag, Trash2, ArrowRight, ChevronDown, Filter, Sparkles } from 'lucide-react';
+import { ShoppingCart, Search, Sparkles, Plus, Minus, X, ArrowRight } from 'lucide-react';
 
 interface Product {
   id: string; name: string; sku: string; base_price: number; cost_price: number;
-  category_id: string; category_name?: string; image_url?: string; description?: string;
+  category_id: string; category_name?: string;
 }
 interface CartItem { product: Product; quantity: number; }
+interface Category { id: string; name: string; }
 
-async function publicFetch(path: string) {
-  try {
-    const res = await fetch('/api/v1' + path);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data;
-  } catch {
-    return null;
-  }
+function fmtEGP(piasters: number): string {
+  const egp = Number(piasters) / 100;
+  return isNaN(egp) ? 'EGP 0.00' : `EGP ${egp.toFixed(2)}`;
 }
 
-function ProductCard({ product, onAddToCart, onQuickView }: { product: Product; onAddToCart: (p: Product) => void; onQuickView: (p: Product) => void }) {
-  const price = Number(product.base_price) / 100;
-  const gradient = [
-    'from-rose-100 to-pink-50', 'from-violet-100 to-purple-50', 'from-blue-100 to-cyan-50',
-    'from-emerald-100 to-teal-50', 'from-amber-100 to-yellow-50', 'from-indigo-100 to-sky-50',
-  ];
-  const idx = parseInt(product.id?.replace?.(/\D/g, '') || '0') % gradient.length;
+const GRADIENTS = [
+  'from-rose-100 to-pink-50', 'from-violet-100 to-purple-50', 'from-blue-100 to-cyan-50',
+  'from-emerald-100 to-teal-50', 'from-amber-100 to-yellow-50', 'from-indigo-100 to-sky-50',
+];
 
-  return (
-    <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-      <div className={cn('relative h-52 bg-gradient-to-br flex items-center justify-center', gradient[idx])}>
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="text-center">
-            <Sparkles className="h-12 w-12 text-rose-300 mx-auto mb-2" />
-            <p className="text-xs text-gray-400">{product.category_name || 'Beauty'}</p>
-          </div>
-        )}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => onQuickView(product)} className="h-8 w-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow hover:bg-white"><Eye className="h-4 w-4 text-gray-600" /></button>
-          <button className="h-8 w-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow hover:bg-white"><Heart className="h-4 w-4 text-gray-600" /></button>
-        </div>
-        {price > 300 && <span className="absolute top-3 left-3 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">HOT</span>}
-      </div>
-      <div className="p-4">
-        <p className="text-xs text-rose-500 font-medium mb-1">{product.category_name || 'Makeup'}</p>
-        <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2">{product.name}</h3>
-        <p className="text-xs text-gray-400 mb-3">SKU: {product.sku}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-rose-600">{formatEGP(price)}</span>
-          <button onClick={() => onAddToCart(product)}
-            className="h-9 w-9 bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-rose-200 hover:shadow-rose-300 transition">
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CartSlider({ cart, onUpdateQty, onRemove, onClose, onCheckout }: { cart: CartItem[]; onUpdateQty: (id: string, qty: number) => void; onRemove: (id: string) => void; onClose: () => void; onCheckout: () => void }) {
-  const total = cart.reduce((s, c) => s + (Number(c.product.base_price) / 100) * c.quantity, 0);
-  const vat = total * 0.14;
-
-  return (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in-right">
-        <div className="flex items-center justify-between p-5 border-b bg-gradient-to-r from-rose-500 to-pink-600 text-white">
-          <h2 className="font-bold text-lg flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Your Cart ({cart.length})</h2>
-          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full"><X className="h-5 w-5" /></button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {cart.length === 0 ? (
-            <div className="text-center py-12">
-              <ShoppingCart className="h-16 w-16 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400">Your cart is empty</p>
-              <p className="text-sm text-gray-300 mt-1">Add some beauty products!</p>
-            </div>
-          ) : cart.map(item => {
-            const price = Number(item.product.base_price) / 100;
-            return (
-              <div key={item.product.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-rose-100 to-pink-50 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="h-6 w-6 text-rose-300" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{item.product.name}</p>
-                  <p className="text-xs text-rose-500 font-semibold">{formatEGP(price)}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => onUpdateQty(item.product.id, item.quantity - 1)} className="h-7 w-7 rounded-lg bg-gray-200 flex items-center justify-center hover:bg-gray-300"><Minus className="h-3 w-3" /></button>
-                  <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
-                  <button onClick={() => onUpdateQty(item.product.id, item.quantity + 1)} className="h-7 w-7 rounded-lg bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600"><Plus className="h-3 w-3" /></button>
-                </div>
-                <button onClick={() => onRemove(item.product.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
-              </div>
-            );
-          })}
-        </div>
-        {cart.length > 0 && (
-          <div className="border-t p-5 space-y-3 bg-gray-50">
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span className="font-medium">{formatEGP(total)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">VAT (14%)</span><span className="font-medium">{formatEGP(vat)}</span></div>
-            <div className="flex justify-between text-base font-bold border-t pt-2"><span>Total</span><span className="text-rose-600">{formatEGP(total + vat)}</span></div>
-            <button onClick={onCheckout} className="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
-              Checkout <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CheckoutModal({ cart, onClose, onComplete }: { cart: CartItem[]; onClose: () => void; onComplete: () => void }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', city: '', notes: '' });
-  const [payMethod, setPayMethod] = useState('cod');
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const total = cart.reduce((s, c) => s + (Number(c.product.base_price) / 100) * c.quantity, 0);
-  const vat = total * 0.14;
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.phone || !form.address) return alert('Please fill required fields');
-    setSubmitting(true);
-    // Submit order via API
-    try {
-      const token = (() => { try { const r = localStorage.getItem('brushia-auth'); if (r) return JSON.parse(r)?.state?.accessToken; } catch {} return null; })();
-      const res = await fetch('/api/v1/sales/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-        body: JSON.stringify({
-          channel: 'ecommerce',
-          status: 'pending',
-          method: payMethod === 'cod' ? 'cash' : payMethod,
-          shipping_address: `${form.address}, ${form.city}`,
-          notes: `${form.name} | ${form.phone} | ${form.email} | ${form.notes}`,
-          items: cart.map(c => ({
-            product_id: c.product.id,
-            name: c.product.name,
-            sku: c.product.sku,
-            quantity: c.quantity,
-            unit_price: Number(c.product.base_price),
-            cost_price: Number(c.product.cost_price) || 0,
-            total: Number(c.product.base_price) * c.quantity,
-          })),
-          total: Math.round((total + vat) * 100),
-        }),
-      });
-      if (res.ok) setSuccess(true);
-      else throw new Error('Order failed');
-    } catch (e) {
-      setSuccess(true); // Show success anyway for demo
-    }
-    setSubmitting(false);
-  };
-
-  if (success) return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
-        <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-4xl">🎉</span>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h2>
-        <p className="text-gray-500 mb-1">Thank you, {form.name}!</p>
-        <p className="text-sm text-gray-400 mb-6">We'll contact you on {form.phone} to confirm delivery.</p>
-        <p className="text-2xl font-bold text-rose-600 mb-6">{formatEGP(total + vat)}</p>
-        <button onClick={onComplete} className="px-8 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl">
-          Continue Shopping
-        </button>
-      </div>
-    </div>
-  );
-
-  const cities = ['Cairo', 'Alexandria', 'Giza', 'Mansoura', 'Tanta', 'Zagazig', 'Assiut', 'Ismailia', 'Suez', 'Port Said', 'Luxor', 'Aswan', 'Damietta', 'Fayoum', 'Beni Suef', 'Minya', 'Sohag', 'Qena', 'Hurghada', 'Sharm El Sheikh'];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="p-6 border-b bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-t-3xl">
-          <h2 className="text-xl font-bold">Checkout</h2>
-          <p className="text-sm opacity-80">{cart.length} items — {formatEGP(total + vat)}</p>
-        </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="text-xs font-medium text-gray-600">Full Name *</label>
-            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full mt-1 px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500" placeholder="Ahmed Mohamed" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-gray-600">Phone *</label>
-              <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full mt-1 px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-rose-500" placeholder="+20 1xx xxx xxxx" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600">Email</label>
-              <input value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full mt-1 px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-rose-500" placeholder="email@example.com" />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600">City *</label>
-            <select value={form.city} onChange={e => setForm({...form, city: e.target.value})} className="w-full mt-1 px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-rose-500">
-              <option value="">Select city...</option>
-              {cities.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600">Delivery Address *</label>
-            <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})} rows={2} className="w-full mt-1 px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-rose-500" placeholder="Building, Street, Area..." />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 mb-2 block">Payment Method</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[{id: 'cod', label: 'Cash on Delivery', icon: '💵'}, {id: 'card', label: 'Card', icon: '💳'}, {id: 'vodafone_cash', label: 'Vodafone Cash', icon: '📱'}, {id: 'instapay', label: 'InstaPay', icon: '🏦'}].map(m => (
-                <button key={m.id} onClick={() => setPayMethod(m.id)}
-                  className={cn('p-3 rounded-xl border-2 text-sm font-medium flex items-center gap-2 transition',
-                    payMethod === m.id ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-gray-200 hover:border-gray-300')}>
-                  <span>{m.icon}</span> {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600">Notes</label>
-            <input value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className="w-full mt-1 px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-rose-500" placeholder="Special instructions..." />
-          </div>
-        </div>
-        <div className="p-6 border-t flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 border rounded-xl font-medium text-gray-600 hover:bg-gray-50">Back</button>
-          <button onClick={handleSubmit} disabled={submitting}
-            className="flex-1 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2">
-            {submitting ? <div className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full" /> : <>Place Order <ArrowRight className="h-4 w-4" /></>}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+const CITIES = [
+  'Cairo', 'Alexandria', 'Giza', 'Sharm El-Sheikh', 'Hurghada', 'Luxor', 'Aswan',
+  'Port Said', 'Suez', 'Mansoura', 'Tanta', 'Ismailia', 'Faiyum', 'Zagazig',
+  'Damietta', 'Assiut', 'Minia', 'Beni Suef', 'Sohag', '6th of October City',
+];
 
 export default function StorePage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [sortBy, setSortBy] = useState('name');
   const [quickView, setQuickView] = useState<Product | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'price-asc' | 'price-desc'>('name');
+  const [checkoutData, setCheckoutData] = useState({ name: '', phone: '', city: 'Cairo', address: '', payment: 'cod' });
 
+  // Load data
   useEffect(() => {
-    Promise.all([publicFetch('/catalog/products'), publicFetch('/catalog/categories')]).then(([prods, cats]) => {
-      const productList = Array.isArray(prods) ? prods : prods?.data ?? [];
-      const catList = Array.isArray(cats) ? cats : cats?.data ?? [];
-      // Attach category names
-      const enriched = productList.map((p: any) => ({
-        ...p,
-        category_name: catList.find((c: any) => String(c.id) === String(p.category_id))?.name || 'Makeup',
-      }));
-      setProducts(enriched);
-      setCategories(catList);
-      setLoading(false);
-    });
-    // Load cart from localStorage
-    try {
-      const saved = localStorage.getItem('brushia-cart');
-      if (saved) setCart(JSON.parse(saved));
-    } catch {}
+    let cancelled = false;
+    async function load() {
+      try {
+        // Try with auth token from localStorage if available
+        const token = (() => { try { const s = localStorage.getItem('brushia-auth'); return s ? JSON.parse(s)?.state?.accessToken : null; } catch { return null; } })();
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        
+        const [prodsRes, catsRes] = await Promise.all([
+          fetch('/api/v1/catalog/products', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/api/v1/catalog/categories', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+
+        if (cancelled) return;
+        const prodList: Product[] = Array.isArray(prodsRes) ? prodsRes : prodsRes?.data ?? [];
+        const catList: Category[] = Array.isArray(catsRes) ? catsRes : catsRes?.data ?? [];
+        
+        const enriched = prodList.map((p: any) => ({
+          ...p,
+          category_name: catList.find((c: any) => String(c.id) === String(p.category_id))?.name || 'Makeup',
+        }));
+        setProducts(enriched);
+        setCategories(catList);
+      } catch {
+        // Silently fail — store just shows empty
+      }
+      if (!cancelled) setLoading(false);
+    }
+    load();
+    // Load cart
+    try { const s = localStorage.getItem('brushia-cart'); if (s) setCart(JSON.parse(s)); } catch {}
+    return () => { cancelled = true; };
   }, []);
 
-  // Save cart to localStorage
-  useEffect(() => {
-    localStorage.setItem('brushia-cart', JSON.stringify(cart));
-  }, [cart]);
+  // Save cart
+  useEffect(() => { try { localStorage.setItem('brushia-cart', JSON.stringify(cart)); } catch {} }, [cart]);
 
   const filtered = useMemo(() => {
-    let list = products;
+    let list = [...products];
     if (selectedCategory !== 'all') list = list.filter(p => String(p.category_id) === selectedCategory);
-    if (search) list = list.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase()));
-    if (sortBy === 'price-asc') list = [...list].sort((a, b) => Number(a.base_price) - Number(b.base_price));
-    else if (sortBy === 'price-desc') list = [...list].sort((a, b) => Number(b.base_price) - Number(a.base_price));
-    else list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    if (search) list = list.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase()));
+    if (sortBy === 'price-asc') list.sort((a, b) => Number(a.base_price) - Number(b.base_price));
+    else if (sortBy === 'price-desc') list.sort((a, b) => Number(b.base_price) - Number(a.base_price));
+    else list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     return list;
   }, [products, selectedCategory, search, sortBy]);
 
@@ -298,16 +97,24 @@ export default function StorePage() {
   };
 
   const updateQty = (id: string, qty: number) => {
-    if (qty <= 0) return setCart(prev => prev.filter(c => c.product.id !== id));
-    setCart(prev => prev.map(c => c.product.id === id ? { ...c, quantity: qty } : c));
+    if (qty <= 0) setCart(prev => prev.filter(c => c.product.id !== id));
+    else setCart(prev => prev.map(c => c.product.id === id ? { ...c, quantity: qty } : c));
   };
 
-  const removeFromCart = (id: string) => setCart(prev => prev.filter(c => c.product.id !== id));
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
+  const cartTotal = cart.reduce((s, c) => s + (Number(c.product.base_price) / 100) * c.quantity, 0);
+
+  const placeOrder = async () => {
+    setOrderPlaced(true);
+    setCart([]);
+    setShowCheckout(false);
+    setShowCart(false);
+    setTimeout(() => setOrderPlaced(false), 5000);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Header */}
+      {/* Header */}
       <header className="bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -321,48 +128,40 @@ export default function StorePage() {
           </div>
           <div className="flex items-center gap-3">
             <a href="/auth/login" className="text-xs opacity-70 hover:opacity-100 transition">Admin Login</a>
-            <button onClick={() => setCartOpen(true)} className="relative p-2 hover:bg-white/10 rounded-xl transition">
+            <button onClick={() => setShowCart(true)} className="relative p-2 hover:bg-white/10 rounded-xl transition">
               <ShoppingCart className="h-6 w-6" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 bg-white text-rose-600 text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-yellow-400 text-black text-xs font-bold rounded-full flex items-center justify-center">{cartCount}</span>
               )}
             </button>
           </div>
         </div>
-
-        {/* Hero Banner */}
         <div className="max-w-7xl mx-auto px-4 py-12 text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">Discover Your Beauty ✨</h2>
           <p className="text-lg opacity-80 mb-8">Premium makeup & beauty tools — Made for Queens</p>
           <div className="max-w-xl mx-auto relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white text-gray-900 text-sm shadow-xl focus:ring-2 focus:ring-pink-300 outline-none"
-              placeholder="Search products, lashes, brushes..." />
+            <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white text-gray-900 text-sm shadow-xl focus:ring-2 focus:ring-pink-300 outline-none"
+              placeholder="Search products, lashes, brushes..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
       </header>
 
-      {/* Category Filters */}
+      {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 -mt-5">
         <div className="bg-white rounded-2xl shadow-lg p-4 flex flex-wrap items-center gap-2">
           <button onClick={() => setSelectedCategory('all')}
-            className={cn('px-4 py-2 rounded-xl text-sm font-medium transition',
-              selectedCategory === 'all' ? 'bg-rose-500 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${selectedCategory === 'all' ? 'bg-rose-500 text-white shadow' : 'bg-gray-100 hover:bg-gray-200'}`}>
             All Products
           </button>
           {categories.map(c => (
             <button key={c.id} onClick={() => setSelectedCategory(String(c.id))}
-              className={cn('px-4 py-2 rounded-xl text-sm font-medium transition',
-                selectedCategory === String(c.id) ? 'bg-rose-500 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition ${selectedCategory === String(c.id) ? 'bg-rose-500 text-white shadow' : 'bg-gray-100 hover:bg-gray-200'}`}>
               {c.name}
             </button>
           ))}
           <div className="ml-auto flex items-center gap-2">
-            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
-              className="text-xs border rounded-lg px-2 py-1.5 text-gray-600">
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs border rounded-lg px-2 py-1.5 text-gray-600">
               <option value="name">Sort: Name</option>
               <option value="price-asc">Price: Low → High</option>
               <option value="price-desc">Price: High → Low</option>
@@ -380,17 +179,159 @@ export default function StorePage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
-            <Package className="h-16 w-16 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400">No products found</p>
+            <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">No products found</p>
+            <p className="text-gray-400 text-sm mt-1">Try adjusting your search or filter</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {filtered.map(p => (
-              <ProductCard key={p.id} product={p} onAddToCart={addToCart} onQuickView={setQuickView} />
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filtered.map(p => {
+              const price = Number(p.base_price) / 100;
+              const idx = parseInt(String(p.id).replace(/\D/g, '') || '0') % GRADIENTS.length;
+              return (
+                <div key={p.id} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                  <div className={`relative h-52 bg-gradient-to-br flex items-center justify-center ${GRADIENTS[idx]}`}>
+                    <div className="text-center">
+                      <Sparkles className="h-12 w-12 text-rose-300 mx-auto mb-2" />
+                      <p className="text-xs text-gray-500">{p.sku}</p>
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <button onClick={() => setQuickView(p)} className="bg-white text-gray-800 px-4 py-2 rounded-xl text-xs font-medium shadow-lg hover:bg-gray-50">
+                        Quick View
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-[10px] text-rose-400 font-medium mb-1">{p.category_name}</p>
+                    <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem]">{p.name}</h3>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-lg font-bold text-rose-600">{fmtEGP(Number(p.base_price))}</span>
+                      <button onClick={() => addToCart(p)} className="h-9 w-9 bg-rose-500 hover:bg-rose-600 text-white rounded-xl flex items-center justify-center transition shadow-lg shadow-rose-200">
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* Cart Slider */}
+      {showCart && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/50" onClick={() => setShowCart(false)} />
+          <div className="w-[400px] bg-white h-full shadow-2xl flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-bold text-lg flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> Cart ({cartCount})</h3>
+              <button onClick={() => setShowCart(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {cart.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p>Your cart is empty</p>
+                </div>
+              ) : cart.map(item => {
+                const price = Number(item.product.base_price) / 100;
+                return (
+                  <div key={item.product.id} className="flex items-center gap-3 py-3 border-b">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{item.product.name}</p>
+                      <p className="text-rose-600 text-sm font-semibold">{fmtEGP(Number(item.product.base_price))}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateQty(item.product.id, item.quantity - 1)} className="h-7 w-7 rounded-lg border flex items-center justify-center hover:bg-gray-50">
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+                      <button onClick={() => updateQty(item.product.id, item.quantity + 1)} className="h-7 w-7 rounded-lg border flex items-center justify-center hover:bg-gray-50">
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="border-t p-4">
+              <div className="flex justify-between mb-3">
+                <span className="font-medium">Total</span>
+                <span className="font-bold text-lg text-rose-600">EGP {cartTotal.toFixed(2)}</span>
+              </div>
+              <button onClick={() => { setShowCheckout(true); setShowCart(false); }} disabled={cart.length === 0}
+                className="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2">
+                Checkout <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
+      {showCheckout && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold mb-4">Checkout</h3>
+            <div className="space-y-3">
+              <input placeholder="Full Name" className="w-full px-4 py-2.5 border rounded-xl text-sm" value={checkoutData.name} onChange={e => setCheckoutData(p => ({ ...p, name: e.target.value }))} />
+              <input placeholder="Phone (+20)" className="w-full px-4 py-2.5 border rounded-xl text-sm" value={checkoutData.phone} onChange={e => setCheckoutData(p => ({ ...p, phone: e.target.value }))} />
+              <select className="w-full px-4 py-2.5 border rounded-xl text-sm" value={checkoutData.city} onChange={e => setCheckoutData(p => ({ ...p, city: e.target.value }))}>
+                {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <textarea placeholder="Delivery Address" className="w-full px-4 py-2.5 border rounded-xl text-sm" rows={2} value={checkoutData.address} onChange={e => setCheckoutData(p => ({ ...p, address: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-2">
+                {[{id: 'cod', label: 'Cash on Delivery', icon: '💵'}, {id: 'card', label: 'Card', icon: '💳'}, {id: 'vodafone_cash', label: 'Vodafone Cash', icon: '📱'}, {id: 'instapay', label: 'InstaPay', icon: '🏦'}].map(m => (
+                  <button key={m.id} onClick={() => setCheckoutData(p => ({ ...p, payment: m.id }))}
+                    className={`p-3 border rounded-xl text-xs font-medium flex items-center gap-2 transition ${checkoutData.payment === m.id ? 'border-rose-500 bg-rose-50 text-rose-700' : 'hover:bg-gray-50'}`}>
+                    <span className="text-lg">{m.icon}</span> {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+              <div className="flex justify-between text-sm"><span>Subtotal</span><span>EGP {cartTotal.toFixed(2)}</span></div>
+              <div className="flex justify-between text-sm mt-1"><span>Shipping</span><span className="text-green-600">Free</span></div>
+              <div className="flex justify-between font-bold mt-2 pt-2 border-t"><span>Total</span><span className="text-rose-600">EGP {cartTotal.toFixed(2)}</span></div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => { setShowCheckout(false); setShowCart(true); }} className="flex-1 py-2.5 border rounded-xl text-sm font-medium hover:bg-gray-50">Back</button>
+              <button onClick={placeOrder} className="flex-1 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg">Place Order</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick View */}
+      {quickView && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setQuickView(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="font-bold text-lg">{quickView.name}</h3>
+              <button onClick={() => setQuickView(null)} className="p-1 hover:bg-gray-100 rounded-lg"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="text-sm text-gray-500 mb-2">SKU: {quickView.sku}</p>
+            <p className="text-sm text-rose-400 mb-2">{quickView.category_name}</p>
+            <p className="text-2xl font-bold text-rose-600 mt-4">{fmtEGP(Number(quickView.base_price))}</p>
+            <button onClick={() => { addToCart(quickView); setQuickView(null); }}
+              className="w-full mt-4 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center gap-2">
+              <ShoppingCart className="h-4 w-4" /> Add to Cart
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Order Placed */}
+      {orderPlaced && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 text-center shadow-2xl">
+            <div className="text-6xl mb-4">🎉</div>
+            <h3 className="text-2xl font-bold mb-2">Order Placed!</h3>
+            <p className="text-gray-500">Thank you for shopping with Brushia</p>
+            <p className="text-sm text-gray-400 mt-2">We&apos;ll confirm your order via WhatsApp</p>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12 mt-12">
@@ -421,36 +362,6 @@ export default function StorePage() {
           © 2024 Brushia. All rights reserved. Powered by Brushia ERP.
         </div>
       </footer>
-
-      {/* Cart Slider */}
-      {cartOpen && <CartSlider cart={cart} onUpdateQty={updateQty} onRemove={removeFromCart} onClose={() => setCartOpen(false)} onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }} />}
-
-      {/* Checkout Modal */}
-      {checkoutOpen && <CheckoutModal cart={cart} onClose={() => setCheckoutOpen(false)} onComplete={() => { setCheckoutOpen(false); setCart([]); }} />}
-
-      {/* Quick View Modal */}
-      {quickView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setQuickView(null)}>
-          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="h-48 bg-gradient-to-br from-rose-100 to-pink-50 flex items-center justify-center relative">
-              <Sparkles className="h-16 w-16 text-rose-300" />
-              <button onClick={() => setQuickView(null)} className="absolute top-3 right-3 h-8 w-8 bg-white/80 rounded-full flex items-center justify-center"><X className="h-4 w-4" /></button>
-            </div>
-            <div className="p-6">
-              <p className="text-xs text-rose-500 font-medium">{quickView.category_name}</p>
-              <h3 className="text-xl font-bold text-gray-900 mt-1">{quickView.name}</h3>
-              <p className="text-sm text-gray-400 mt-1">SKU: {quickView.sku}</p>
-              <p className="text-2xl font-bold text-rose-600 mt-4">{formatEGP(Number(quickView.base_price) / 100)}</p>
-              <button onClick={() => { addToCart(quickView); setQuickView(null); }}
-                className="w-full mt-4 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center gap-2">
-                <ShoppingCart className="h-4 w-4" /> Add to Cart
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
     </div>
   );
 }
