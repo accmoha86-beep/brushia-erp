@@ -66,13 +66,32 @@ export class ApiError extends Error {
   }
 }
 
+function getAuthFromStorage(): { accessToken: string | null; tenantId: string | null } {
+  if (typeof window === 'undefined') return { accessToken: null, tenantId: null };
+  try {
+    const raw = localStorage.getItem('brushia-auth');
+    if (!raw) return { accessToken: null, tenantId: null };
+    const parsed = JSON.parse(raw);
+    return {
+      accessToken: parsed?.state?.accessToken || null,
+      tenantId: parsed?.state?.user?.tenantId || null,
+    };
+  } catch {
+    return { accessToken: null, tenantId: null };
+  }
+}
+
 export async function apiClient<T = unknown>(
   path: string,
   options: RequestInit & {
     params?: Record<string, string | number | boolean | undefined>;
   } = {},
 ): Promise<T> {
-  const { accessToken, user } = useAuthStore.getState();
+  const storeState = useAuthStore.getState();
+  // Zustand persist rehydrates async — fallback to direct localStorage read
+  const fallback = (!storeState.accessToken) ? getAuthFromStorage() : null;
+  const accessToken = storeState.accessToken || fallback?.accessToken || null;
+  const user = storeState.user || (fallback?.tenantId ? { tenantId: fallback.tenantId } : null);
 
   // Build URL with query params
   const fullPath = path.startsWith('/') ? API_BASE + path : API_BASE + '/' + path;
