@@ -641,7 +641,8 @@ export class AccountingService implements IAccountingService {
     }
     query += ` ORDER BY cc.type, cc.code`;
 
-    const rows = await this.db.query(query, params);
+    const result = await this.db.query(query, params);
+    const rows = result.rows;
     return { data: rows, total: rows.length };
   }
 
@@ -718,7 +719,7 @@ export class AccountingService implements IAccountingService {
     if (endDate) { dateFilter += ` AND je.date <= $${idx++}`; params.push(endDate); }
 
     // Get income vs expense breakdown
-    const summary = await this.db.query(
+    const summaryResult = await this.db.query(
       `SELECT 
         coa.account_type,
         COUNT(DISTINCT je.id) as entry_count,
@@ -734,7 +735,7 @@ export class AccountingService implements IAccountingService {
     );
 
     // Get recent transactions
-    const recentTxns = await this.db.query(
+    const recentResult = await this.db.query(
       `SELECT je.entry_number, je.date, je.description, jl.debit, jl.credit,
         coa.account_number, coa.name as account_name
        FROM accounting.journal_lines jl
@@ -748,10 +749,10 @@ export class AccountingService implements IAccountingService {
 
     return {
       costCenter: cc,
-      summary,
-      recentTransactions: recentTxns,
+      summary: summaryResult.rows,
+      recentTransactions: recentResult.rows,
       budgetAmount: Number(cc.budget_amount || 0),
-      totalSpent: summary.reduce((sum: number, r: any) => sum + Number(r.total_debit || 0), 0),
+      totalSpent: (summaryResult.rows || []).reduce((sum: number, r: any) => sum + Number(r.total_debit || 0), 0),
     };
   }
 
@@ -762,7 +763,7 @@ export class AccountingService implements IAccountingService {
     if (startDate) { dateFilter += ` AND je.date >= $${idx++}`; params.push(startDate); }
     if (endDate) { dateFilter += ` AND je.date <= $${idx++}`; params.push(endDate); }
 
-    const data = await this.db.query(
+    const dataResult = await this.db.query(
       `SELECT 
         cc.id, cc.code, cc.name, cc.name_ar, cc.type, cc.budget_amount,
         COUNT(DISTINCT je.id) as transaction_count,
@@ -780,6 +781,6 @@ export class AccountingService implements IAccountingService {
       params,
     );
 
-    return { data, total: data.length };
+    return { data: dataResult.rows, total: dataResult.rows.length };
   }
 }
