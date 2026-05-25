@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
-import { Search, Eye, X, Package, Truck, CheckCircle2, Clock, XCircle, RefreshCw, ShoppingBag, CreditCard, Banknote, Hash, Printer, Receipt, FileText } from 'lucide-react';
+import { Search, Eye, X, Package, Truck, CheckCircle2, Clock, XCircle, RefreshCw, ShoppingBag, CreditCard, Banknote, Hash, Printer, Receipt, FileText , Download } from 'lucide-react';
 import { printA4Invoice, printThermalReceipt } from '@/lib/print-invoice';
+import { exportToCSV, exportToExcelXML } from '@/lib/export-data';
 
 interface Order {
   id: string; order_number: string; customer_id?: string; customer_name?: string;
@@ -145,6 +146,15 @@ export default function OrdersPage() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search orders..."
             className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-rose-500" />
         </div>
+
+        <button onClick={() => exportToCSV(orders.map((o: Order) => ({ 'Order #': o.order_number, Date: new Date(o.created_at).toLocaleDateString(), Customer: o.customer_name || '-', Status: o.status, Payment: o.payment_status, Channel: o.channel, Total: safeEGP(getTotal(o)), Paid: safeEGP(o.paid_amount) })), 'brushia_orders')}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition whitespace-nowrap">
+          <Download className="w-4 h-4" /> CSV
+        </button>
+        <button onClick={() => exportToExcelXML(orders.map((o: Order) => ({ 'Order #': o.order_number, Date: new Date(o.created_at).toLocaleDateString(), Customer: o.customer_name || '-', Status: o.status, Payment: o.payment_status, Channel: o.channel, Total: Number(getTotal(o)), Paid: Number(o.paid_amount || 0) })), 'brushia_orders', 'Orders')}
+          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition whitespace-nowrap">
+          <Download className="w-4 h-4" /> Excel
+        </button>
         {['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)}
             className={cn('px-3 py-2 rounded-lg text-sm font-medium capitalize transition-all',

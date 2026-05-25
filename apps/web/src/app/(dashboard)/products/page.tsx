@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { formatEGP, cn } from '@/lib/utils';
 import { api } from '@/lib/api-client';
-import { Search, Plus, ChevronLeft, ChevronRight, Package, Edit, Trash2, Eye, X, RefreshCw, Save, AlertTriangle, Check, Tag, DollarSign, Archive } from 'lucide-react';
+import { exportToCSV, exportToExcelXML } from '@/lib/export-data';
+import { Search, Plus, ChevronLeft, ChevronRight, Package, Edit, Trash2, Eye, X, RefreshCw, Save, AlertTriangle, Check, Tag, DollarSign, Archive , Download } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────
 interface PaginatedResponse<T> {
@@ -508,7 +509,17 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="text-sm text-gray-500 mt-1">{loading ? '…' : `${totalProducts} products in catalog`}</p>
         </div>
-        <button onClick={() => setShowAddModal(true)}
+        <div className="flex gap-2">
+              <button onClick={() => exportToCSV(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'brushia_products')}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition">
+                <Download className="w-4 h-4" /> CSV
+              </button>
+              <button onClick={() => exportToExcelXML(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'brushia_products', 'Products')}
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition">
+                <Download className="w-4 h-4" /> Excel
+              </button>
+            </div>
+            <button onClick={() => setShowAddModal(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:from-rose-600 hover:to-purple-700 transition-all">
           <Plus className="h-4 w-4" /> Add Product
         </button>
