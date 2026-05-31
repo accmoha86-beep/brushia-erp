@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/lib/i18n';
 import Link from 'next/link';
 import { formatEGP, cn } from '@/lib/utils';
 import {
@@ -69,6 +70,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t, locale } = useI18n();
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -245,10 +247,10 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-rose-500" /> Dashboard
+            <Sparkles className="h-6 w-6 text-rose-500" /> {t('dashboard.title')}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Welcome back to <span className="text-rose-500 font-semibold">Brushia</span> ERP — {new Date().toLocaleDateString('en-EG', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            {t('dashboard.subtitle')} — {new Date().toLocaleDateString(locale === 'ar' ? 'ar-EG' : locale === 'ar' ? 'ar-EG' : 'en-EG', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -256,7 +258,7 @@ export default function DashboardPage() {
             <RefreshCw className={cn("h-4 w-4 text-gray-500", loading && "animate-spin")} />
           </button>
           <Link href="/pos" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 text-white text-sm font-medium shadow-lg shadow-rose-200 hover:shadow-xl transition-all">
-            <Sparkles className="h-4 w-4" /> Open POS
+            <Sparkles className="h-4 w-4" /> {t('dashboard.openPOS')}
           </Link>
         </div>
       </div>
@@ -266,10 +268,10 @@ export default function DashboardPage() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
           <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-red-800">Dashboard Error</p>
+            <p className="text-sm font-medium text-red-800">{t('common.noData')}</p>
             <p className="text-xs text-red-600">{error}</p>
           </div>
-          <button onClick={fetchDashboard} className="ml-auto px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200">Retry</button>
+          <button onClick={fetchDashboard} className="ml-auto px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200">{t('common.refresh')}</button>
         </div>
       )}
 
@@ -296,13 +298,13 @@ export default function DashboardPage() {
               <div className="relative">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 rounded-lg bg-rose-50"><DollarSign className="h-4 w-4 text-rose-500" /></div>
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Revenue</span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboard.totalRevenue')}</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{fmtMoney(data.totalRevenue)}</p>
                 <div className="flex items-center gap-3 mt-3">
                   <MiniBarChart data={data.last7 || []} color="bg-rose-400" />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1">7-day trend</p>
+                <p className="text-[10px] text-gray-400 mt-1">{locale === 'ar' ? 'اتجاه ٧ أيام' : '7-day trend'}</p>
               </div>
             </div>
 
@@ -312,11 +314,11 @@ export default function DashboardPage() {
               <div className="relative">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 rounded-lg bg-emerald-50"><TrendingUp className="h-4 w-4 text-emerald-500" /></div>
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Today&apos;s Sales</span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboard.totalOrders')}</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{fmtMoney(data.todayRevenue)}</p>
                 <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                  <ShoppingBag className="h-3 w-3" /> {data.todaysOrders?.length || 0} orders today
+                  <ShoppingBag className="h-3 w-3" /> {data.todaysOrders?.length || 0} {locale === 'ar' ? 'طلب اليوم' : 'orders today'}
                 </p>
               </div>
             </div>
@@ -327,7 +329,7 @@ export default function DashboardPage() {
               <div className="relative">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 rounded-lg bg-blue-50"><ShoppingBag className="h-4 w-4 text-blue-500" /></div>
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Orders</span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboard.totalOrders')}</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{data.orderCount}</p>
                 <p className="text-xs text-gray-400 mt-2">Avg {fmtMoney(data.avgOrderValue)} / order</p>
@@ -340,12 +342,12 @@ export default function DashboardPage() {
               <div className="relative">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 rounded-lg bg-purple-50"><Users className="h-4 w-4 text-purple-500" /></div>
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Customers</span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboard.totalCustomers')}</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{data.customerStats?.total_customers || 0}</p>
                 <div className="flex items-center gap-2 mt-2 text-xs flex-wrap">
-                  <span className="text-gray-400">{data.customerStats?.retail_count || 0} retail</span>
-                  <span className="text-purple-500 font-medium">{data.customerStats?.wholesale_count || 0} wholesale</span>
+                  <span className="text-gray-400">{data.customerStats?.retail_count || 0} {locale === 'ar' ? 'تجزئة' : 'retail'}</span>
+                  <span className="text-purple-500 font-medium">{data.customerStats?.wholesale_count || 0} {locale === 'ar' ? 'جملة' : 'wholesale'}</span>
                   <span className="text-amber-500 font-medium">⭐ {data.customerStats?.vip_count || 0} VIP</span>
                 </div>
               </div>
@@ -358,12 +360,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-rose-50"><Package className="h-3.5 w-3.5 text-rose-500" /></div>
-                  <span className="text-xs font-medium text-gray-500">Products</span>
+                  <span className="text-xs font-medium text-gray-500">{t('nav.products')}</span>
                 </div>
                 <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-rose-400 transition-colors" />
               </div>
               <p className="text-2xl font-bold mt-2">{data.productCount}</p>
-              <p className="text-[10px] text-gray-400 mt-1">{data.categoryCount} categories</p>
+              <p className="text-[10px] text-gray-400 mt-1">{data.categoryCount} {t('nav.categories')}</p>
             </Link>
 
             <Link href="/inventory" className="group bg-white rounded-xl p-4 border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all">
@@ -375,7 +377,7 @@ export default function DashboardPage() {
                 <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-emerald-400 transition-colors" />
               </div>
               <p className="text-2xl font-bold mt-2">{data.totalUnits?.toLocaleString()}</p>
-              <p className="text-[10px] text-gray-400 mt-1">{data.stockItems} stock records</p>
+              <p className="text-[10px] text-gray-400 mt-1">{data.stockItems} {locale === 'ar' ? 'سجل مخزون' : 'stock records'}</p>
             </Link>
 
             <Link href="/promotions" className="group bg-white rounded-xl p-4 border border-gray-100 hover:border-amber-200 hover:shadow-md transition-all">
@@ -387,7 +389,7 @@ export default function DashboardPage() {
                 <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-amber-400 transition-colors" />
               </div>
               <p className="text-2xl font-bold mt-2">{data.activePromos?.length || 0}</p>
-              <p className="text-[10px] text-gray-400 mt-1">running campaigns</p>
+              <p className="text-[10px] text-gray-400 mt-1">{locale === 'ar' ? 'حملات نشطة' : 'running campaigns'}</p>
             </Link>
 
             <Link href="/branches" className="group bg-white rounded-xl p-4 border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all">
@@ -400,9 +402,9 @@ export default function DashboardPage() {
               </div>
               <p className="text-2xl font-bold mt-2">{data.branchArr?.length || 0}</p>
               <div className="flex items-center gap-1.5 mt-1 text-[10px]">
-                <span className="text-gray-400">{data.retailBranches} retail</span>
-                <span className="text-amber-500">{data.exhibitionBranches} exhibition</span>
-                <span className="text-blue-500">{data.warehouseBranches} warehouse</span>
+                <span className="text-gray-400">{data.retailBranches} {t('branches.retail')}</span>
+                <span className="text-amber-500">{data.exhibitionBranches} {t('branches.exhibition')}</span>
+                <span className="text-blue-500">{data.warehouseBranches} {t('branches.warehouse')}</span>
               </div>
             </Link>
           </div>
@@ -413,11 +415,11 @@ export default function DashboardPage() {
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" /> Low Stock Alerts
+                  <AlertTriangle className="h-4 w-4 text-amber-500" /> {t('dashboard.lowStockAlerts')}
                 </h3>
                 <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full',
                   (data.lowStock?.length || 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')}>
-                  {data.lowStock?.length || 0} items
+                  {data.lowStock?.length || 0} {t('common.items')}
                 </span>
               </div>
               {(data.lowStock?.length || 0) > 0 ? (
@@ -426,7 +428,7 @@ export default function DashboardPage() {
                     <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 text-xs">
                       <span className="font-medium text-gray-700 truncate flex-1">{item.product_name || item.name || 'Product'}</span>
                       <span className={cn('font-bold ml-2', Number(item.qty_on_hand) <= 10 ? 'text-red-600' : 'text-amber-600')}>
-                        {item.qty_on_hand} units
+                        {item.qty_on_hand} {t('common.units')}
                       </span>
                     </div>
                   ))}
@@ -434,7 +436,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                   <CheckCircle2 className="h-10 w-10 text-emerald-300 mb-2" />
-                  <p className="text-sm">All stock levels healthy!</p>
+                  <p className="text-sm">{t('notifications.allClear')}</p>
                 </div>
               )}
               <Link href="/inventory" className="flex items-center gap-1 text-xs text-rose-500 font-medium mt-4 hover:text-rose-600">
@@ -445,7 +447,7 @@ export default function DashboardPage() {
             {/* Sales by Channel */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-4">
-                <BarChart3 className="h-4 w-4 text-blue-500" /> Sales by Channel
+                <BarChart3 className="h-4 w-4 text-blue-500" /> {t('dashboard.salesOverview')}
               </h3>
               {Object.keys(data.channelCounts || {}).length > 0 ? (
                 <div className="space-y-3">
@@ -457,7 +459,7 @@ export default function DashboardPage() {
                       <div key={ch}>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-medium text-gray-700">{info.label}</span>
-                          <span className="text-gray-400">{String(count)} orders · {fmtMoney(Number(rev))}</span>
+                          <span className="text-gray-400">{String(count)} {t('nav.orders')} · {fmtMoney(Number(rev))}</span>
                         </div>
                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                           <div className={cn('h-full rounded-full transition-all', info.color)} style={{ width: `${pct}%` }} />
@@ -469,7 +471,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                   <BarChart3 className="h-10 w-10 text-gray-200 mb-2" />
-                  <p className="text-sm">No sales data yet</p>
+                  <p className="text-sm">{t('common.noData')}</p>
                 </div>
               )}
               <div className="border-t border-gray-100 mt-4 pt-4">
@@ -488,7 +490,7 @@ export default function DashboardPage() {
             {/* Payment Methods */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-4">
-                <CreditCard className="h-4 w-4 text-purple-500" /> Payment Methods
+                <CreditCard className="h-4 w-4 text-purple-500" /> {t('analytics.paymentMethods')}
               </h3>
               {Object.keys(data.paymentCounts || {}).length > 0 ? (
                 <div className="space-y-3">
@@ -511,7 +513,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                   <CreditCard className="h-10 w-10 text-gray-200 mb-2" />
-                  <p className="text-sm">No payment data yet</p>
+                  <p className="text-sm">{t('common.noData')}</p>
                 </div>
               )}
             </div>
@@ -523,9 +525,9 @@ export default function DashboardPage() {
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <ShoppingBag className="h-4 w-4 text-rose-500" /> Recent Orders
+                  <ShoppingBag className="h-4 w-4 text-rose-500" /> {t('dashboard.recentOrders')}
                 </h3>
-                <Link href="/orders" className="text-xs text-rose-500 font-medium hover:text-rose-600">View All</Link>
+                <Link href="/orders" className="text-xs text-rose-500 font-medium hover:text-rose-600">{t('dashboard.viewAll')}</Link>
               </div>
               {(data.orderArr?.length || 0) > 0 ? (
                 <div className="space-y-2">
@@ -550,7 +552,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                   <ShoppingBag className="h-10 w-10 text-gray-200 mb-2" />
-                  <p className="text-sm">No orders yet</p>
+                  <p className="text-sm">{t('dashboard.noOrders')}</p>
                 </div>
               )}
             </div>
@@ -558,35 +560,35 @@ export default function DashboardPage() {
             {/* Quick Actions */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-4">
-                <Activity className="h-4 w-4 text-purple-500" /> Quick Actions
+                <Activity className="h-4 w-4 text-purple-500" /> {t('dashboard.quickActions')}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <Link href="/pos" className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-100 hover:shadow-md transition-all group">
                   <div className="p-2 rounded-lg bg-rose-100"><Sparkles className="h-4 w-4 text-rose-500" /></div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-800">Open POS</p>
-                    <p className="text-[10px] text-gray-400">Start selling</p>
+                    <p className="text-xs font-semibold text-gray-800">{t('dashboard.openPOS')}</p>
+                    <p className="text-[10px] text-gray-400">{t('pos.newSale')}</p>
                   </div>
                 </Link>
                 <Link href="/orders" className="flex items-center gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100 hover:shadow-md transition-all group">
                   <div className="p-2 rounded-lg bg-blue-100"><ShoppingBag className="h-4 w-4 text-blue-500" /></div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-800">Orders</p>
-                    <p className="text-[10px] text-gray-400">{data.orderCount} total</p>
+                    <p className="text-xs font-semibold text-gray-800">{t('nav.orders')}</p>
+                    <p className="text-[10px] text-gray-400">{data.orderCount} {t('common.total')}</p>
                   </div>
                 </Link>
                 <Link href="/products" className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100 hover:shadow-md transition-all group">
                   <div className="p-2 rounded-lg bg-amber-100"><Package className="h-4 w-4 text-amber-500" /></div>
                   <div>
                     <p className="text-xs font-semibold text-gray-800">Products</p>
-                    <p className="text-[10px] text-gray-400">{data.productCount} items</p>
+                    <p className="text-[10px] text-gray-400">{data.productCount} {t('common.items')}</p>
                   </div>
                 </Link>
                 <Link href="/reports" className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100 hover:shadow-md transition-all group">
                   <div className="p-2 rounded-lg bg-emerald-100"><BarChart3 className="h-4 w-4 text-emerald-500" /></div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-800">Reports</p>
-                    <p className="text-[10px] text-gray-400">Analytics</p>
+                    <p className="text-xs font-semibold text-gray-800">{t('nav.reports')}</p>
+                    <p className="text-[10px] text-gray-400">{t('section.analytics')}</p>
                   </div>
                 </Link>
               </div>
@@ -597,11 +599,11 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Award className="h-4 w-4 text-amber-600" />
-                      <span className="text-xs font-medium text-gray-700">Total Commissions</span>
+                      <span className="text-xs font-medium text-gray-700">{t('commissions.totalCommissions')}</span>
                     </div>
                     <span className="text-sm font-bold text-amber-700">{fmtMoney(data.totalCommission)}</span>
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-1">{data.commArr?.length || 0} salespersons</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{data.commArr?.length || 0} {locale === 'ar' ? 'مندوب مبيعات' : 'salespersons'}</p>
                 </div>
               )}
             </div>

@@ -9,51 +9,52 @@ import { cn } from '@/lib/utils';
 import { LayoutDashboard, ShoppingCart, Package, Grid3X3, ShoppingBag, Users, Building2, FileText, Warehouse, Truck, BookOpen, Calculator, BarChart3, Tag, Crown, Settings, LogOut, Menu, X, Heart, ClipboardCheck, CalendarDays, MessageCircle, Store, DollarSign, Shield, PackageCheck, Receipt, Target, TrendingUp, ScanBarcode, Globe, Bell, AlertTriangle, ShieldAlert, Calendar, ArrowDown, ChevronDown, FolderTree, }  from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'POS', href: '/pos', icon: ShoppingCart },
-  { type: 'separator' as const, label: 'Catalog' },
-  { name: 'Products', href: '/products', icon: Package },
-  { name: 'Categories', href: '/categories', icon: Grid3X3 },
-  { type: 'separator' as const, label: 'Sales' },
-  { name: 'Orders', href: '/orders', icon: ShoppingBag },
-  { name: 'Customers', href: '/customers', icon: Users },
-  { name: 'WhatsApp Orders', href: '/whatsapp', icon: MessageCircle },
-  { type: 'separator' as const, label: 'Purchasing' },
-  { name: 'Vendors', href: '/vendors', icon: Building2 },
-  { name: 'Purchase Orders', href: '/purchase-orders', icon: FileText },
-  { name: 'Goods Receiving', href: '/goods-receiving', icon: PackageCheck },
-  { name: 'Vendor Bills', href: '/vendor-bills', icon: Receipt },
-  { type: 'separator' as const, label: 'Operations' },
-  { name: 'Branches', href: '/branches', icon: Store },
-  { name: 'Inventory', href: '/inventory', icon: Warehouse },
-  { name: 'Warehouses', href: '/warehouses', icon: Building2 },
-  { name: 'Stock Counts', href: '/stock-counts', icon: ClipboardCheck },
-  { name: 'Shipping', href: '/shipping', icon: Truck },
-  { type: 'separator' as const, label: 'Finance' },
-  { name: 'Accounting', href: '/accounting', icon: BookOpen },
-  { name: 'Chart of Accounts', href: '/chart-of-accounts', icon: FolderTree },
-  { name: 'Cost Centers', href: '/accounting/cost-centers', icon: Target },
-  { name: 'Sub-Ledgers', href: '/accounting/sub-ledgers', icon: Receipt },
-  { name: 'Statements', href: '/accounting/statements', icon: FileText },
-  { name: 'Reports', href: '/accounting/advanced-reports', icon: TrendingUp },
-  { name: 'Commissions', href: '/commissions', icon: Calculator },
-  { name: 'Cost Tracking', href: '/cost-tracking', icon: DollarSign },
-  { type: 'separator' as const, label: 'Marketing' },
-  { name: 'Promotions', href: '/promotions', icon: Tag },
-  { name: 'Wholesale', href: '/wholesale', icon: Crown },
-  { name: 'Loyalty Program', href: '/loyalty', icon: Heart },
-  { type: 'separator' as const, label: 'Analytics' },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
-  { name: 'Advanced Analytics', href: '/analytics', icon: TrendingUp },
-  { name: 'Barcode Labels', href: '/barcode-labels', icon: ScanBarcode },
-  { type: 'separator' as const, label: 'System' },
-  { name: 'Users & Roles', href: '/users', icon: Shield },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { nameKey: 'nav.dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { nameKey: 'nav.pos', href: '/pos', icon: ShoppingCart },
+  { type: 'separator' as const, labelKey: 'section.catalog' },
+  { nameKey: 'nav.products', href: '/products', icon: Package },
+  { nameKey: 'nav.categories', href: '/categories', icon: Grid3X3 },
+  { type: 'separator' as const, labelKey: 'section.sales' },
+  { nameKey: 'nav.orders', href: '/orders', icon: ShoppingBag },
+  { nameKey: 'nav.customers', href: '/customers', icon: Users },
+  { nameKey: 'nav.whatsapp', href: '/whatsapp', icon: MessageCircle },
+  { type: 'separator' as const, labelKey: 'section.purchasing' },
+  { nameKey: 'nav.vendors', href: '/vendors', icon: Building2 },
+  { nameKey: 'nav.purchaseOrders', href: '/purchase-orders', icon: FileText },
+  { nameKey: 'nav.goodsReceiving', href: '/goods-receiving', icon: PackageCheck },
+  { nameKey: 'nav.vendorBills', href: '/vendor-bills', icon: Receipt },
+  { type: 'separator' as const, labelKey: 'section.operations' },
+  { nameKey: 'nav.branches', href: '/branches', icon: Store },
+  { nameKey: 'nav.inventory', href: '/inventory', icon: Warehouse },
+  { nameKey: 'nav.warehouses', href: '/warehouses', icon: Building2 },
+  { nameKey: 'nav.stockCounts', href: '/stock-counts', icon: ClipboardCheck },
+  { nameKey: 'nav.shipping', href: '/shipping', icon: Truck },
+  { type: 'separator' as const, labelKey: 'section.finance' },
+  { nameKey: 'nav.accounting', href: '/accounting', icon: BookOpen },
+  { nameKey: 'nav.chartOfAccounts', href: '/chart-of-accounts', icon: FolderTree },
+  { nameKey: 'nav.costCenters', href: '/accounting/cost-centers', icon: Target },
+  { nameKey: 'nav.subLedgers', href: '/accounting/sub-ledgers', icon: Receipt },
+  { nameKey: 'nav.financialStatements', href: '/accounting/statements', icon: FileText },
+  { nameKey: 'nav.advancedReports', href: '/accounting/advanced-reports', icon: TrendingUp },
+  { nameKey: 'nav.commissions', href: '/commissions', icon: Calculator },
+  { nameKey: 'nav.costTracking', href: '/cost-tracking', icon: DollarSign },
+  { type: 'separator' as const, labelKey: 'section.marketing' },
+  { nameKey: 'nav.promotions', href: '/promotions', icon: Tag },
+  { nameKey: 'nav.wholesale', href: '/wholesale', icon: Crown },
+  { nameKey: 'nav.loyalty', href: '/loyalty', icon: Heart },
+  { type: 'separator' as const, labelKey: 'section.analytics' },
+  { nameKey: 'nav.reports', href: '/reports', icon: BarChart3 },
+  { nameKey: 'nav.analytics', href: '/analytics', icon: TrendingUp },
+  { nameKey: 'nav.barcodeLabels', href: '/barcode-labels', icon: ScanBarcode },
+  { type: 'separator' as const, labelKey: 'section.system' },
+  { nameKey: 'nav.users', href: '/users', icon: Shield },
+  { nameKey: 'nav.settings', href: '/settings', icon: Settings },
 ];
 
 
 /* ── Notification Center ── */
 function NotificationCenter() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,7 +74,6 @@ function NotificationCenter() {
     const headers: any = token ? { Authorization: 'Bearer ' + token } : {};
 
     try {
-      // Low stock alerts
       const stockRes = await fetch('/api/v1/inventory/stock-levels', { headers });
       if (stockRes.ok) {
         const stockData = await stockRes.json();
@@ -84,19 +84,18 @@ function NotificationCenter() {
             id: 'stock-' + s.product_id,
             type: 'warning',
             icon: '📦',
-            title: 'Low Stock Alert',
-            message: (s.product_name || 'Product') + ' — only ' + Number(s.qty_on_hand ?? s.quantity ?? 0) + ' left',
-            time: 'Now',
+            title: t('notifications.lowStock'),
+            message: (s.product_name || 'Product') + ' — ' + Number(s.qty_on_hand ?? s.quantity ?? 0),
+            time: t('common.today'),
           });
         });
         if (lowStock.length > 5) {
-          notifs.push({ id: 'stock-more', type: 'info', icon: '⚠️', title: 'More Low Stock', message: '+' + (lowStock.length - 5) + ' more products below threshold', time: 'Now' });
+          notifs.push({ id: 'stock-more', type: 'info', icon: '⚠️', title: t('notifications.lowStock'), message: '+' + (lowStock.length - 5), time: t('common.today') });
         }
       }
     } catch {}
 
     try {
-      // Pending orders
       const ordersRes = await fetch('/api/v1/sales/orders', { headers });
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json();
@@ -107,16 +106,15 @@ function NotificationCenter() {
             id: 'orders-pending',
             type: 'info',
             icon: '🛒',
-            title: 'Pending Orders',
-            message: pending.length + ' order(s) awaiting confirmation',
-            time: 'Now',
+            title: t('notifications.pendingOrders'),
+            message: pending.length + '',
+            time: t('common.today'),
           });
         }
       }
     } catch {}
 
     try {
-      // Active promotions ending soon
       const promoRes = await fetch('/api/v1/promotions', { headers });
       if (promoRes.ok) {
         const promos = await promoRes.json();
@@ -124,36 +122,35 @@ function NotificationCenter() {
         const endingSoon = promoList.filter((p: any) => {
           const end = new Date(p.ends_at || p.end_date);
           const diff = end.getTime() - Date.now();
-          return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000; // within 7 days
+          return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
         });
         if (endingSoon.length > 0) {
           notifs.push({
             id: 'promo-ending',
             type: 'info',
             icon: '🏷️',
-            title: 'Promotions Ending Soon',
-            message: endingSoon.length + ' promotion(s) ending within 7 days',
-            time: 'Soon',
+            title: t('notifications.promosEnding'),
+            message: endingSoon.length + '',
+            time: '',
           });
         }
       }
     } catch {}
 
     if (notifs.length === 0) {
-      notifs.push({ id: 'none', type: 'success', icon: '✅', title: 'All Clear!', message: 'No urgent notifications', time: 'Now' });
+      notifs.push({ id: 'none', type: 'success', icon: '✅', title: t('notifications.allClear'), message: t('notifications.noUrgent'), time: '' });
     }
 
     setNotifications(notifs);
     setLoading(false);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5 * 60 * 1000); // refresh every 5 min
+    const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Close on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -177,10 +174,10 @@ function NotificationCenter() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+        <div className="absolute end-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
           <div className="bg-gradient-to-r from-rose-500 to-pink-600 px-4 py-3 text-white">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm">Notifications</h3>
+              <h3 className="font-semibold text-sm">{t('notifications.title')}</h3>
               <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{notifications.length}</span>
             </div>
           </div>
@@ -197,14 +194,14 @@ function NotificationCenter() {
                     <p className="text-sm font-semibold text-gray-900">{n.title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
                   </div>
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap">{n.time}</span>
+                  {n.time && <span className="text-[10px] text-gray-400 whitespace-nowrap">{n.time}</span>}
                 </div>
               </div>
             ))}
           </div>
           <div className="border-t px-4 py-2 bg-gray-50">
             <button onClick={() => fetchNotifications()} className="text-xs text-rose-500 hover:text-rose-600 font-medium w-full text-center">
-              Refresh
+              {t('common.refresh')}
             </button>
           </div>
         </div>
@@ -224,16 +221,14 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const { t, isRTL, locale } = useI18n();
 
   useEffect(() => {
     setMounted(true);
-    // Wait for zustand persist to finish rehydrating from localStorage
-    // before checking auth — prevents redirect race condition
     const checkHydration = () => {
       if (useAuthStore.persist?.hasHydrated?.()) {
         setHydrated(true);
       } else {
-        // Fallback: check localStorage directly
         try {
           const raw = localStorage.getItem('brushia-auth');
           if (raw && JSON.parse(raw)?.state?.accessToken) {
@@ -241,7 +236,6 @@ export default function DashboardLayout({
             return;
           }
         } catch {}
-        // If not hydrated yet, check again in 100ms (max 2s)
         setTimeout(checkHydration, 100);
       }
     };
@@ -250,11 +244,9 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (mounted && hydrated && !isAuthenticated) {
-      // Double-check localStorage before redirecting
       try {
         const raw = localStorage.getItem('brushia-auth');
         if (raw && JSON.parse(raw)?.state?.accessToken) {
-          // Token exists in localStorage but zustand hasn't synced — wait
           return;
         }
       } catch {}
@@ -262,7 +254,6 @@ export default function DashboardLayout({
     }
   }, [mounted, hydrated, isAuthenticated, router]);
 
-  // Hide sidebar on POS page
   const isPOS = pathname === '/pos';
 
   if (!mounted) {
@@ -270,7 +261,7 @@ export default function DashboardLayout({
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent" />
-          <p className="text-sm text-gray-500">Loading Brushia ERP...</p>
+          <p className="text-sm text-gray-500">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -285,8 +276,12 @@ export default function DashboardLayout({
     router.push('/auth/login');
   };
 
+  // Find current page name for header
+  const currentNav = navigation.find((n) => 'href' in n && pathname === n.href);
+  const currentPageName = currentNav && 'nameKey' in currentNav ? t(currentNav.nameKey!) : 'Brushia ERP';
+
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -298,8 +293,13 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 transition-transform duration-200 lg:relative lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 z-50 flex w-64 flex-col bg-gray-900 transition-transform duration-200 lg:relative lg:translate-x-0',
+          isRTL ? 'right-0' : 'left-0',
+          sidebarOpen
+            ? 'translate-x-0'
+            : isRTL
+            ? 'translate-x-full'
+            : '-translate-x-full'
         )}
       >
         {/* Logo */}
@@ -327,18 +327,18 @@ export default function DashboardLayout({
               return (
                 <div key={idx} className="pt-4 pb-1 px-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                    {item.label}
+                    {t(item.labelKey!)}
                   </p>
                 </div>
               );
             }
             if (!('href' in item)) return null;
-            const Icon = item.icon;
+            const Icon = item.icon!;
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={item.href!}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -348,7 +348,7 @@ export default function DashboardLayout({
                 )}
               >
                 <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-rose-400')} />
-                {item.name}
+                {t(item.nameKey!)}
               </Link>
             );
           })}
@@ -369,7 +369,7 @@ export default function DashboardLayout({
             <button
               onClick={handleLogout}
               className="text-gray-500 hover:text-rose-400 transition-colors"
-              title="Logout"
+              title={t('common.logout')}
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -390,7 +390,7 @@ export default function DashboardLayout({
 
           <div className="hidden lg:block">
             <h2 className="text-sm font-medium text-gray-500">
-              {navigation.find((n) => 'href' in n && pathname === n.href)?.name || 'Brushia ERP'}
+              {currentPageName}
             </h2>
           </div>
 
@@ -399,10 +399,10 @@ export default function DashboardLayout({
             <NotificationCenter />
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              System Online
+              {t('common.systemOnline')}
             </div>
             <div className="text-sm text-gray-500">
-              {new Date().toLocaleDateString('en-EG', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {new Date().toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-EG', { weekday: 'short', month: 'short', day: 'numeric' })}
             </div>
           </div>
         </header>

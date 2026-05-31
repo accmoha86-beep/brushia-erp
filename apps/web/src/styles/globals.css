@@ -52,35 +52,18 @@
 
 /* ── Mobile Responsive Enhancements ── */
 @media (max-width: 640px) {
-  /* Tables become scrollable */
   table { display: block; overflow-x: auto; white-space: nowrap; }
-  
-  /* Smaller padding on mobile */
   .p-6 { padding: 1rem; }
   .px-6 { padding-left: 1rem; padding-right: 1rem; }
   .py-6 { padding-top: 1rem; padding-bottom: 1rem; }
-  
-  /* Stack grid items on mobile */
   .grid-cols-2 { grid-template-columns: 1fr !important; }
   .grid-cols-3 { grid-template-columns: 1fr !important; }
   .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
-  
-  /* Full-width buttons on mobile */
   .mobile-full { width: 100% !important; }
-  
-  /* Hide non-essential elements */
   .mobile-hide { display: none !important; }
-  
-  /* Adjust font sizes */
   h1 { font-size: 1.25rem !important; }
-  
-  /* Fix sidebar overlay */
   .sidebar-overlay { z-index: 50; }
-  
-  /* Better touch targets */
   button, a { min-height: 44px; }
-  
-  /* POS layout adjustments */
   .pos-grid { grid-template-columns: 1fr !important; }
 }
 
@@ -90,16 +73,66 @@
   .md\:grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
-/* RTL Support */
+/* ── RTL / Arabic Support ── */
 [dir="rtl"] {
   direction: rtl;
   text-align: right;
+  font-family: var(--font-cairo), var(--font-inter), system-ui, sans-serif;
 }
 
-[dir="rtl"] .gap-2 > * + * { margin-right: 0; }
-[dir="rtl"] table { direction: rtl; }
+[dir="rtl"] table {
+  direction: rtl;
+}
+
+/* Flip logical properties for RTL */
 [dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
 [dir="rtl"] .mr-auto { margin-right: 0; margin-left: auto; }
+[dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+[dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+[dir="rtl"] .ml-3 { margin-left: 0; margin-right: 0.75rem; }
+[dir="rtl"] .mr-3 { margin-right: 0; margin-left: 0.75rem; }
+[dir="rtl"] .ml-4 { margin-left: 0; margin-right: 1rem; }
+
+/* Sidebar RTL positioning */
+[dir="rtl"] .translate-x-full { transform: translateX(100%); }
+[dir="rtl"] .-translate-x-full { transform: translateX(100%); }
+
+/* Fix flex direction for RTL */
+[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+/* Rounded corners flip for RTL */
+[dir="rtl"] .rounded-l-lg { border-radius: 0 0.5rem 0.5rem 0; }
+[dir="rtl"] .rounded-r-lg { border-radius: 0.5rem 0 0 0.5rem; }
+
+/* Chevron/arrow flip */
+[dir="rtl"] .rotate-icon { transform: scaleX(-1); }
+
+/* Input text alignment */
+[dir="rtl"] input, [dir="rtl"] textarea, [dir="rtl"] select {
+  text-align: right;
+}
+
+[dir="rtl"] input[type="number"] {
+  text-align: left;
+  direction: ltr;
+}
+
+/* Table header alignment */
+[dir="rtl"] th {
+  text-align: right;
+}
+
+/* Fix absolute positioned elements */
+[dir="rtl"] .right-0 { right: auto; left: 0; }
+[dir="rtl"] .left-0 { left: auto; right: 0; }
+
+/* Decorative circles and ornaments — keep position */
+[dir="rtl"] .absolute.top-0.right-0 { right: 0 !important; left: auto !important; }
 
 /* Print styles */
 @media print {
