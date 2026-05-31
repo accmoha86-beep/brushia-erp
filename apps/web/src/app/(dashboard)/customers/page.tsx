@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import { Search, Plus, Star, Phone, X, Eye, RefreshCw, Users, Crown } from 'lucide-react';
@@ -16,6 +17,7 @@ const tierColors: Record<string, string> = { bronze: 'bg-orange-100 text-orange-
 const tierIcons: Record<string, string> = { bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '👑' };
 
 export default function CustomersPage() {
+  const { t, locale, isRTL } = useI18n();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

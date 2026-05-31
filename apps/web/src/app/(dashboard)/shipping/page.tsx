@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
 import { Search, Truck, Package, Clock, CheckCircle2, MapPin, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -11,6 +12,7 @@ const statusColors: Record<string, string> = { pending: 'bg-yellow-100 text-yell
 const statusIcons: Record<string, any> = { pending: Clock, picked_up: Package, in_transit: Truck, delivered: CheckCircle2, failed: AlertTriangle };
 
 export default function ShippingPage() {
+  const { t, locale, isRTL } = useI18n();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import {
@@ -51,6 +52,7 @@ function drawBarcode(canvas: HTMLCanvasElement, value: string) {
 }
 
 export default function BarcodeLabelsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

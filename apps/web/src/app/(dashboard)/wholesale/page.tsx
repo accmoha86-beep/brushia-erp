@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import { Building2, Users, DollarSign, RefreshCw, Plus, X, ShoppingBag } from 'lucide-react';
@@ -9,6 +10,7 @@ interface PriceList { id: string; name: string; code: string; type: string; is_a
 interface WholesaleCustomer { id: string; first_name: string; last_name: string; company_name: string; email: string; phone: string; total_orders: number; total_spent: number; loyalty_tier: string; }
 
 export default function WholesalePage() {
+  const { t, locale, isRTL } = useI18n();
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [customers, setCustomers] = useState<WholesaleCustomer[]>([]);
   const [loading, setLoading] = useState(true);

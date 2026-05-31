@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import {
@@ -29,6 +30,7 @@ interface POSRegister {
 }
 
 export default function BranchesPage() {
+  const { t, locale, isRTL } = useI18n();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editBranch, setEditBranch] = useState<Branch | null>(null);
@@ -263,8 +265,8 @@ export default function BranchesPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
                 <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Registers</th>
                 <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Stock</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('common.status')}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y">

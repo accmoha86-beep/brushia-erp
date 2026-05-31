@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import { Warehouse, MapPin, Package, Box, BarChart3, RefreshCw, Plus, X } from 'lucide-react';
@@ -10,6 +11,7 @@ interface WarehouseData { id: string; code: string; name: string; name_ar?: stri
 const typeColors: Record<string, string> = { standard: 'bg-blue-100 text-blue-700', showroom: 'bg-purple-100 text-purple-700', returns: 'bg-orange-100 text-orange-700' };
 
 export default function WarehousesPage() {
+  const { t, locale, isRTL } = useI18n();
   const [warehouses, setWarehouses] = useState<WarehouseData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);

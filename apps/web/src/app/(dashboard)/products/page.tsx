@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { formatEGP, cn } from '@/lib/utils';
 import { api } from '@/lib/api-client';
 import { exportToCSV, exportToExcelXML } from '@/lib/export-data';
@@ -168,7 +169,7 @@ function ViewProductModal({ product, onClose }: { product: Product; onClose: () 
               <p className="text-sm text-gray-700 mt-0.5">{product.category}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400 uppercase">Status</p>
+              <p className="text-xs font-medium text-gray-400 uppercase">{t('common.status')}</p>
               <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium mt-0.5 ${statusStyles[product.status] || 'bg-gray-100 text-gray-600'}`}>{product.status}</span>
             </div>
             {product.barcode && (
@@ -232,6 +233,7 @@ function ProductFormModal({ product, categories, onClose, onSaved }: {
   onSaved: () => void;
 }) {
   const isEdit = !!product;
+  const { t, locale, isRTL } = useI18n();
   const [form, setForm] = useState({
     name: product?.name || '',
     name_ar: product?.name_ar || '',
@@ -340,11 +342,11 @@ function ProductFormModal({ product, categories, onClose, onSaved }: {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.status')}</label>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="active">{t('common.active')}</option>
+                <option value="inactive">{t('common.inactive')}</option>
                 <option value="draft">Draft</option>
               </select>
             </div>
@@ -364,7 +366,7 @@ function ProductFormModal({ product, categories, onClose, onSaved }: {
         </div>
 
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-          <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">{t('common.cancel')}</button>
           <button onClick={handleSubmit} disabled={saving}
             className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:from-rose-600 hover:to-purple-700 disabled:opacity-50">
             {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -409,7 +411,7 @@ function DeleteConfirmModal({ product, onClose, onDeleted }: { product: Product;
           {error && <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
         </div>
         <div className="mt-6 flex justify-center gap-3">
-          <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">{t('common.cancel')}</button>
           <button onClick={handleDelete} disabled={deleting}
             className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
             {deleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -535,7 +537,7 @@ export default function ProductsPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => { setCategoryFilter('all'); setPage(1); }}
-            className={cn('rounded-lg px-3 py-2 text-sm font-medium transition-colors', categoryFilter === 'all' ? 'bg-rose-500 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50')}>All</button>
+            className={cn('rounded-lg px-3 py-2 text-sm font-medium transition-colors', categoryFilter === 'all' ? 'bg-rose-500 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50')}>{t('common.all')}</button>
           {categories.map(cat => (
             <button key={cat.id} onClick={() => { setCategoryFilter(cat.id); setPage(1); }}
               className={cn('rounded-lg px-3 py-2 text-sm font-medium transition-colors', categoryFilter === cat.id ? 'bg-rose-500 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50')}>{cat.name}</button>
@@ -565,8 +567,8 @@ export default function ProductsPage() {
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Price</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Cost</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Stock</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">{t('common.status')}</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

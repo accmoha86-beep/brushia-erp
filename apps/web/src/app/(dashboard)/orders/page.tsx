@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
 import { Search, Eye, X, Package, Truck, CheckCircle2, Clock, XCircle, RefreshCw, ShoppingBag, CreditCard, Banknote, Hash, Printer, Receipt, FileText , Download } from 'lucide-react';
@@ -66,6 +67,7 @@ function buildInvoiceData(order: any, items: any[]) {
 }
 
 export default function OrdersPage() {
+  const { t, locale, isRTL } = useI18n();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -183,10 +185,10 @@ export default function OrdersPage() {
                 <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-500">Channel</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-500">Items</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">{t('common.status')}</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-500">Payment</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-500">Total</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Actions</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y">

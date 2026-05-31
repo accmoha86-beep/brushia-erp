@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { FolderTree, RefreshCw, Plus, X, Package, Trash2, Pencil, GripVertical, ToggleLeft, ToggleRight } from 'lucide-react';
@@ -26,6 +27,7 @@ const catColors: Record<string, string> = {
 };
 
 export default function CategoriesPage() {
+  const { t, locale, isRTL } = useI18n();
   const [tree, setTree] = useState<Category[]>([]);
   const [flat, setFlat] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);

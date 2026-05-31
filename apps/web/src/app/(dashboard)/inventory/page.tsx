@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import { Search, Package, AlertTriangle, TrendingUp, ArrowRightLeft, RefreshCw, BarChart3 } from 'lucide-react';
@@ -10,6 +11,7 @@ interface StockItem { id: string; product_name: string; sku: string; variant_nam
 type Tab = 'stock' | 'movements' | 'valuation';
 
 export default function InventoryPage() {
+  const { t, locale, isRTL } = useI18n();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
   const [valuation, setValuation] = useState<any>(null);
