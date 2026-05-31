@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import { BarChart3, TrendingUp, Package, Users, Truck, Wallet, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function ReportsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [dashboard, setDashboard] = useState<any>(null);
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [revenueByDay, setRevenueByDay] = useState<any[]>([]);

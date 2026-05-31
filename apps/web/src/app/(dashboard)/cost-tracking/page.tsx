@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import {
@@ -138,6 +139,7 @@ function ProductCostsTab({
   products: Product[];
   stockMap: Map<string, StockLevel>;
 }) {
+  const { t, locale, isRTL } = useI18n();
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<'name' | 'margin_pct' | 'wac' | 'base_price'>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -432,7 +434,7 @@ function PurchaseOrderCostsTab({ orders }: { orders: PurchaseOrder[] }) {
                 <th className="px-4 py-3 w-8"></th>
                 <th className="px-4 py-3 font-medium">PO #</th>
                 <th className="px-4 py-3 font-medium">Vendor</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">{t('common.status')}</th>
                 <th className="px-4 py-3 font-medium text-right">Subtotal</th>
                 <th className="px-4 py-3 font-medium text-right">Shipping</th>
                 <th className="px-4 py-3 font-medium text-right">Customs</th>

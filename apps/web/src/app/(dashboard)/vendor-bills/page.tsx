@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
 import { Plus, RefreshCw, Eye, X, DollarSign, FileText, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
@@ -11,6 +12,7 @@ interface Vendor { id: string; company_name: string; vendor_code: string; }
 const statusColors: Record<string, string> = { draft: 'bg-gray-100 text-gray-600', pending: 'bg-yellow-100 text-yellow-700', approved: 'bg-blue-100 text-blue-700', partial: 'bg-amber-100 text-amber-700', paid: 'bg-emerald-100 text-emerald-700', overdue: 'bg-red-100 text-red-700', voided: 'bg-gray-200 text-gray-500' };
 
 export default function VendorBillsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -145,7 +147,7 @@ export default function VendorBillsPage() {
             <th className="text-left px-4 py-3 font-medium text-gray-500">Bill #</th>
             <th className="text-left px-4 py-3 font-medium text-gray-500">Vendor</th>
             <th className="text-left px-4 py-3 font-medium text-gray-500">PO</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-500">{t('common.status')}</th>
             <th className="text-right px-4 py-3 font-medium text-gray-500">Total</th>
             <th className="text-right px-4 py-3 font-medium text-gray-500">Paid</th>
             <th className="text-right px-4 py-3 font-medium text-gray-500">Due</th>
@@ -216,7 +218,7 @@ export default function VendorBillsPage() {
               <div><label className="text-xs font-medium text-gray-500 mb-1 block">Notes</label><textarea value={formNotes} onChange={e => setFormNotes(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-sm" /></div>
             </div>
             <div className="border-t px-6 py-4 flex justify-end gap-3">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-lg text-sm">{t('common.cancel')}</button>
               <button onClick={createBill} disabled={saving} className="px-6 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 disabled:opacity-50">{saving ? 'Creating...' : 'Create Bill'}</button>
             </div>
           </div>
@@ -246,7 +248,7 @@ export default function VendorBillsPage() {
               <div><label className="text-xs font-medium text-gray-500 mb-1 block">Reference #</label><input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Bank transfer ref, check #..." /></div>
             </div>
             <div className="border-t px-6 py-4 flex justify-end gap-3">
-              <button onClick={() => setShowPay(null)} className="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+              <button onClick={() => setShowPay(null)} className="px-4 py-2 border rounded-lg text-sm">{t('common.cancel')}</button>
               <button onClick={submitPayment} disabled={saving} className="px-6 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 disabled:opacity-50">{saving ? 'Processing...' : '✅ Record Payment'}</button>
             </div>
           </div>

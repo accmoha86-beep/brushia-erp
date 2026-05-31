@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
 import { Plus, RefreshCw, Eye, X, Package, Check, XCircle, AlertTriangle, ClipboardCheck, Truck, Edit3, Search, Filter, Calendar, Hash, Save, Trash2, ChevronRight, CheckCircle2, Clock, Ban, FileText } from 'lucide-react';
@@ -32,6 +33,7 @@ const tabs = [
 ];
 
 export default function GoodsReceivingPage() {
+  const { t, locale, isRTL } = useI18n();
   const [grns, setGRNs] = useState<GRN[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
@@ -292,12 +294,12 @@ export default function GoodsReceivingPage() {
               <th className="text-left px-5 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">GRN #</th>
               <th className="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">PO #</th>
               <th className="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">Vendor</th>
-              <th className="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">Status</th>
+              <th className="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">{t('common.status')}</th>
               <th className="text-right px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">Items</th>
               <th className="text-right px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">Qty</th>
               <th className="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">Received By</th>
               <th className="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">Date</th>
-              <th className="px-4 py-4 text-right font-semibold text-gray-600 text-xs uppercase tracking-wider">Actions</th>
+              <th className="px-4 py-4 text-right font-semibold text-gray-600 text-xs uppercase tracking-wider">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -566,7 +568,7 @@ export default function GoodsReceivingPage() {
               </div>
             </div>
             <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3">
-              <button onClick={() => setShowEdit(null)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowEdit(null)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50">{t('common.cancel')}</button>
               <button onClick={saveEdit} disabled={saving}
                 className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl text-sm font-bold hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-200 disabled:opacity-50 transition-all">
                 <Save className="h-4 w-4" />
@@ -654,7 +656,7 @@ export default function GoodsReceivingPage() {
               </div>
             </div>
             <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3">
-              <button onClick={() => setShowInspect(null)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowInspect(null)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50">{t('common.cancel')}</button>
               <button onClick={submitInspection} disabled={saving}
                 className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl text-sm font-bold hover:from-emerald-600 hover:to-green-600 shadow-lg shadow-emerald-200 disabled:opacity-50 transition-all">
                 <Check className="h-4 w-4" />

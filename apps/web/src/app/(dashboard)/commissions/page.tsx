@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import {
@@ -56,6 +57,7 @@ const fmt = (amount: number) =>
   new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
 
 export default function CommissionsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [tab, setTab] = useState<'salespersons' | 'rules' | 'report'>('salespersons');
   const [salespersons, setSalespersons] = useState<Salesperson[]>([]);
   const [rules, setRules] = useState<CommissionRule[]>([]);
@@ -277,7 +279,7 @@ export default function CommissionsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Total Sales</th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Total Commission</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -430,7 +432,7 @@ export default function CommissionsPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Order</th>
                       <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Order Total</th>
                       <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Commission</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('common.status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">

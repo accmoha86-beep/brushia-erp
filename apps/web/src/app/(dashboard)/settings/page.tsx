@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { Building2, Users, MapPin, Receipt, Plug, Save, Check, Shield, X, Eye, EyeOff, Loader2, Wifi, WifiOff, TestTube, Trash2, ExternalLink, ChevronRight, AlertCircle } from 'lucide-react';
@@ -81,6 +82,7 @@ interface Integration {
 }
 
 export default function SettingsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [activeTab, setActiveTab] = useState('company');
   const [saved, setSaved] = useState(false);
   const [companyInfo, setCompanyInfo] = useState({ name: 'Brushia', legal_name: 'Brushia for Cosmetics', email: 'info@brushia.net', phone: '+201000000000', tax_id: '', commercial_reg: '', city: 'Cairo', governorate: 'Cairo', currency: 'EGP', vat_rate: 14 });
@@ -514,7 +516,7 @@ export default function SettingsPage() {
                     Test Connection
                   </button>
                 )}
-                <button onClick={closeConfig} className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button onClick={closeConfig} className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100">{t('common.cancel')}</button>
                 <button onClick={handleSaveIntegration} disabled={saving} className="flex items-center gap-1.5 rounded-lg bg-rose-500 px-4 py-2 text-xs font-medium text-white hover:bg-rose-600 disabled:opacity-50">
                   {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
                   {selectedInt?.status === 'configured' ? 'Update' : 'Connect'}

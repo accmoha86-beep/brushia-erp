@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { Plus, X, Calendar, Percent, CircleDollarSign, Copy, Tag, Search, Edit2, Trash2, Check, Clock, Ban, Zap, Gift, BarChart3 } from 'lucide-react';
@@ -20,6 +21,7 @@ const statusConfig: Record<string, { bg: string; text: string; icon: any; label:
 const emptyForm = { name: '', type: 'percentage', value: '', code: '', start_date: '', end_date: '', usage_limit: '', min_order_amount: '', description: '' };
 
 export default function PromotionsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -239,7 +241,7 @@ export default function PromotionsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-5">
-              <button onClick={() => { setShowModal(false); setEditId(null); }} className="rounded-lg border px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button onClick={() => { setShowModal(false); setEditId(null); }} className="rounded-lg border px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">{t('common.cancel')}</button>
               <button onClick={handleSave} disabled={saving || !form.name || !form.code || !form.value} className="rounded-lg bg-rose-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-rose-600 disabled:opacity-50">
                 {saving ? 'Saving...' : editId ? 'Update Promotion' : 'Create Promotion'}
               </button>
@@ -260,7 +262,7 @@ export default function PromotionsPage() {
               <p className="mt-2 text-sm text-gray-500">This will deactivate the promotion. Customers won't be able to use the code anymore.</p>
             </div>
             <div className="mt-5 flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">{t('common.cancel')}</button>
               <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700">Deactivate</button>
             </div>
           </div>

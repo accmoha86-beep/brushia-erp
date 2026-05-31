@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import {
@@ -50,6 +51,7 @@ const fmt = (amount: number) =>
   new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
 
 export default function LoyaltyPage() {
+  const { t, locale, isRTL } = useI18n();
   const [tab, setTab] = useState<'tiers' | 'transactions' | 'stats'>('tiers');
   const [tiers, setTiers] = useState<LoyaltyTier[]>([]);
   const [transactions, setTransactions] = useState<LoyaltyTransaction[]>([]);

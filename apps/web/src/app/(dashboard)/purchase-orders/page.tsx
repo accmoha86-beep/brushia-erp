@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
 import { Plus, Search, Eye, X, RefreshCw, FileText, ChevronRight, Package, TruckIcon, DollarSign, Send, Check, XCircle, Edit, ArrowRight } from 'lucide-react';
@@ -14,6 +15,7 @@ const statusColors: Record<string, string> = { draft: 'bg-gray-100 text-gray-600
 const statusFlow = ['draft','submitted','approved','ordered','partial_received','received','closed'];
 
 export default function PurchaseOrdersPage() {
+  const { t, locale, isRTL } = useI18n();
   const [pos, setPOs] = useState<PO[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -159,7 +161,7 @@ export default function PurchaseOrdersPage() {
           <thead className="bg-gray-50 border-b"><tr>
             <th className="text-left px-4 py-3 font-medium text-gray-500">PO #</th>
             <th className="text-left px-4 py-3 font-medium text-gray-500">Vendor</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-500">{t('common.status')}</th>
             <th className="text-right px-4 py-3 font-medium text-gray-500">Items</th>
             <th className="text-right px-4 py-3 font-medium text-gray-500">Subtotal</th>
             <th className="text-right px-4 py-3 font-medium text-gray-500">Landed Cost</th>
@@ -302,7 +304,7 @@ export default function PurchaseOrdersPage() {
               </div>
             </div>
             <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">{t('common.cancel')}</button>
               <button onClick={savePO} disabled={saving} className="px-6 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 disabled:opacity-50">{saving ? 'Creating...' : 'Create Purchase Order'}</button>
             </div>
           </div>
