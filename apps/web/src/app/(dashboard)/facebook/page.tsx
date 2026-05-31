@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { formatEGP, cn } from '@/lib/utils';
 import { MessageCircle, Store, Settings, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Send, Package, Link2, Unlink, ExternalLink, Zap, Users, ShoppingBag, Eye, BarChart3 } from 'lucide-react';
 
@@ -19,6 +20,7 @@ async function apiFetch(path: string, opts?: any) {
 }
 
 export default function FacebookPage() {
+  const { t, locale, isRTL } = useI18n();
   const [activeTab, setActiveTab] = useState<'overview' | 'messenger' | 'shop' | 'settings'>('overview');
   const [config, setConfig] = useState({
     page_id: '', page_access_token: '', catalog_id: '', pixel_id: '',
@@ -273,7 +275,7 @@ export default function FacebookPage() {
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500">Product</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500">SKU</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500">Price</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500">Status</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500">{t('common.status')}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500">Sync</th>
                 </tr>
               </thead>
@@ -283,7 +285,7 @@ export default function FacebookPage() {
                     <td className="px-4 py-3 text-sm font-medium">{p.name}</td>
                     <td className="px-4 py-3 text-xs text-gray-500">{p.sku}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-rose-600">{formatEGP(Number(p.base_price) / 100)}</td>
-                    <td className="px-4 py-3"><span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Active</span></td>
+                    <td className="px-4 py-3"><span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{t('common.active')}</span></td>
                     <td className="px-4 py-3">
                       <span className="text-xs text-gray-400">{isConfigured ? '✅ Ready' : '⏳ Configure first'}</span>
                     </td>

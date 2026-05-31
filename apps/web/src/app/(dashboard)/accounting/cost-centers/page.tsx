@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 const API = '/api/v1/accounting/cost-centers';
 
@@ -43,6 +44,7 @@ interface CostCenter {
 }
 
 export default function CostCentersPage() {
+  const { t, locale, isRTL } = useI18n();
   const [centers, setCenters] = useState<CostCenter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -186,8 +188,8 @@ export default function CostCentersPage() {
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Branch</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Budget</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Transactions</th>
-                <th className="text-center px-4 py-3 font-semibold text-gray-600">Status</th>
-                <th className="text-center px-4 py-3 font-semibold text-gray-600">Actions</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600">{t('common.status')}</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -210,8 +212,8 @@ export default function CostCentersPage() {
                       <span className={`inline-block w-2 h-2 rounded-full ${cc.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
                     </td>
                     <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => openEdit(cc)} className="text-indigo-600 hover:text-indigo-800 text-xs mr-2">Edit</button>
-                      <button onClick={() => handleDelete(cc)} className="text-red-500 hover:text-red-700 text-xs">Delete</button>
+                      <button onClick={() => openEdit(cc)} className="text-indigo-600 hover:text-indigo-800 text-xs mr-2">{t('common.edit')}</button>
+                      <button onClick={() => handleDelete(cc)} className="text-red-500 hover:text-red-700 text-xs">{t('common.delete')}</button>
                     </td>
                   </tr>
                 );
@@ -352,7 +354,7 @@ export default function CostCentersPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
               <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 shadow-sm">
                 {editItem ? 'Update' : 'Create'}
               </button>

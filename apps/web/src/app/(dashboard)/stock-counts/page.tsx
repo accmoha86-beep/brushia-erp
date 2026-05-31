@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import {
@@ -51,6 +52,7 @@ const fmt = (amount: number) =>
   new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
 
 export default function StockCountsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [counts, setCounts] = useState<StockCount[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -285,7 +287,7 @@ export default function StockCountsPage() {
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Count #</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Warehouse</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('common.status')}</th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Items</th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Variance</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Date</th>

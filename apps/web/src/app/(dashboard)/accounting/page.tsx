@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import {
   BookOpen, Plus, FileText, BarChart3, TrendingUp, TrendingDown,
@@ -75,6 +76,7 @@ const tabs: { id: Tab; label: string; icon: any }[] = [
 
 export default function AccountingPage() {
   const { accessToken } = useAuthStore();
+  const { t, locale, isRTL } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>('accounts');
 
   return (
@@ -242,7 +244,7 @@ function ChartOfAccountsTab({ token }: { token: string | null }) {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Arabic Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Parent</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{t('common.status')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -573,8 +575,8 @@ function JournalEntriesTab({ token }: { token: string | null }) {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Source</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Debit</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Credit</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{t('common.status')}</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -1048,7 +1050,7 @@ function TrialBalanceTab({ token }: { token: string | null }) {
               <div className="text-xl font-bold text-gray-900 mt-1">{formatEGP(data.totals.total_credit)}</div>
             </div>
             <div className={`rounded-lg border p-4 ${data.is_balanced ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="text-xs text-gray-500 uppercase">Status</div>
+              <div className="text-xs text-gray-500 uppercase">{t('common.status')}</div>
               <div className={`text-xl font-bold mt-1 flex items-center gap-2 ${data.is_balanced ? 'text-green-700' : 'text-red-700'}`}>
                 {data.is_balanced ? <Check className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                 {data.is_balanced ? 'Balanced ✓' : 'Unbalanced!'}

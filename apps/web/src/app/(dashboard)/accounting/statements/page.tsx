@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 function getToken() {
   try {
@@ -28,6 +29,7 @@ type Tab = 'trial-balance' | 'income-statement' | 'balance-sheet';
 interface Account { account_number: string; name: string; name_ar?: string; account_type: string; debit: number; credit: number; balance: number; }
 
 export default function FinancialStatementsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [tab, setTab] = useState<Tab>('trial-balance');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

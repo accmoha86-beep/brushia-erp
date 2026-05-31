@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { printThermalReceipt, printA4Invoice } from '@/lib/print-invoice';
 import { formatEGP, cn } from '@/lib/utils';
@@ -61,6 +62,7 @@ function gradientFor(name: string) {
 /* ─── main ─── */
 export default function POSPage() {
   /* phase: 'start-shift' | 'selling' | 'end-shift' */
+  const { t, locale, isRTL } = useI18n();
   const [phase, setPhase] = useState<'start-shift' | 'selling' | 'end-shift'>('start-shift');
   const [loading, setLoading] = useState(true);
 

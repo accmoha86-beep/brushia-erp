@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import {
   BookOpen, Plus, Edit2, Trash2, ChevronRight, ChevronDown, Search,
@@ -159,6 +160,7 @@ function AccountFormModal({ isOpen, onClose, onSave, account, parentAccount, all
   account?: Account | null; parentAccount?: Account | null; allAccounts: Account[];
   isLoading: boolean;
 }) {
+  const { t, locale, isRTL } = useI18n();
   const [form, setForm] = useState({
     account_number: '', name: '', name_ar: '', account_type: 'asset',
     parent_id: '', description: '', is_bank_account: false, is_active: true, currency: 'EGP',

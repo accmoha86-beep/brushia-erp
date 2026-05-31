@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import {
@@ -88,6 +89,7 @@ function roleDotClass(name: string) {
 /* ------------------------------------------------------------------ */
 
 export default function UsersPage() {
+  const { t, locale, isRTL } = useI18n();
   const [tab, setTab] = useState<Tab>('Users');
 
   /* shared data */

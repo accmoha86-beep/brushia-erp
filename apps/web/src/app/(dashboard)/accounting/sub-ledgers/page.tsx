@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 function getToken() {
   try {
@@ -43,6 +44,7 @@ interface BankAccount {
 }
 
 export default function SubLedgersPage() {
+  const { t, locale, isRTL } = useI18n();
   const [tab, setTab] = useState<'auxiliary' | 'banks'>('auxiliary');
   const [accounts, setAccounts] = useState<AuxAccount[]>([]);
   const [banks, setBanks] = useState<BankAccount[]>([]);
@@ -138,7 +140,7 @@ export default function SubLedgersPage() {
           </div>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">{error}</div>}
-          {loading && <div className="text-center py-8 text-gray-400">Loading...</div>}
+          {loading && <div className="text-center py-8 text-gray-400">{t('common.loading')}</div>}
 
           {!loading && accounts.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
@@ -152,7 +154,7 @@ export default function SubLedgersPage() {
                     <th className="text-right px-4 py-3 font-semibold text-gray-600">Opening Balance</th>
                     <th className="text-right px-4 py-3 font-semibold text-gray-600">Current Balance</th>
                     <th className="text-right px-4 py-3 font-semibold text-gray-600">Credit Limit</th>
-                    <th className="text-center px-4 py-3 font-semibold text-gray-600">Status</th>
+                    <th className="text-center px-4 py-3 font-semibold text-gray-600">{t('common.status')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

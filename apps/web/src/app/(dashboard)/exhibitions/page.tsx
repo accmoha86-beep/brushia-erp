@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import {
@@ -63,6 +64,7 @@ const fmt = (amount: number) =>
   new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(amount / 100);
 
 export default function ExhibitionsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);
   const [warehouses, setWarehouses] = useState<{ id: string; name: string }[]>([]);
   const [showModal, setShowModal] = useState(false);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 function getToken() {
   try {
@@ -42,6 +43,7 @@ function StatBox({ icon, value, label, sub, color }: any) {
 }
 
 export default function AdvancedReportsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [tab, setTab] = useState<Tab>('vat');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

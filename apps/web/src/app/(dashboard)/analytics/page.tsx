@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { formatEGP, cn } from '@/lib/utils';
 import {
   BarChart3, TrendingUp, PieChart as PieIcon, Calendar, RefreshCw,
@@ -40,6 +41,7 @@ async function apiFetch(path: string) {
 }
 
 export default function AnalyticsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [period, setPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>({});
