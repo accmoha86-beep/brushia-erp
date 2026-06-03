@@ -29,7 +29,7 @@ export class LoggerService implements NestLoggerService {
         timestamp: pino.stdTimeFunctions.isoTime,
       }),
       base: {
-        service: 'brushia-api',
+        service: 'bloom-api',
         env: process.env.NODE_ENV,
       },
     });

@@ -58,6 +58,22 @@ export const tenants = iamSchema.table('tenants', {
   maxBranches: integer('max_branches').notNull().default(1),
   maxWarehouses: integer('max_warehouses').notNull().default(2),
   
+  // Branding (multi-tenant white-label)
+  logoUrl: text('logo_url'),
+  faviconUrl: text('favicon_url'),
+  primaryColor: varchar('primary_color', { length: 7 }).default('#E11D48'),
+  secondaryColor: varchar('secondary_color', { length: 7 }).default('#7C3AED'),
+  tagline: varchar('tagline', { length: 255 }),
+  customDomain: varchar('custom_domain', { length: 255 }),
+  website: varchar('website', { length: 255 }),
+  socialInstagram: varchar('social_instagram', { length: 255 }),
+  socialFacebook: varchar('social_facebook', { length: 255 }),
+  socialTiktok: varchar('social_tiktok', { length: 255 }),
+  invoiceHeader: text('invoice_header'),
+  invoiceFooter: text('invoice_footer'),
+  receiptHeader: text('receipt_header'),
+  receiptFooter: text('receipt_footer'),
+
   trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

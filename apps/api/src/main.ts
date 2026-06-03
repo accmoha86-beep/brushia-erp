@@ -46,7 +46,7 @@ async function bootstrap(): Promise<void> {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  logger.log(`🚀 Brushia ERP running on port ${port} [${process.env.NODE_ENV || 'development'}]`, 'Bootstrap');
+  logger.log(`🚀 Bloom ERP running on port ${port} [${process.env.NODE_ENV || 'development'}]`, 'Bootstrap');
 }
 
 bootstrap().catch((err) => {

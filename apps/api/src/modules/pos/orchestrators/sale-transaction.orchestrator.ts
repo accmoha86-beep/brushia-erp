@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Brushia ERP — Sale Transaction Orchestrator
+// Bloom ERP — Sale Transaction Orchestrator
 // ═══════════════════════════════════════════════════════════════════════════
 // This is the CRITICAL path. Every POS sale flows through here.
 // One database transaction. All or nothing. No partial state.

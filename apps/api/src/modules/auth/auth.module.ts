@@ -19,7 +19,7 @@ import { TenantModule } from '../tenant';
         secret: process.env.JWT_SECRET,
         signOptions: {
           expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m',
-          issuer: 'brushia-erp',
+          issuer: 'bloom-erp',
         },
       }),
     }),

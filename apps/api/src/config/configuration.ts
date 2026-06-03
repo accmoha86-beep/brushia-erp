@@ -1,6 +1,6 @@
 export const configuration = () => ({
   app: {
-    name: process.env.APP_NAME ?? 'brushia-erp',
+    name: process.env.APP_NAME ?? 'bloom-erp',
     port: parseInt(process.env.APP_PORT ?? '3001', 10),
     env: process.env.NODE_ENV ?? 'development',
     url: process.env.APP_URL ?? 'http://localhost:3001',
@@ -29,7 +29,7 @@ export const configuration = () => ({
     origins: (process.env.CORS_ORIGINS ?? 'http://localhost:3000').split(','),
   },
   queue: {
-    prefix: process.env.QUEUE_PREFIX ?? 'brushia',
+    prefix: process.env.QUEUE_PREFIX ?? 'bloom',
   },
   sentry: {
     dsn: process.env.SENTRY_DSN,
