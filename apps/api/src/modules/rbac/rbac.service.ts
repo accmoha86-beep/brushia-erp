@@ -5,6 +5,10 @@ import { RbacRepository } from './rbac.repository';
 export class RbacService {
   constructor(private readonly rbacRepo: RbacRepository) {}
 
+  async getUsersForTenant(tenantId: string) {
+    return this.rbacRepo.getUsersForTenant(tenantId);
+  }
+
   async getRolesForTenant(tenantId: string) {
     return this.rbacRepo.findRolesByTenant(tenantId);
   }

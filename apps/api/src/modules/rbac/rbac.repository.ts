@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { DB_CONNECTION } from '../../database/database.constants';
 import * as schema from '@brushia/db';
 
@@ -12,6 +12,17 @@ export class RbacRepository {
   ) {}
 
   // ---- Roles ----
+
+  async getUsersForTenant(tenantId: string) {
+    const result = await this.db.execute(
+      sql`SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.status, 
+              u.last_login_at, u.created_at
+       FROM iam.users u
+       WHERE u.tenant_id = ${tenantId} AND u.deleted_at IS NULL
+       ORDER BY u.created_at DESC`
+    );
+    return result.rows;
+  }
 
   async findRolesByTenant(tenantId: string) {
     return this.db

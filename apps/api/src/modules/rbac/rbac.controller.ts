@@ -58,6 +58,13 @@ export class RbacController {
     return { success: true };
   }
 
+  @Get('users')
+  @RequirePermissions('admin.users.manage')
+  @ApiOperation({ summary: 'List all users for current tenant' })
+  async listUsers(@CurrentUser('tid') tenantId: string) {
+    return this.rbacService.getUsersForTenant(tenantId);
+  }
+
   @Get('users/:userId/roles')
   @RequirePermissions('admin.users.manage')
   @ApiOperation({ summary: 'Get roles for a user' })
