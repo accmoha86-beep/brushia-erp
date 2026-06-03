@@ -96,6 +96,12 @@ export default function DashboardPage() {
 
       const fetchJSON = async (path: string) => {
         const res = await fetch(`/api/v1${path}`, { headers });
+        if (res.status === 401) {
+          // Token expired — redirect to login
+          localStorage.removeItem('bloom-auth');
+          window.location.href = '/auth/login';
+          throw new Error('Session expired');
+        }
         if (!res.ok) throw new Error(`${path} returned ${res.status}`);
         return res.json();
       };
@@ -332,7 +338,7 @@ export default function DashboardPage() {
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboard.totalOrders')}</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{data.orderCount}</p>
-                <p className="text-xs text-gray-400 mt-2">Avg {fmtMoney(data.avgOrderValue)} / order</p>
+                <p className="text-xs text-gray-400 mt-2">{locale === 'ar' ? `متوسط ${fmtMoney(data.avgOrderValue)} / طلب` : `Avg ${fmtMoney(data.avgOrderValue)} / order`}</p>
               </div>
             </div>
 
@@ -372,7 +378,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-emerald-50"><Package className="h-3.5 w-3.5 text-emerald-500" /></div>
-                  <span className="text-xs font-medium text-gray-500">Inventory</span>
+                  <span className="text-xs font-medium text-gray-500">{t('nav.inventory')}</span>
                 </div>
                 <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-emerald-400 transition-colors" />
               </div>
@@ -384,7 +390,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-amber-50"><Tag className="h-3.5 w-3.5 text-amber-500" /></div>
-                  <span className="text-xs font-medium text-gray-500">Active Promos</span>
+                  <span className="text-xs font-medium text-gray-500">{t('dashboard.activePromos')}</span>
                 </div>
                 <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-amber-400 transition-colors" />
               </div>
@@ -396,7 +402,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-blue-50"><MapPin className="h-3.5 w-3.5 text-blue-500" /></div>
-                  <span className="text-xs font-medium text-gray-500">Branches</span>
+                  <span className="text-xs font-medium text-gray-500">{t('nav.branches')}</span>
                 </div>
                 <ArrowRight className="h-3 w-3 text-gray-300 group-hover:text-blue-400 transition-colors" />
               </div>
@@ -440,7 +446,7 @@ export default function DashboardPage() {
                 </div>
               )}
               <Link href="/inventory" className="flex items-center gap-1 text-xs text-rose-500 font-medium mt-4 hover:text-rose-600">
-                View All Inventory <ArrowRight className="h-3 w-3" />
+                {t('dashboard.viewAllInventory')} <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
 
@@ -475,13 +481,13 @@ export default function DashboardPage() {
                 </div>
               )}
               <div className="border-t border-gray-100 mt-4 pt-4">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Order Status</p>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase mb-2">{t('dashboard.orderStatus')}</p>
                 <div className="flex items-center gap-3">
                   <ProgressRing pct={paidPct} color="#10b981" />
                   <div className="text-xs space-y-0.5">
-                    <p className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-500" /> {data.statusCounts?.confirmed || 0} confirmed</p>
-                    <p className="flex items-center gap-1"><Clock className="h-3 w-3 text-amber-500" /> {data.statusCounts?.pending || 0} pending</p>
-                    <p className="flex items-center gap-1"><XCircle className="h-3 w-3 text-red-400" /> {data.statusCounts?.cancelled || 0} cancelled</p>
+                    <p className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-500" /> {data.statusCounts?.confirmed || 0} {t('status.confirmed')}</p>
+                    <p className="flex items-center gap-1"><Clock className="h-3 w-3 text-amber-500" /> {data.statusCounts?.pending || 0} {t('status.pending')}</p>
+                    <p className="flex items-center gap-1"><XCircle className="h-3 w-3 text-red-400" /> {data.statusCounts?.cancelled || 0} {t('status.cancelled')}</p>
                   </div>
                 </div>
               </div>

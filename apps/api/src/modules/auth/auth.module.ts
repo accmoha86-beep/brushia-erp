@@ -18,7 +18,7 @@ import { TenantModule } from '../tenant';
       useFactory: () => ({
         secret: process.env.JWT_SECRET,
         signOptions: {
-          expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m',
+          expiresIn: process.env.JWT_ACCESS_EXPIRY || '24h',
           issuer: 'bloom-erp',
         },
       }),
