@@ -133,6 +133,7 @@ export default function AccountingPage() {
 // ═══════════════════════════════════════════════════════
 
 function ChartOfAccountsTab({ token }: { token: string | null }) {
+  const { t } = useI18n();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -461,6 +462,7 @@ function CreateAccountModal({ token, accounts, onClose, onCreated }: {
 // ═══════════════════════════════════════════════════════
 
 function JournalEntriesTab({ token }: { token: string | null }) {
+  const { t } = useI18n();
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -1000,6 +1002,7 @@ function JournalEntryDetailModal({ token, entryId, onClose }: {
 // ═══════════════════════════════════════════════════════
 
 function TrialBalanceTab({ token }: { token: string | null }) {
+  const { t } = useI18n();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);

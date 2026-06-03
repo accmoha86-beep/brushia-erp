@@ -322,6 +322,7 @@ function ProductCostsTab({
 // ─── Tab 2: Purchase Order Costs ─────────────────────────────────────────────
 
 function PurchaseOrderCostsTab({ orders }: { orders: PurchaseOrder[] }) {
+  const { t } = useI18n();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<'date' | 'landed' | 'per_unit'>('date');

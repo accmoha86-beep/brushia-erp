@@ -117,6 +117,7 @@ function Skeleton({ className = '' }: { className?: string }) {
 
 // ── View Detail Modal ─────────────────────────────────────────
 function ViewProductModal({ product, onClose }: { product: Product; onClose: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -380,6 +381,7 @@ function ProductFormModal({ product, categories, onClose, onSaved }: {
 
 // ── Delete Confirmation Modal ─────────────────────────────────
 function DeleteConfirmModal({ product, onClose, onDeleted }: { product: Product; onClose: () => void; onDeleted: () => void }) {
+  const { t } = useI18n();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
@@ -425,6 +427,7 @@ function DeleteConfirmModal({ product, onClose, onDeleted }: { product: Product;
 
 // ── Main Page ─────────────────────────────────────────────────
 export default function ProductsPage() {
+  const { t, locale, isRTL } = useI18n();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
