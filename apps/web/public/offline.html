@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline — Bloom ERP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+      padding: 20px;
+    }
+    .container {
+      text-align: center;
+      max-width: 420px;
+    }
+    .icon {
+      font-size: 80px;
+      margin-bottom: 24px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    h1 {
+      font-size: 28px;
+      color: #065f46;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 16px;
+      color: #047857;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .ar { direction: rtl; color: #059669; margin-top: 4px; }
+    .retry-btn {
+      display: inline-block;
+      margin-top: 32px;
+      padding: 14px 36px;
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+    }
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+    }
+    .retry-btn:active { transform: translateY(0); }
+    .status {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 10px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .status span { color: #ef4444; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🌸</div>
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection.</p>
+    <p class="ar">يبدو إنك مش متصل بالإنترنت</p>
+    <p style="margin-top: 16px;">Don't worry — your data is safe. Reconnect and pick up where you left off.</p>
+    <button class="retry-btn" onclick="window.location.reload()">
+      🔄 Try Again
+    </button>
+    <div class="status">
+      Status: <span>Offline</span> · Bloom ERP v1.0
+    </div>
+  </div>
+</body>
+</html>
