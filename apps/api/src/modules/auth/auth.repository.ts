@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { DB_CONNECTION } from '../../database/database.constants';
 import * as schema from '@brushia/db';
 
@@ -64,8 +64,7 @@ export class AuthRepository {
 
   async incrementFailedAttempts(userId: string) {
     await this.db.execute(
-      `UPDATE iam.users SET failed_login_attempts = failed_login_attempts + 1, updated_at = NOW() WHERE id = $1`,
-      // Note: In production, use the Drizzle sql`` tagged template for this
+      sql`UPDATE iam.users SET failed_login_attempts = failed_login_attempts + 1, updated_at = NOW() WHERE id = ${userId}`
     );
   }
 

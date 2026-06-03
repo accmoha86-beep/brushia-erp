@@ -1,4 +1,4 @@
-import { Controller, Get, Inject } from '@nestjs/common';
+import { Controller, Get, Inject, Version, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   HealthCheck,
@@ -18,6 +18,7 @@ export class HealthController {
   ) {}
 
   @Get()
+  @Version(VERSION_NEUTRAL)
   @HealthCheck()
   @ApiOperation({ summary: 'Liveness probe' })
   async check(): Promise<HealthCheckResult> {
@@ -28,6 +29,7 @@ export class HealthController {
   }
 
   @Get('db')
+  @Version(VERSION_NEUTRAL)
   @ApiOperation({ summary: 'Database diagnostics' })
   async dbCheck() {
     const results: any = {};
@@ -57,6 +59,7 @@ export class HealthController {
   }
 
   @Get('ready')
+  @Version(VERSION_NEUTRAL)
   @HealthCheck()
   @ApiOperation({ summary: 'Readiness probe — checks all dependencies' })
   async readiness(): Promise<HealthCheckResult> {

@@ -13,6 +13,13 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class WholesaleController {
   constructor(private readonly wholesaleService: WholesaleService) {}
 
+  @Get()
+  @RequirePermissions('catalog:read')
+  async getOverview(@CurrentUser() user: any) {
+    const priceLists = await this.wholesaleService.listPriceLists(user.tenantId);
+    return { priceLists };
+  }
+
   @Get('price-lists')
   @RequirePermissions('catalog:read')
   async listPriceLists(@CurrentUser() user: any) {

@@ -8,8 +8,8 @@ export class ReportingService {
   async getDashboard(tenantId: string) {
     const [sales, inventory, customers, orders] = await Promise.all([
       this.db.queryOne(`
-        SELECT COALESCE(SUM(total), 0)::bigint as total_revenue,
-               COALESCE(SUM(total) FILTER (WHERE created_at >= CURRENT_DATE), 0)::bigint as today_revenue,
+        SELECT COALESCE(SUM(grand_total), 0)::bigint as total_revenue,
+               COALESCE(SUM(grand_total) FILTER (WHERE created_at >= CURRENT_DATE), 0)::bigint as today_revenue,
                COUNT(*)::int as total_orders,
                COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)::int as today_orders
         FROM sales.sales_orders WHERE tenant_id = $1 AND status != 'cancelled'`, [tenantId]),
@@ -36,8 +36,8 @@ export class ReportingService {
     const dateTo = to || new Date().toISOString().split('T')[0];
     const result = await this.db.queryOne(`
       SELECT COUNT(*)::int as order_count,
-             COALESCE(SUM(total), 0)::bigint as total_revenue,
-             COALESCE(AVG(total), 0)::bigint as avg_order_value,
+             COALESCE(SUM(grand_total), 0)::bigint as total_revenue,
+             COALESCE(AVG(grand_total), 0)::bigint as avg_order_value,
              COALESCE(SUM(tax_amount), 0)::bigint as total_tax
       FROM sales.sales_orders WHERE tenant_id = $1 AND status != 'cancelled'
       AND created_at >= $2::date AND created_at < ($3::date + interval '1 day')
@@ -91,7 +91,7 @@ export class ReportingService {
 
   async getRevenueByDay(tenantId: string, days: number) {
     const result = await this.db.query(`
-      SELECT d.date, COALESCE(SUM(so.total), 0)::bigint as revenue,
+      SELECT d.date, COALESCE(SUM(so.grand_total), 0)::bigint as revenue,
              COUNT(so.id)::int as order_count
       FROM generate_series(CURRENT_DATE - ($2 || ' days')::interval, CURRENT_DATE, '1 day') d(date)
       LEFT JOIN sales.sales_orders so ON so.tenant_id = $1 AND DATE(so.created_at) = d.date AND so.status != 'cancelled'
@@ -117,7 +117,7 @@ export class ReportingService {
     const result = await this.db.query(`
       SELECT u.first_name || ' ' || u.last_name as salesperson,
              COUNT(so.id)::int as orders_count,
-             COALESCE(SUM(so.total), 0)::bigint as total_sales
+             COALESCE(SUM(so.grand_total), 0)::bigint as total_sales
       FROM sales.sales_orders so
       JOIN iam.users u ON u.id = so.created_by
       WHERE so.tenant_id = $1 AND so.status != 'cancelled'
