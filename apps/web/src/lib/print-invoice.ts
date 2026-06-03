@@ -1,4 +1,4 @@
-/* Professional Invoice & Receipt printing for Brushia ERP */
+/* Professional Invoice & Receipt printing for Bloom ERP — Multi-tenant */
 
 interface InvoiceData {
   order_number: string;
@@ -19,9 +19,41 @@ interface InvoiceData {
   notes?: string;
 }
 
+function getTenantBranding() {
+  try {
+    const raw = localStorage.getItem('bloom-auth');
+    if (raw) {
+      const state = JSON.parse(raw)?.state;
+      const tenant = state?.tenant;
+      if (tenant) return tenant;
+    }
+  } catch {}
+  return {
+    name: 'Bloom',
+    tagline: 'Beauty & Cosmetics',
+    primaryColor: '#059669',
+    email: '',
+    city: '',
+    website: '',
+    invoiceHeader: null,
+    invoiceFooter: null,
+    receiptHeader: null,
+    receiptFooter: null,
+  };
+}
+
 export function printA4Invoice(data: InvoiceData) {
   const w = window.open('', '_blank');
   if (!w) return;
+  const b = getTenantBranding();
+  const companyName = b.name || 'Bloom';
+  const tagline = b.tagline || 'Beauty & Cosmetics';
+  const color = b.primaryColor || '#059669';
+  const city = b.city || '';
+  const email = b.email || '';
+  const website = b.website || '';
+  const header = b.invoiceHeader || `✨ ${companyName}`;
+  const footer = b.invoiceFooter || `Thank you for shopping with ${companyName}! ✨`;
 
   const itemRows = data.items.map(i => `
     <tr>
@@ -37,7 +69,7 @@ export function printA4Invoice(data: InvoiceData) {
   ` : '';
 
   const discountLine = data.discount > 0 ? `
-    <tr><td style="padding:4px 0;color:#e11d48;font-size:13px">Discount</td><td style="padding:4px 0;text-align:right;color:#e11d48;font-size:13px">- EGP ${(data.discount / 100).toFixed(2)}</td></tr>
+    <tr><td style="padding:4px 0;color:${color};font-size:13px">Discount</td><td style="padding:4px 0;text-align:right;color:${color};font-size:13px">- EGP ${(data.discount / 100).toFixed(2)}</td></tr>
   ` : '';
 
   const shippingLine = data.shipping > 0 ? `
@@ -55,7 +87,7 @@ export function printA4Invoice(data: InvoiceData) {
 
   <!-- Print Button -->
   <div class="no-print" style="text-align:center;margin-bottom:20px">
-    <button onclick="window.print()" style="background:#e11d48;color:white;border:none;padding:12px 40px;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600">
+    <button onclick="window.print()" style="background:${color};color:white;border:none;padding:12px 40px;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600">
       🖨️ Print Invoice
     </button>
     <button onclick="window.close()" style="background:#eee;color:#333;border:none;padding:12px 30px;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px">
@@ -64,12 +96,12 @@ export function printA4Invoice(data: InvoiceData) {
   </div>
 
   <!-- Header -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid #e11d48">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid ${color}">
     <div>
-      <h1 style="font-size:32px;font-weight:800;color:#e11d48;margin-bottom:4px">✨ Brushia</h1>
-      <p style="color:#888;font-size:13px">Beauty & Cosmetics</p>
-      <p style="color:#888;font-size:12px;margin-top:8px">Cairo, Egypt</p>
-      <p style="color:#888;font-size:12px">info@brushia.net</p>
+      <h1 style="font-size:32px;font-weight:800;color:${color};margin-bottom:4px">${header}</h1>
+      <p style="color:#888;font-size:13px">${tagline}</p>
+      ${city ? `<p style="color:#888;font-size:12px;margin-top:8px">${city}, Egypt</p>` : ''}
+      ${email ? `<p style="color:#888;font-size:12px">${email}</p>` : ''}
     </div>
     <div style="text-align:right">
       <h2 style="font-size:28px;font-weight:700;color:#333;margin-bottom:8px">INVOICE</h2>
@@ -113,7 +145,7 @@ export function printA4Invoice(data: InvoiceData) {
       ${discountLine}
       ${vatLine}
       ${shippingLine}
-      <tr style="border-top:2px solid #333"><td style="padding:10px 0;font-size:18px;font-weight:700">Total</td><td style="padding:10px 0;text-align:right;font-size:18px;font-weight:700;color:#e11d48">EGP ${(data.total / 100).toFixed(2)}</td></tr>
+      <tr style="border-top:2px solid #333"><td style="padding:10px 0;font-size:18px;font-weight:700">Total</td><td style="padding:10px 0;text-align:right;font-size:18px;font-weight:700;color:${color}">EGP ${(data.total / 100).toFixed(2)}</td></tr>
       <tr><td style="padding:2px 0;color:#16a34a;font-size:13px;font-weight:600">Amount Paid</td><td style="padding:2px 0;text-align:right;color:#16a34a;font-size:13px;font-weight:600">EGP ${(data.paid / 100).toFixed(2)}</td></tr>
     </table>
   </div>
@@ -122,8 +154,9 @@ export function printA4Invoice(data: InvoiceData) {
 
   <!-- Footer -->
   <div style="margin-top:40px;padding-top:20px;border-top:1px solid #eee;text-align:center">
-    <p style="color:#e11d48;font-weight:600;font-size:14px">Thank you for shopping with Brushia! ✨</p>
-    <p style="color:#aaa;font-size:11px;margin-top:6px">www.brushia.net • Follow us @brushia</p>
+    <p style="color:${color};font-weight:600;font-size:14px">${footer}</p>
+    ${website ? `<p style="color:#aaa;font-size:11px;margin-top:6px">${website}</p>` : ''}
+    <p style="color:#ccc;font-size:9px;margin-top:4px">Powered by Bloom</p>
   </div>
 </div>
 </body></html>`);
@@ -133,6 +166,12 @@ export function printA4Invoice(data: InvoiceData) {
 export function printThermalReceipt(data: InvoiceData) {
   const w = window.open('', '_blank');
   if (!w) return;
+  const b = getTenantBranding();
+  const receiptHeader = b.receiptHeader || `✨ ${(b.name || 'BLOOM').toUpperCase()} ✨`;
+  const tagline = b.tagline || 'Beauty & Cosmetics';
+  const city = b.city || '';
+  const receiptFooter = b.receiptFooter || 'Thank you for shopping! ✨';
+  const website = b.website || '';
 
   const items = data.items.map(i => `
     <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px">
@@ -149,13 +188,13 @@ export function printThermalReceipt(data: InvoiceData) {
   @media print { .no-print { display: none !important; } }
 </style></head><body>
 <div class="no-print" style="text-align:center;margin:10px 0">
-  <button onclick="window.print()" style="background:#e11d48;color:white;border:none;padding:8px 24px;border-radius:6px;cursor:pointer">🖨️ Print</button>
+  <button onclick="window.print()" style="background:#059669;color:white;border:none;padding:8px 24px;border-radius:6px;cursor:pointer">🖨️ Print</button>
   <button onclick="window.close()" style="background:#eee;color:#333;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-left:5px">Close</button>
 </div>
 <div style="text-align:center;padding:8px 0">
-  <div style="font-size:18px;font-weight:bold">✨ BRUSHIA ✨</div>
-  <div style="font-size:10px;color:#666">Beauty & Cosmetics</div>
-  <div style="font-size:10px;color:#666">Cairo, Egypt</div>
+  <div style="font-size:18px;font-weight:bold">${receiptHeader}</div>
+  <div style="font-size:10px;color:#666">${tagline}</div>
+  ${city ? `<div style="font-size:10px;color:#666">${city}, Egypt</div>` : ''}
 </div>
 <div class="line"></div>
 <div style="display:flex;justify-content:space-between;font-size:11px">
@@ -177,8 +216,8 @@ ${data.tax > 0 ? `<div style="display:flex;justify-content:space-between;font-si
 <div style="display:flex;justify-content:space-between;font-size:12px"><span>Paid</span><span>EGP ${(data.paid / 100).toFixed(2)}</span></div>
 <div class="line"></div>
 <div style="text-align:center;padding:8px 0">
-  <div style="font-size:11px;font-weight:bold">Thank you for shopping! ✨</div>
-  <div style="font-size:9px;color:#888;margin-top:4px">www.brushia.net</div>
+  <div style="font-size:11px;font-weight:bold">${receiptFooter}</div>
+  ${website ? `<div style="font-size:9px;color:#888;margin-top:4px">${website}</div>` : ''}
 </div>
 </body></html>`);
   w.document.close();

@@ -23,7 +23,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('en');
 
   useEffect(() => {
-    const saved = localStorage.getItem('brushia-locale') as Locale;
+    const saved = localStorage.getItem('bloom-locale') as Locale;
     if (saved && (saved === 'en' || saved === 'ar')) {
       setLocaleState(saved);
     }
@@ -31,7 +31,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);
-    localStorage.setItem('brushia-locale', newLocale);
+    localStorage.setItem('bloom-locale', newLocale);
     // Update document direction
     document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = newLocale;

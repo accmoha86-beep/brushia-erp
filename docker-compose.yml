@@ -1,4 +1,4 @@
-# Brushia ERP — Development Docker Compose
+# Bloom ERP — Development Docker Compose
 # Usage: docker compose up -d
 
 name: brushia-erp

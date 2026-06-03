@@ -1,4 +1,4 @@
-# Brushia ERP — Production Docker Compose
+# Bloom ERP — Production Docker Compose
 # Usage: docker compose -f docker-compose.prod.yml up -d
 
 name: brushia-erp-prod

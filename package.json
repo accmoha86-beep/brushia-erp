@@ -2,9 +2,9 @@
   "name": "brushia-erp",
   "version": "0.1.0",
   "private": true,
-  "description": "Brushia ERP \u2014 Enterprise Beauty & Cosmetics Platform",
+  "description": "Bloom — Multi-tenant Beauty & Cosmetics ERP Platform",
   "license": "UNLICENSED",
-  "author": "Brushia <hello@brushia.net>",
+  "author": "Bloom ERP",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"

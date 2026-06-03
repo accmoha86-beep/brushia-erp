@@ -1,4 +1,4 @@
-/* Export utilities for Brushia ERP — CSV & Excel-compatible export */
+/* Export utilities for Bloom ERP — CSV & Excel-compatible export */
 
 export function exportToCSV(data: Record<string, any>[], filename: string, columns?: { key: string; label: string }[]) {
   if (!data.length) return;

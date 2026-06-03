@@ -1,4 +1,4 @@
-# 🎨 Brushia ERP
+# 🎨 Bloom ERP
 
 > Enterprise Beauty & Cosmetics Management Platform
 

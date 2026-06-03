@@ -57,7 +57,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
     // Dashboard
     'dashboard.title': 'Dashboard',
-    'dashboard.subtitle': 'Business overview for Brushia',
+    'dashboard.subtitle': 'Business overview',
     'dashboard.totalRevenue': 'Total Revenue',
     'dashboard.totalOrders': 'Total Orders',
     'dashboard.totalCustomers': 'Customers',
@@ -558,7 +558,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'barcode.labelSize': 'Label Size',
 
     // Store
-    'store.title': 'Brushia Beauty Store',
+    'store.title': 'Beauty Store',
     'store.subtitle': 'Premium Makeup & Beauty Tools',
     'store.addToCart': 'Add to Cart',
     'store.checkout': 'Checkout',
