@@ -146,7 +146,7 @@ export class WhatsAppBotService {
 
   private async sendWelcome(convo: any): Promise<void> {
     const name = convo.customer_name || 'there';
-    const msg = `✨ Welcome to *Brushia* 💄\nHi ${name}! I'm your beauty assistant.\n\nHow can I help you today?`;
+    const msg = `✨ Welcome to our store 💄\nHi ${name}! I'm your beauty assistant.\n\nHow can I help you today?`;
 
     await this.meta.sendButtons(convo.customer_phone, msg, [
       { id: 'browse_catalog', title: '🛍️ Browse Products' },
@@ -189,7 +189,7 @@ export class WhatsAppBotService {
 
     await this.meta.sendList(
       convo.customer_phone,
-      '💄 *Brushia Product Categories*\n\nChoose a category to explore:',
+      '💄 *Product Categories*\n\nChoose a category to explore:',
       'View Categories',
       [{ title: 'Categories', rows }],
     );
@@ -772,7 +772,7 @@ export class WhatsAppBotService {
   private async switchToAgent(convo: any): Promise<void> {
     await this.meta.sendText(
       convo.customer_phone,
-      '👋 Connecting you to a Brushia team member!\n\nA human agent will reply shortly. Type *menu* anytime to return to the bot.',
+      '👋 Connecting you to our team!\n\nA human agent will reply shortly. Type *menu* anytime to return to the bot.',
     );
     await this.db.query(
       `UPDATE whatsapp.conversations SET bot_enabled = false, assigned_to = NULL, updated_at = NOW() WHERE id = $1`,

@@ -17,10 +17,10 @@ const cairo = Cairo({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Brushia ERP',
-    template: '%s | Brushia ERP',
+    default: 'Bloom — Beauty ERP',
+    template: '%s | Bloom',
   },
-  description: 'Enterprise Beauty & Cosmetics Management Platform',
+  description: 'Multi-tenant Beauty & Cosmetics ERP Platform',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',

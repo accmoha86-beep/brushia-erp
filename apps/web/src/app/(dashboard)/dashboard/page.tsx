@@ -79,7 +79,7 @@ export default function DashboardPage() {
       // Get token directly from localStorage
       let token: string | null = null;
       try {
-        const raw = localStorage.getItem('brushia-auth');
+        const raw = localStorage.getItem('bloom-auth');
         if (raw) token = JSON.parse(raw)?.state?.accessToken || null;
       } catch {}
 

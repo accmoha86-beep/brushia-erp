@@ -65,7 +65,7 @@ function NotificationCenter() {
     const notifs: any[] = [];
     const getToken = () => {
       try {
-        const raw = localStorage.getItem('brushia-auth');
+        const raw = localStorage.getItem('bloom-auth');
         if (raw) return JSON.parse(raw)?.state?.accessToken;
       } catch {}
       return localStorage.getItem('token');
@@ -230,7 +230,7 @@ export default function DashboardLayout({
         setHydrated(true);
       } else {
         try {
-          const raw = localStorage.getItem('brushia-auth');
+          const raw = localStorage.getItem('bloom-auth');
           if (raw && JSON.parse(raw)?.state?.accessToken) {
             setHydrated(true);
             return;
@@ -245,7 +245,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (mounted && hydrated && !isAuthenticated) {
       try {
-        const raw = localStorage.getItem('brushia-auth');
+        const raw = localStorage.getItem('bloom-auth');
         if (raw && JSON.parse(raw)?.state?.accessToken) {
           return;
         }
@@ -278,7 +278,8 @@ export default function DashboardLayout({
 
   // Find current page name for header
   const currentNav = navigation.find((n) => 'href' in n && pathname === n.href);
-  const currentPageName = currentNav && 'nameKey' in currentNav ? t(currentNav.nameKey!) : 'Brushia ERP';
+  const tenantName = useAuthStore.getState()?.tenant?.name || 'Bloom';
+  const currentPageName = currentNav && 'nameKey' in currentNav ? t(currentNav.nameKey!) : tenantName;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -305,11 +306,11 @@ export default function DashboardLayout({
         {/* Logo */}
         <div className="flex h-16 items-center justify-between px-6 border-b border-gray-800">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-purple-600">
-              <span className="text-sm font-bold text-white">B</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600">
+              <span className="text-sm">🌸</span>
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
-              Brushia
+            <span className="text-lg font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+              {useAuthStore.getState()?.tenant?.name || 'Bloom'}
             </span>
           </Link>
           <button

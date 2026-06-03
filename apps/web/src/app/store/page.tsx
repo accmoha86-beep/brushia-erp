@@ -46,7 +46,7 @@ export default function StorePage() {
     async function load() {
       try {
         // Try with auth token from localStorage if available
-        const token = (() => { try { const s = localStorage.getItem('brushia-auth'); return s ? JSON.parse(s)?.state?.accessToken : null; } catch { return null; } })();
+        const token = (() => { try { const s = localStorage.getItem('bloom-auth'); return s ? JSON.parse(s)?.state?.accessToken : null; } catch { return null; } })();
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
         
         const [prodsRes, catsRes] = await Promise.all([
@@ -71,12 +71,12 @@ export default function StorePage() {
     }
     load();
     // Load cart
-    try { const s = localStorage.getItem('brushia-cart'); if (s) setCart(JSON.parse(s)); } catch {}
+    try { const s = localStorage.getItem('bloom-cart'); if (s) setCart(JSON.parse(s)); } catch {}
     return () => { cancelled = true; };
   }, []);
 
   // Save cart
-  useEffect(() => { try { localStorage.setItem('brushia-cart', JSON.stringify(cart)); } catch {} }, [cart]);
+  useEffect(() => { try { localStorage.setItem('bloom-cart', JSON.stringify(cart)); } catch {} }, [cart]);
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -122,7 +122,7 @@ export default function StorePage() {
               <Sparkles className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Brushia</h1>
+              <h1 className="text-xl font-bold tracking-tight">🌸 Store</h1>
               <p className="text-[10px] opacity-70 -mt-0.5">Beauty & Cosmetics</p>
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function StorePage() {
           <div className="bg-white rounded-2xl p-8 text-center shadow-2xl">
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-2xl font-bold mb-2">Order Placed!</h3>
-            <p className="text-gray-500">Thank you for shopping with Brushia</p>
+            <p className="text-gray-500">Thank you for shopping with us!</p>
             <p className="text-sm text-gray-400 mt-2">We&apos;ll confirm your order via WhatsApp</p>
           </div>
         </div>
@@ -337,7 +337,7 @@ export default function StorePage() {
       <footer className="bg-gray-900 text-white py-12 mt-12">
         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
           <div>
-            <h3 className="font-bold text-lg mb-3 flex items-center gap-2"><Sparkles className="h-5 w-5 text-rose-400" /> Brushia</h3>
+            <h3 className="font-bold text-lg mb-3 flex items-center gap-2"><Sparkles className="h-5 w-5 text-emerald-400" /> Bloom Store</h3>
             <p className="text-sm text-gray-400">Premium beauty & cosmetics from Egypt. Quality you can trust.</p>
           </div>
           <div>
@@ -353,13 +353,13 @@ export default function StorePage() {
             <h4 className="font-semibold text-sm mb-3">Contact Us</h4>
             <div className="space-y-1.5 text-sm text-gray-400">
               <p>📱 WhatsApp: +20 xxx xxx xxxx</p>
-              <p>📧 info@brushia.net</p>
+              <p>📧 support@bloom.app</p>
               <p>📍 Egypt</p>
             </div>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
-          © 2024 Brushia. All rights reserved. Powered by Brushia ERP.
+          © 2024 Powered by Bloom — Beauty ERP Platform
         </div>
       </footer>
     </div>

@@ -2,8 +2,30 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, TenantBranding } from '@/stores/auth.store';
 import { api, ApiError } from '@/lib/api-client';
+
+interface TenantResponse {
+  id: string;
+  name: string;
+  slug: string;
+  email: string;
+  phone?: string;
+  city?: string;
+  governorate?: string;
+  logo_url?: string;
+  favicon_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  tagline?: string;
+  website?: string;
+  invoice_header?: string;
+  invoice_footer?: string;
+  receipt_header?: string;
+  receipt_footer?: string;
+  social_instagram?: string;
+  social_facebook?: string;
+}
 
 interface LoginResponse {
   accessToken: string;
@@ -19,6 +41,30 @@ interface LoginResponse {
     avatarUrl?: string;
     language: string;
     theme: string;
+  };
+}
+
+function mapTenantBranding(t: TenantResponse): TenantBranding {
+  return {
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    logoUrl: t.logo_url,
+    faviconUrl: t.favicon_url,
+    primaryColor: t.primary_color || '#E11D48',
+    secondaryColor: t.secondary_color || '#7C3AED',
+    tagline: t.tagline,
+    website: t.website,
+    email: t.email,
+    phone: t.phone,
+    city: t.city,
+    governorate: t.governorate,
+    invoiceHeader: t.invoice_header,
+    invoiceFooter: t.invoice_footer,
+    receiptHeader: t.receipt_header,
+    receiptFooter: t.receipt_footer,
+    socialInstagram: t.social_instagram,
+    socialFacebook: t.social_facebook,
   };
 }
 
@@ -40,12 +86,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // First resolve tenant slug to ID
-      const tenant = await api.get<{ id: string }>(`/tenants/slug/${form.tenantSlug}`);
+      // First resolve tenant slug to ID + branding
+      const tenantData = await api.get<TenantResponse>(`/tenants/slug/${form.tenantSlug}`);
 
       // Then login
       const result = await api.post<LoginResponse>('/auth/login', {
-        tenantId: tenant.id,
+        tenantId: tenantData.id,
         email: form.email,
         password: form.password,
         deviceType: 'web',
@@ -55,10 +101,11 @@ export default function LoginPage() {
         user: {
           ...result.user,
           displayName: result.user.displayName || `${result.user.firstName} ${result.user.lastName}`,
-          permissions: [], // Will be populated from JWT decode
+          permissions: [],
         },
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
+        tenant: mapTenantBranding(tenantData),
       });
 
       router.push('/dashboard');
@@ -85,17 +132,21 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-400/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
-            Brushia
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 mb-4 shadow-lg shadow-emerald-500/25">
+            <span className="text-3xl">🌸</span>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+            Bloom
           </h1>
-          <p className="text-gray-400 mt-2 text-sm">Enterprise Resource Planning</p>
+          <p className="text-gray-400 mt-2 text-sm">Beauty & Cosmetics ERP Platform</p>
         </div>
 
         {/* Login Card */}
@@ -114,7 +165,7 @@ export default function LoginPage() {
                 onChange={(e) => setForm((f) => ({ ...f, tenantSlug: e.target.value }))}
                 placeholder="your-company"
                 required
-                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 transition-all"
+                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
               />
             </div>
 
@@ -130,7 +181,7 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 required
                 autoComplete="email"
-                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 transition-all"
+                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
               />
             </div>
 
@@ -138,7 +189,7 @@ export default function LoginPage() {
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="text-sm font-medium text-gray-300">Password</label>
-                <button type="button" className="text-xs text-rose-400 hover:text-rose-300">
+                <button type="button" className="text-xs text-emerald-400 hover:text-emerald-300">
                   Forgot password?
                 </button>
               </div>
@@ -149,7 +200,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 transition-all"
+                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
               />
             </div>
 
@@ -164,7 +215,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-600 hover:to-purple-600 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -183,7 +234,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-gray-500 text-xs mt-6">
-          © {new Date().getFullYear()} Brushia ERP. All rights reserved.
+          © {new Date().getFullYear()} Bloom. All rights reserved.
         </p>
       </div>
     </div>

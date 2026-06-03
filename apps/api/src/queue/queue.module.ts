@@ -28,7 +28,7 @@ function parseRedisUrl(url: string) {
         };
         return {
           connection: conn,
-          prefix: config.get('queue.prefix', 'brushia'),
+          prefix: config.get('queue.prefix', 'bloom'),
           defaultJobOptions: {
             attempts: 3,
             backoff: { type: 'exponential', delay: 1000 },
