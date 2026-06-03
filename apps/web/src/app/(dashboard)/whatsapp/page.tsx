@@ -151,7 +151,7 @@ export default function WhatsAppPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {isRTL ? 'واتساب بروشيا' : 'Brushia WhatsApp'}
+              {isRTL ? 'واتساب' : 'WhatsApp Hub'}
             </h1>
             <p className="text-sm text-gray-500">
               {isRTL ? 'إدارة المحادثات والطلبات والبوت' : 'Manage conversations, orders & bot'}

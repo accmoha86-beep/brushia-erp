@@ -77,7 +77,7 @@ interface Product {
 
 function getToken() {
   try {
-    const raw = localStorage.getItem('brushia-auth');
+    const raw = localStorage.getItem('bloom-auth');
     if (raw) {
       const parsed = JSON.parse(raw);
       return parsed?.state?.accessToken || null;
@@ -302,7 +302,7 @@ function ProductFormModal({ product, categories, onClose, onSaved }: {
             <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-              placeholder="e.g. Brushia Matte Foundation" />
+              placeholder="e.g. Matte Foundation" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Arabic Name</label>
@@ -512,11 +512,11 @@ export default function ProductsPage() {
           <p className="text-sm text-gray-500 mt-1">{loading ? '…' : `${totalProducts} products in catalog`}</p>
         </div>
         <div className="flex gap-2">
-              <button onClick={() => exportToCSV(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'brushia_products')}
+              <button onClick={() => exportToCSV(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'bloom_products')}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition">
                 <Download className="w-4 h-4" /> CSV
               </button>
-              <button onClick={() => exportToExcelXML(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'brushia_products', 'Products')}
+              <button onClick={() => exportToExcelXML(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'bloom_products', 'Products')}
                 className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition">
                 <Download className="w-4 h-4" /> Excel
               </button>

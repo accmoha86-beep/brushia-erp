@@ -25,7 +25,7 @@ const GRADIENT_CARDS = [
 
 function getToken() {
   try {
-    const raw = localStorage.getItem('brushia-auth');
+    const raw = localStorage.getItem('bloom-auth');
     if (raw) return JSON.parse(raw)?.state?.accessToken;
   } catch {}
   return null;
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
             <BarChart3 className="h-6 w-6 text-rose-500" />
             Advanced Analytics
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Deep business insights for Brushia</p>
+          <p className="text-sm text-gray-500 mt-1">Deep business insights & analytics</p>
         </div>
         <div className="flex items-center gap-2">
           {(['7d', '30d', '90d', 'all'] as const).map(p => (

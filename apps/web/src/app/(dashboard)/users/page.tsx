@@ -449,7 +449,7 @@ function UsersTab({
                 onChange={(e) =>
                   setForm((f) => ({ ...f, email: e.target.value }))
                 }
-                placeholder="ahmed@brushia.com"
+                placeholder="ahmed@example.com"
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
               />
             </div>

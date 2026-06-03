@@ -36,7 +36,7 @@ const INTEGRATION_FIELDS: Record<string, { key: string; label: string; type: str
   instapay: [
     { key: 'ipa_address', label: 'IPA Address', type: 'text', placeholder: 'username@instapay', help: 'Your InstaPay address (IPA) for receiving payments', required: true },
     { key: 'bank_name', label: 'Bank Name', type: 'text', placeholder: 'e.g. CIB, NBE, QNB', help: 'The bank linked to your InstaPay account' },
-    { key: 'account_holder', label: 'Account Holder Name', type: 'text', placeholder: 'Brushia for Cosmetics', help: 'Name shown to customers when paying' },
+    { key: 'account_holder', label: 'Account Holder Name', type: 'text', placeholder: 'Your Company Name', help: 'Name shown to customers when paying' },
     { key: 'notification_phone', label: 'Notification Phone', type: 'text', placeholder: '+201xxxxxxxxx', help: 'Receive SMS notifications for incoming payments' },
   ],
   meta_pixel: [
@@ -85,7 +85,7 @@ export default function SettingsPage() {
   const { t, locale, isRTL } = useI18n();
   const [activeTab, setActiveTab] = useState('company');
   const [saved, setSaved] = useState(false);
-  const [companyInfo, setCompanyInfo] = useState({ name: 'Brushia', legal_name: 'Brushia for Cosmetics', email: 'info@brushia.net', phone: '+201000000000', tax_id: '', commercial_reg: '', city: 'Cairo', governorate: 'Cairo', currency: 'EGP', vat_rate: 14 });
+  const [companyInfo, setCompanyInfo] = useState({ name: '', legal_name: '', email: '', phone: '+201000000000', tax_id: '', commercial_reg: '', city: 'Cairo', governorate: 'Cairo', currency: 'EGP', vat_rate: 14 });
   const [taxSettings, setTaxSettings] = useState({ vat_rate: 14, tax_inclusive: true, fiscal_year_start: 'January' });
 
   // Integration state
@@ -281,10 +281,10 @@ export default function SettingsPage() {
             <div><h2 className="text-lg font-semibold mb-4">Users & Roles</h2>
               <p className="text-sm text-gray-500 mb-4">Manage users from the <a href="/users" className="text-rose-600 font-medium hover:underline">Users & Roles</a> page.</p>
               <div className="space-y-3">
-                {[{ name: 'Mohamed Admin', email: 'admin@brushia.net', role: 'Admin', status: 'active' },
-                  { name: 'Noha Adel', email: 'noha@brushia.com', role: 'Manager', status: 'active' },
-                  { name: 'Ahmed Hassan', email: 'ahmed@brushia.com', role: 'Warehouse', status: 'active' },
-                  { name: 'Sara Ali', email: 'sara@brushia.com', role: 'Sales', status: 'active' }].map((u, i) => (
+                {[{ name: 'Mohamed Admin', email: 'admin@company.com', role: 'Admin', status: 'active' },
+                  { name: 'Noha Adel', email: 'noha@company.com', role: 'Manager', status: 'active' },
+                  { name: 'Ahmed Hassan', email: 'ahmed@company.com', role: 'Warehouse', status: 'active' },
+                  { name: 'Sara Ali', email: 'sara@company.com', role: 'Sales', status: 'active' }].map((u, i) => (
                   <div key={i} className="flex items-center justify-between rounded-lg border p-3">
                     <div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-xs font-bold text-rose-600">{u.name[0]}</div><div><p className="text-sm font-medium">{u.name}</p><p className="text-xs text-gray-400">{u.email}</p></div></div>
                     <div className="flex items-center gap-2"><span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs">{u.role}</span><span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs">{u.status}</span></div>

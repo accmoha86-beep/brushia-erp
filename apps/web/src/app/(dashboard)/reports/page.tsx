@@ -44,7 +44,7 @@ export default function ReportsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <div><h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1><p className="text-sm text-gray-500 mt-1">Business intelligence for Brushia</p></div>
+        <div><h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1><p className="text-sm text-gray-500 mt-1">Business intelligence dashboard</p></div>
         <button onClick={fetchAll} className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50"><RefreshCw className="h-4 w-4" /></button>
       </div>
 
