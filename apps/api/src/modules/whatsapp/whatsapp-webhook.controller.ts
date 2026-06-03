@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Query, Body, Req, Res, HttpCode, Logger, RawBody } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { Controller, Get, Post, Query, Body, Res, HttpCode, Logger } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { WhatsAppMetaService } from './services/whatsapp-meta.service';
 import { WhatsAppBotService } from './services/whatsapp-bot.service';
 
@@ -16,6 +17,7 @@ export class WhatsAppWebhookController {
   /**
    * Webhook verification — Meta sends GET request to verify
    */
+  @Public()
   @Get()
   @ApiOperation({ summary: 'WhatsApp webhook verification' })
   verify(
@@ -38,6 +40,7 @@ export class WhatsAppWebhookController {
   /**
    * Incoming messages — Meta sends POST with message data
    */
+  @Public()
   @Post()
   @HttpCode(200)
   @ApiOperation({ summary: 'Receive WhatsApp messages' })
@@ -45,7 +48,6 @@ export class WhatsAppWebhookController {
     this.logger.log(`Webhook received: ${JSON.stringify(body).substring(0, 500)}`);
 
     try {
-      // Meta webhook structure
       const entry = body?.entry?.[0];
       const changes = entry?.changes?.[0];
       const value = changes?.value;
@@ -69,7 +71,7 @@ export class WhatsAppWebhookController {
       }
 
       for (const message of messages) {
-        const phone = message.from; // sender phone number
+        const phone = message.from;
         const waMessageId = message.id;
         const messageType = message.type;
 
