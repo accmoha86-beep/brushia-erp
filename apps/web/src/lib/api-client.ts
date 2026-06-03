@@ -73,7 +73,7 @@ export class ApiError extends Error {
 function getAuthFromStorage(): { accessToken: string | null; tenantId: string | null } {
   if (typeof window === 'undefined') return { accessToken: null, tenantId: null };
   try {
-    const raw = localStorage.getItem('brushia-auth');
+    const raw = localStorage.getItem('bloom-auth');
     if (!raw) return { accessToken: null, tenantId: null };
     const parsed = JSON.parse(raw);
     return {

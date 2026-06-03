@@ -5,7 +5,7 @@ import { useI18n } from '@/lib/i18n';
 
 function getToken() {
   try {
-    const raw = localStorage.getItem('brushia-auth');
+    const raw = localStorage.getItem('bloom-auth');
     if (!raw) return localStorage.getItem('token') || '';
     const parsed = JSON.parse(raw);
     return parsed?.state?.accessToken || parsed?.state?.token || localStorage.getItem('token') || '';

@@ -7,7 +7,7 @@ const API = '/api/v1/accounting/cost-centers';
 
 function getToken() {
   try {
-    const raw = localStorage.getItem('brushia-auth');
+    const raw = localStorage.getItem('bloom-auth');
     if (!raw) return '';
     const parsed = JSON.parse(raw);
     return parsed?.state?.accessToken || parsed?.state?.token || localStorage.getItem('token') || '';

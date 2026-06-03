@@ -582,7 +582,7 @@ export default function ChartOfAccountsPage() {
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t text-sm text-gray-500">
           <span>{filteredAccounts.length} حساب رئيسي — {stats.total} إجمالي</span>
-          <span className="font-arabic text-xs">Brushia ERP — شجرة الحسابات المحاسبية</span>
+          <span className="font-arabic text-xs">Bloom — شجرة الحسابات المحاسبية</span>
         </div>
       </div>
 

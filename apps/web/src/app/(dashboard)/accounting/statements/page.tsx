@@ -5,7 +5,7 @@ import { useI18n } from '@/lib/i18n';
 
 function getToken() {
   try {
-    const raw = localStorage.getItem('brushia-auth');
+    const raw = localStorage.getItem('bloom-auth');
     if (!raw) return localStorage.getItem('token') || '';
     const parsed = JSON.parse(raw);
     return parsed?.state?.accessToken || parsed?.state?.token || localStorage.getItem('token') || '';
@@ -63,7 +63,7 @@ export default function FinancialStatementsPage() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">📊 Financial Statements</h1>
-        <p className="text-sm text-gray-500 mt-1">القوائم المالية — Professional financial reports for Brushia</p>
+        <p className="text-sm text-gray-500 mt-1">القوائم المالية — Professional financial reports</p>
       </div>
 
       {/* Tabs */}

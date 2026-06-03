@@ -6,7 +6,7 @@ import { formatEGP, cn } from '@/lib/utils';
 import { MessageCircle, Store, Settings, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Send, Package, Link2, Unlink, ExternalLink, Zap, Users, ShoppingBag, Eye, BarChart3 } from 'lucide-react';
 
 function getToken() {
-  try { const r = localStorage.getItem('brushia-auth'); if (r) return JSON.parse(r)?.state?.accessToken; } catch {} return null;
+  try { const r = localStorage.getItem('bloom-auth'); if (r) return JSON.parse(r)?.state?.accessToken; } catch {} return null;
 }
 
 async function apiFetch(path: string, opts?: any) {

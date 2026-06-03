@@ -113,7 +113,7 @@ export default function BarcodeLabelsPage() {
       });
       const win = window.open('', '_blank');
       if (!win) return;
-      win.document.write('<html><head><title>Brushia Labels</title><style>@page{margin:5mm}body{margin:0;font-family:Arial,sans-serif}.grid{display:grid;grid-template-columns:repeat(' + columns + ',1fr);gap:2mm}.label{border:1px dashed #ccc;padding:3mm;text-align:center;page-break-inside:avoid}.label .name{font-size:9px;font-weight:bold;margin-bottom:2px}.label .price{font-size:11px;font-weight:bold;margin-top:2px}canvas{max-width:100%}</style></head><body><div class="grid">' + el.innerHTML + '</div></body></html>');
+      win.document.write('<html><head><title>Barcode Labels</title><style>@page{margin:5mm}body{margin:0;font-family:Arial,sans-serif}.grid{display:grid;grid-template-columns:repeat(' + columns + ',1fr);gap:2mm}.label{border:1px dashed #ccc;padding:3mm;text-align:center;page-break-inside:avoid}.label .name{font-size:9px;font-weight:bold;margin-bottom:2px}.label .price{font-size:11px;font-weight:bold;margin-top:2px}canvas{max-width:100%}</style></head><body><div class="grid">' + el.innerHTML + '</div></body></html>');
       win.document.close();
       setTimeout(() => { win.print(); win.close(); }, 500);
     }, 300);
