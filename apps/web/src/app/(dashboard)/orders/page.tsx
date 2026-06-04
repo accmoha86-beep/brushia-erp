@@ -4,17 +4,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
-import { Search, Eye, X, Package, Truck, CheckCircle2, Clock, XCircle, RefreshCw, ShoppingBag, CreditCard, Banknote, Hash, Printer, Receipt, FileText , Download } from 'lucide-react';
-import { printA4Invoice, printThermalReceipt } from '@/lib/print-invoice';
 import { exportToCSV, exportToExcelXML } from '@/lib/export-data';
+import { printA4Invoice, printThermalReceipt } from '@/lib/print-invoice';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard, StatCardGrid } from '@/components/ui/stat-card';
+import { SearchFilter, FilterTabs } from '@/components/ui/search-filter';
+import { BloomModal, BtnPrimary, BtnSecondary } from '@/components/ui/bloom-modal';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState, TableSkeleton } from '@/components/ui/empty-state';
+import { Table, Thead, Th, Td, Tr } from '@/components/ui/table';
+import {
+  ShoppingBag, Eye, Download, RefreshCw, Printer, Receipt, FileText,
+  CreditCard, Banknote, Hash, Clock, CheckCircle2, XCircle, Truck, Package,
+} from 'lucide-react';
 
 interface Order {
-  id: string; order_number: string; customer_id?: string; customer_name?: string;
-  status: string; payment_status: string; channel: string;
-  subtotal: string; discount_amount: string; tax_amount: string; shipping_amount: string;
-  total: string; grand_total: string; paid_amount: string;
-  payment_method?: string; item_count?: string; created_at: string;
-  currency: string; order_type: string; notes?: string;
+  id: string; order_number: string; customer_name?: string; status: string;
+  payment_status: string; channel: string; subtotal: string; discount_amount: string;
+  tax_amount: string; shipping_amount: string; total: string; grand_total: string;
+  paid_amount: string; payment_method?: string; item_count?: string; created_at: string;
+  currency: string; notes?: string;
 }
 
 interface OrderItem {
@@ -22,69 +31,43 @@ interface OrderItem {
   unit_price: string; cost_price: string; discount: string; total: string;
 }
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700', confirmed: 'bg-blue-100 text-blue-700',
-  processing: 'bg-indigo-100 text-indigo-700', shipped: 'bg-purple-100 text-purple-700',
-  delivered: 'bg-emerald-100 text-emerald-700', cancelled: 'bg-red-100 text-red-700',
-};
-const paymentColors: Record<string, string> = {
-  unpaid: 'bg-red-100 text-red-700', partial: 'bg-yellow-100 text-yellow-700',
-  paid: 'bg-emerald-100 text-emerald-700', refunded: 'bg-gray-100 text-gray-600',
-};
-const channelLabels: Record<string, string> = {
-  pos: 'POS', online: 'Online', whatsapp: 'WhatsApp', exhibition: 'Exhibition',
+const statusConfig: Record<string, { color: 'amber' | 'blue' | 'indigo' | 'purple' | 'emerald' | 'red' | 'gray'; label: string }> = {
+  pending:    { color: 'amber',   label: 'Pending' },
+  confirmed:  { color: 'blue',    label: 'Confirmed' },
+  processing: { color: 'indigo',  label: 'Processing' },
+  shipped:    { color: 'purple',  label: 'Shipped' },
+  delivered:  { color: 'emerald', label: 'Delivered' },
+  cancelled:  { color: 'red',     label: 'Cancelled' },
 };
 
-function safeEGP(val: any): string {
-  const num = Number(val);
-  return isNaN(num) ? 'EGP 0.00' : formatEGP(num);
-}
+const paymentConfig: Record<string, { color: 'red' | 'amber' | 'emerald' | 'gray'; label: string }> = {
+  unpaid:   { color: 'red',     label: 'Unpaid' },
+  partial:  { color: 'amber',   label: 'Partial' },
+  paid:     { color: 'emerald', label: 'Paid' },
+  refunded: { color: 'gray',    label: 'Refunded' },
+};
 
+const channelEmoji: Record<string, string> = { pos: '🏪', online: '🌐', whatsapp: '💬', exhibition: '🎪' };
 
-function buildInvoiceData(order: any, items: any[]) {
-  return {
-    order_number: order.order_number || order.id.slice(0, 8),
-    receipt_number: order.receipt_number,
-    date: new Date(order.created_at).toLocaleDateString('en-EG', { year: 'numeric', month: 'long', day: 'numeric' }),
-    customer_name: order.customer_name,
-    items: items.map((i: any) => ({
-      name: i.name || 'Item',
-      sku: i.sku,
-      quantity: Number(i.quantity),
-      unit_price: Number(i.unit_price),
-      total: Number(i.total),
-    })),
-    subtotal: Number(order.subtotal || 0),
-    discount: Number(order.discount_amount || 0),
-    tax: Number(order.tax_amount || 0),
-    shipping: Number(order.shipping_amount || 0),
-    total: Number(order.grand_total || order.total || 0),
-    paid: Number(order.paid_amount || 0),
-    payment_method: order.payment_method || order.method,
-    channel: order.channel,
-    notes: order.notes,
-  };
-}
+function safeNum(v: any) { return isNaN(Number(v)) ? 0 : Number(v); }
 
 export default function OrdersPage() {
-  const { t, locale, isRTL } = useI18n();
+  const { t } = useI18n();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (filterStatus !== 'all') params.status = filterStatus;
-      const res = await api.get<any>('/sales/orders', params);
-      const data = res?.data || res || [];
-      setOrders(Array.isArray(data) ? data : []);
-    } catch { setOrders([]); } finally { setLoading(false); }
-  }, [filterStatus]);
+      const res = await api.get<any>('/sales/orders');
+      setOrders(Array.isArray(res) ? res : res?.data || []);
+    } catch { setOrders([]); }
+    finally { setLoading(false); }
+  }, []);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -96,228 +79,206 @@ export default function OrdersPage() {
     } catch { setOrderItems([]); }
   };
 
-  const filtered = orders.filter(o =>
-    o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
-    o.customer_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = orders.filter(o => {
+    const matchSearch = `${o.order_number} ${o.customer_name || ''}`.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === 'all' || o.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
 
-  const getTotal = (o: Order) => Number(o.grand_total) || Number(o.total) || 0;
+  const totalRevenue = orders.reduce((s, o) => s + safeNum(o.grand_total || o.total), 0);
+  const totalPaid = orders.reduce((s, o) => s + safeNum(o.paid_amount), 0);
+  const avgOrder = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  const exportData = () => {
+    exportToCSV(filtered.map(o => ({
+      'Order #': o.order_number, Customer: o.customer_name || 'Walk-in', Status: o.status,
+      Payment: o.payment_status, Channel: o.channel, Total: safeNum(o.grand_total || o.total).toFixed(2),
+      Date: new Date(o.created_at).toLocaleDateString(),
+    })), 'orders');
+  };
+
+  const buildInvoiceData = (order: Order) => ({
+    order_number: order.order_number, date: new Date(order.created_at).toLocaleDateString('en-EG', { year:'numeric',month:'long',day:'numeric' }),
+    customer_name: order.customer_name, items: orderItems.map(i => ({ name: i.name, sku: i.sku, quantity: Number(i.quantity), unit_price: safeNum(i.unit_price), total: safeNum(i.total) })),
+    subtotal: safeNum(order.subtotal), discount: safeNum(order.discount_amount), tax: safeNum(order.tax_amount),
+    shipping: safeNum(order.shipping_amount), total: safeNum(order.grand_total || order.total),
+    paid: safeNum(order.paid_amount), payment_method: order.payment_method, channel: order.channel, notes: order.notes,
+  });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage sales orders across all channels</p>
-        </div>
-        <button onClick={fetchOrders} className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50">
-          <RefreshCw className="h-4 w-4" />
-        </button>
-      </div>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <PageHeader
+        title={t('orders.title') || 'Orders'}
+        subtitle={t('orders.subtitle') || 'Track and manage all sales orders across channels'}
+        icon={<ShoppingBag className="h-5 w-5" />}
+        actions={
+          <div className="flex gap-2">
+            <button onClick={exportData} className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition" title="Export">
+              <Download className="h-4 w-4" />
+            </button>
+            <button onClick={fetchOrders} className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition">
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+        }
+      />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Total Orders</p>
-          <p className="text-2xl font-bold">{orders.length}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Revenue</p>
-          <p className="text-2xl font-bold text-emerald-600">
-            {safeEGP(orders.reduce((s, o) => s + getTotal(o), 0))}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Paid</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {orders.filter(o => o.payment_status === 'paid').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Pending</p>
-          <p className="text-2xl font-bold text-yellow-600">
-            {orders.filter(o => o.status === 'pending').length}
-          </p>
-        </div>
-      </div>
+      <StatCardGrid cols={4}>
+        <StatCard label={t('orders.totalOrders') || 'Total Orders'} value={orders.length} icon={<ShoppingBag className="h-5 w-5" />} color="emerald" />
+        <StatCard label={t('orders.revenue') || 'Revenue'} value={formatEGP(totalRevenue)} icon={<CreditCard className="h-5 w-5" />} color="blue" />
+        <StatCard label={t('orders.collected') || 'Collected'} value={formatEGP(totalPaid)} icon={<Banknote className="h-5 w-5" />} color="teal" />
+        <StatCard label={t('orders.avgOrder') || 'Avg. Order'} value={formatEGP(avgOrder)} icon={<Hash className="h-5 w-5" />} color="purple" />
+      </StatCardGrid>
 
-      {/* Search + Filters */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search orders..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-rose-500" />
-        </div>
+      <SearchFilter
+        search={search} onSearchChange={setSearch}
+        placeholder={t('orders.search') || 'Search by order number or customer...'}
+        filters={
+          <FilterTabs
+            tabs={[
+              { key: 'all', label: 'All', count: orders.length },
+              { key: 'pending', label: '⏳ Pending' },
+              { key: 'confirmed', label: '✅ Confirmed' },
+              { key: 'delivered', label: '📦 Delivered' },
+              { key: 'cancelled', label: '❌ Cancelled' },
+            ]}
+            active={filterStatus} onChange={setFilterStatus}
+          />
+        }
+      />
 
-        <button onClick={() => exportToCSV(orders.map((o: Order) => ({ 'Order #': o.order_number, Date: new Date(o.created_at).toLocaleDateString(), Customer: o.customer_name || '-', Status: o.status, Payment: o.payment_status, Channel: o.channel, Total: safeEGP(getTotal(o)), Paid: safeEGP(o.paid_amount) })), 'bloom_orders')}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition whitespace-nowrap">
-          <Download className="w-4 h-4" /> CSV
-        </button>
-        <button onClick={() => exportToExcelXML(orders.map((o: Order) => ({ 'Order #': o.order_number, Date: new Date(o.created_at).toLocaleDateString(), Customer: o.customer_name || '-', Status: o.status, Payment: o.payment_status, Channel: o.channel, Total: Number(getTotal(o)), Paid: Number(o.paid_amount || 0) })), 'bloom_orders', 'Orders')}
-          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition whitespace-nowrap">
-          <Download className="w-4 h-4" /> Excel
-        </button>
-        {['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].map(s => (
-          <button key={s} onClick={() => setFilterStatus(s)}
-            className={cn('px-3 py-2 rounded-lg text-sm font-medium capitalize transition-all',
-              filterStatus === s ? 'bg-rose-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
-            {s}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-20">
-          <ShoppingBag className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-3 text-gray-500">{search ? 'No orders match your search' : 'No orders yet'}</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Order</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Channel</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Items</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">{t('common.status')}</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Payment</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">Total</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">{t('common.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.map(o => (
-                <tr key={o.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{o.order_number}</p>
-                    {o.customer_name && <p className="text-xs text-gray-500">{o.customer_name}</p>}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{formatDate(o.created_at)}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {channelLabels[o.channel] || o.channel}
+      <Table>
+        <Thead>
+          <tr>
+            <Th>Order</Th>
+            <Th>Customer</Th>
+            <Th>Channel</Th>
+            <Th>Status</Th>
+            <Th>Payment</Th>
+            <Th align="right">Total</Th>
+            <Th>Date</Th>
+            <Th align="right">Actions</Th>
+          </tr>
+        </Thead>
+        <tbody>
+          {loading ? <TableSkeleton rows={5} cols={8} /> : filtered.length === 0 ? (
+            <tr><td colSpan={8}>
+              <EmptyState icon={<ShoppingBag className="h-7 w-7" />} title="No orders found" description="Orders will appear here once sales are made" />
+            </td></tr>
+          ) : (
+            filtered.map((o) => {
+              const sc = statusConfig[o.status] || statusConfig.pending;
+              const pc = paymentConfig[o.payment_status] || paymentConfig.unpaid;
+              return (
+                <Tr key={o.id} onClick={() => viewOrder(o)}>
+                  <Td>
+                    <div>
+                      <p className="font-semibold text-gray-900 font-mono text-xs">{o.order_number}</p>
+                      <p className="text-[10px] text-gray-400">{Number(o.item_count || 0)} items</p>
+                    </div>
+                  </Td>
+                  <Td><span className="text-sm text-gray-700">{o.customer_name || 'Walk-in Customer'}</span></Td>
+                  <Td>
+                    <span className="inline-flex items-center gap-1.5 text-sm">
+                      <span>{channelEmoji[o.channel] || '🛒'}</span>
+                      <span className="capitalize text-gray-600">{o.channel}</span>
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-center text-gray-600">{o.item_count || '-'}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium capitalize', statusColors[o.status] || 'bg-gray-100 text-gray-700')}>
-                      {o.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium', paymentColors[o.payment_status] || 'bg-gray-100 text-gray-600')}>
-                      {o.payment_status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold">{safeEGP(getTotal(o))}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button onClick={() => viewOrder(o)} className="p-1 rounded hover:bg-gray-100">
-                      <Eye className="h-4 w-4 text-rose-500" />
+                  </Td>
+                  <Td><Badge color={sc.color} dot>{sc.label}</Badge></Td>
+                  <Td><Badge color={pc.color}>{pc.label}</Badge></Td>
+                  <Td align="right"><span className="font-semibold text-gray-900">{formatEGP(safeNum(o.grand_total || o.total))}</span></Td>
+                  <Td><span className="text-sm text-gray-500">{new Date(o.created_at).toLocaleDateString('en-GB')}</span></Td>
+                  <Td align="right">
+                    <button onClick={(e) => { e.stopPropagation(); viewOrder(o); }}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 transition">
+                      <Eye className="h-4 w-4" />
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                  </Td>
+                </Tr>
+              );
+            })
+          )}
+        </tbody>
+      </Table>
 
-      {/* Order Detail Drawer */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setSelectedOrder(null)}>
-          <div className="w-full max-w-lg bg-white h-full overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-              <div>
-                <h2 className="font-bold text-lg">{selectedOrder.order_number}</h2>
-                <p className="text-sm text-gray-500">{formatDate(selectedOrder.created_at)}</p>
+      {/* Order Detail Modal */}
+      <BloomModal open={!!selectedOrder} onClose={() => setSelectedOrder(null)}
+        title={`Order ${selectedOrder?.order_number || ''}`}
+        subtitle={selectedOrder?.customer_name || 'Walk-in Customer'}
+        size="lg"
+        footer={
+          selectedOrder ? (
+            <>
+              <button onClick={() => printThermalReceipt(buildInvoiceData(selectedOrder))}
+                className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <Receipt className="h-4 w-4" /> Receipt
+              </button>
+              <button onClick={() => printA4Invoice(buildInvoiceData(selectedOrder))}
+                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">
+                <FileText className="h-4 w-4" /> Invoice
+              </button>
+            </>
+          ) : undefined
+        }
+      >
+        {selectedOrder && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 mb-0.5">Status</p>
+                <Badge color={(statusConfig[selectedOrder.status] || statusConfig.pending).color} dot>{(statusConfig[selectedOrder.status] || statusConfig.pending).label}</Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => printThermalReceipt(buildInvoiceData(selectedOrder, orderItems))} title="Print Receipt"
-                  className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition"><Receipt className="h-4 w-4" /></button>
-                <button onClick={() => printA4Invoice(buildInvoiceData(selectedOrder, orderItems))} title="Print Invoice"
-                  className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition"><Printer className="h-4 w-4" /></button>
-                <button onClick={() => setSelectedOrder(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="h-5 w-5" /></button>
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 mb-0.5">Payment</p>
+                <Badge color={(paymentConfig[selectedOrder.payment_status] || paymentConfig.unpaid).color}>{(paymentConfig[selectedOrder.payment_status] || paymentConfig.unpaid).label}</Badge>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 mb-0.5">Channel</p>
+                <p className="text-sm font-medium">{channelEmoji[selectedOrder.channel]} {selectedOrder.channel}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 mb-0.5">Date</p>
+                <p className="text-sm font-medium">{new Date(selectedOrder.created_at).toLocaleDateString('en-GB')}</p>
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              {/* Status Row */}
-              <div className="flex gap-3">
-                <span className={cn('px-3 py-1 rounded-full text-xs font-medium capitalize', statusColors[selectedOrder.status])}>
-                  {selectedOrder.status}
-                </span>
-                <span className={cn('px-3 py-1 rounded-full text-xs font-medium', paymentColors[selectedOrder.payment_status])}>
-                  {selectedOrder.payment_status}
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                  {channelLabels[selectedOrder.channel] || selectedOrder.channel}
-                </span>
-              </div>
 
-              {/* Summary */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Subtotal</p>
-                  <p className="font-semibold">{safeEGP(selectedOrder.subtotal)}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Tax (14%)</p>
-                  <p className="font-semibold">{safeEGP(selectedOrder.tax_amount)}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Discount</p>
-                  <p className="font-semibold">{safeEGP(selectedOrder.discount_amount)}</p>
-                </div>
-                <div className="bg-rose-50 rounded-lg p-3">
-                  <p className="text-xs text-rose-600">Grand Total</p>
-                  <p className="font-bold text-lg text-rose-600">{safeEGP(getTotal(selectedOrder))}</p>
-                </div>
-              </div>
-
-              {/* Payment Method */}
-              {selectedOrder.payment_method && (
-                <div className="flex items-center gap-2 text-sm">
-                  {selectedOrder.payment_method === 'cash' ? <Banknote className="h-4 w-4 text-green-600" /> : <CreditCard className="h-4 w-4 text-blue-600" />}
-                  <span className="capitalize">{selectedOrder.payment_method}</span>
-                </div>
-              )}
-
-              {/* Items */}
+            {orderItems.length > 0 && (
               <div>
-                <h3 className="font-semibold text-sm mb-3">Order Items</h3>
-                {orderItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">Loading items...</p>
-                ) : (
-                  <div className="space-y-2">
-                    {orderItems.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center bg-gray-50 rounded-lg p-3">
-                        <div>
-                          <p className="font-medium text-sm">{item.name || 'Product'}</p>
-                          <p className="text-xs text-gray-500">{item.sku} × {item.quantity}</p>
-                        </div>
-                        <p className="font-semibold text-sm">{safeEGP(Number(item.total))}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Notes */}
-              {selectedOrder.notes && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-1">Notes</h3>
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{selectedOrder.notes}</p>
+                <h4 className="font-semibold text-gray-900 mb-3">Items</h4>
+                <div className="rounded-xl border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50"><tr>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Product</th>
+                      <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500">Qty</th>
+                      <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500">Price</th>
+                      <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500">Total</th>
+                    </tr></thead>
+                    <tbody className="divide-y">
+                      {orderItems.map((item) => (
+                        <tr key={item.id}>
+                          <td className="px-4 py-2.5"><p className="font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-400 font-mono">{item.sku}</p></td>
+                          <td className="px-4 py-2.5 text-right text-gray-700">{item.quantity}</td>
+                          <td className="px-4 py-2.5 text-right text-gray-700">{formatEGP(safeNum(item.unit_price))}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-gray-900">{formatEGP(safeNum(item.total))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </div>
+            )}
+
+            <div className="rounded-xl bg-gray-50 p-4 space-y-2">
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span>{formatEGP(safeNum(selectedOrder.subtotal))}</span></div>
+              {safeNum(selectedOrder.discount_amount) > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">Discount</span><span className="text-red-600">-{formatEGP(safeNum(selectedOrder.discount_amount))}</span></div>}
+              <div className="flex justify-between text-sm"><span className="text-gray-500">VAT (14%)</span><span>{formatEGP(safeNum(selectedOrder.tax_amount))}</span></div>
+              {safeNum(selectedOrder.shipping_amount) > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">Shipping</span><span>{formatEGP(safeNum(selectedOrder.shipping_amount))}</span></div>}
+              <div className="border-t pt-2 flex justify-between text-base font-bold"><span>Total</span><span>{formatEGP(safeNum(selectedOrder.grand_total || selectedOrder.total))}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Paid</span><span className="text-emerald-600 font-semibold">{formatEGP(safeNum(selectedOrder.paid_amount))}</span></div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </BloomModal>
     </div>
   );
 }

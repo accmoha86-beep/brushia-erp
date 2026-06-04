@@ -5,683 +5,363 @@ import { useI18n } from '@/lib/i18n';
 import { formatEGP, cn } from '@/lib/utils';
 import { api } from '@/lib/api-client';
 import { exportToCSV, exportToExcelXML } from '@/lib/export-data';
-import { Search, Plus, ChevronLeft, ChevronRight, Package, Edit, Trash2, Eye, X, RefreshCw, Save, AlertTriangle, Check, Tag, DollarSign, Archive , Download } from 'lucide-react';
-
-// ── Types ──────────────────────────────────────────────────────
-interface PaginatedResponse<T> {
-  data: T[];
-  pagination: { total: number; page: number; limit: number };
-}
-
-interface ApiProduct {
-  id: string;
-  sku: string;
-  name: string;
-  name_ar?: string;
-  description?: string;
-  category_id?: string;
-  category_name?: string;
-  category?: { name: string };
-  base_price: number;
-  cost_price: number;
-  stock?: number;
-  total_stock?: number;
-  quantity_on_hand?: number;
-  status: string;
-  image?: string;
-  barcode?: string;
-  created_at?: string;
-  updated_at?: string;
-  variants?: Array<{
-    id: string;
-    name: string;
-    sku: string;
-    color_code?: string;
-    cost_override?: number;
-    price_override?: number;
-    stock?: number;
-  }>;
-}
-
-interface ApiCategory {
-  id: string;
-  name: string;
-  slug: string;
-  product_count?: number;
-}
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard, StatCardGrid } from '@/components/ui/stat-card';
+import { SearchFilter, FilterTabs } from '@/components/ui/search-filter';
+import { BloomModal, BtnPrimary, BtnSecondary, BtnDanger } from '@/components/ui/bloom-modal';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState, TableSkeleton } from '@/components/ui/empty-state';
+import { Table, Thead, Th, Td, Tr } from '@/components/ui/table';
+import {
+  Package, Plus, RefreshCw, Search, Eye, Edit, Trash2, X, Download,
+  Tag, DollarSign, Archive, ChevronLeft, ChevronRight, Save, AlertTriangle,
+  Check, Palette, Barcode, Layers,
+} from 'lucide-react';
 
 interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  name_ar?: string;
-  description?: string;
-  category: string;
-  categoryId: string;
-  price: number;
-  cost: number;
-  stock: number;
-  status: string;
-  barcode?: string;
-  created_at?: string;
-  variants?: Array<{
-    id: string;
-    name: string;
-    sku: string;
-    color_code?: string;
-    cost_override?: number;
-    price_override?: number;
-    stock?: number;
-  }>;
+  id: string; sku: string; name: string; name_ar?: string; description?: string;
+  category_id?: string; category_name?: string; base_price: number; cost_price: number;
+  total_stock?: number; status: string; barcode?: string; is_active?: boolean;
+  variant_count?: number; created_at?: string;
+  variants?: Array<{ id: string; name: string; sku: string; color_code?: string; cost_override?: number; price_override?: number; stock?: number; }>;
 }
 
-function getToken() {
-  try {
-    const raw = localStorage.getItem('bloom-auth');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed?.state?.accessToken || null;
-    }
-    return localStorage.getItem('accessToken') || localStorage.getItem('token') || null;
-  } catch { return null; }
-}
+interface Category { id: string; name: string; slug: string; product_count?: number; }
 
-async function apiCall(method: string, path: string, body?: Record<string, unknown>) {
-  const token = getToken();
-  const opts: RequestInit = {
-    method,
-    headers: { 
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
-  };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`/api/v1${path}`, opts);
-  if (!res.ok) {
-    const errBody = await res.json().catch(() => ({}));
-    throw new Error(errBody.message || `API ${res.status}`);
-  }
-  return res.json();
-}
+const emptyForm = { name: '', name_ar: '', sku: '', description: '', category_id: '', base_price: '', cost_price: '', barcode: '', status: 'active' };
 
-const ITEMS_PER_PAGE = 10;
-const statusStyles: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-700',
-  inactive: 'bg-gray-100 text-gray-600',
-  draft: 'bg-yellow-100 text-yellow-700',
-};
-
-function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
-}
-
-// ── View Detail Modal ─────────────────────────────────────────
-function ViewProductModal({ product, onClose }: { product: Product; onClose: () => void }) {
+export default function ProductsPage() {
   const { t } = useI18n();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filterCat, setFilterCat] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [viewProduct, setViewProduct] = useState<Product | null>(null);
+  const [form, setForm] = useState({ ...emptyForm });
+  const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<Product | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get<any>('/catalog/products', { limit, page });
+      setProducts(Array.isArray(res) ? res : res?.data || []);
+    } catch { setProducts([]); }
+    finally { setLoading(false); }
+  }, [page]);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await api.get<any>('/catalog/categories');
+      setCategories(Array.isArray(res) ? res : res?.data || []);
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchProducts(); fetchCategories(); }, [fetchProducts, fetchCategories]);
+
+  const openCreate = () => { setEditProduct(null); setForm({ ...emptyForm }); setShowModal(true); };
+  const openEdit = (p: Product) => {
+    setEditProduct(p);
+    setForm({
+      name: p.name, name_ar: p.name_ar || '', sku: p.sku, description: p.description || '',
+      category_id: p.category_id || '', base_price: String(Number(p.base_price) / 100 || ''),
+      cost_price: String(Number(p.cost_price) / 100 || ''), barcode: p.barcode || '', status: p.status || 'active',
+    });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const body = { ...form, base_price: Math.round(Number(form.base_price) * 100), cost_price: Math.round(Number(form.cost_price) * 100) };
+      if (editProduct) await api.put(`/catalog/products/${editProduct.id}`, body);
+      else await api.post('/catalog/products', body);
+      setShowModal(false); fetchProducts();
+    } catch (e: any) { alert(e.message); }
+    setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    try { await api.delete(`/catalog/products/${deleteConfirm.id}`); setDeleteConfirm(null); fetchProducts(); }
+    catch (e: any) { alert(e.message); }
+  };
+
+  const viewDetail = async (p: Product) => {
+    try {
+      const full = await api.get<any>(`/catalog/products/${p.id}`);
+      setViewProduct(full?.data || full || p);
+    } catch { setViewProduct(p); }
+  };
+
+  const filtered = products.filter(p => {
+    const matchSearch = `${p.name} ${p.sku} ${p.category_name || ''}`.toLowerCase().includes(search.toLowerCase());
+    const matchCat = filterCat === 'all' || p.category_id === filterCat;
+    return matchSearch && matchCat;
+  });
+
+  const totalValue = products.reduce((s, p) => s + (Number(p.base_price) / 100) * Number(p.total_stock || 0), 0);
+  const totalStock = products.reduce((s, p) => s + Number(p.total_stock || 0), 0);
+  const lowStock = products.filter(p => Number(p.total_stock || 0) < 20).length;
+
+  const exportData = () => {
+    const rows = filtered.map(p => ({
+      SKU: p.sku, Name: p.name, Category: p.category_name || '', 
+      Price: (Number(p.base_price) / 100).toFixed(2), Cost: (Number(p.cost_price) / 100).toFixed(2),
+      Stock: p.total_stock || 0, Variants: p.variant_count || 0, Status: p.status,
+    }));
+    exportToCSV(rows, 'products');
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="bg-gradient-to-r from-rose-500 to-purple-600 px-6 py-5 text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <Package className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold">{product.name}</h2>
-                {product.name_ar && <p className="text-sm text-rose-100">{product.name_ar}</p>}
-              </div>
-            </div>
-            <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-white/20 transition-colors">
-              <X className="h-5 w-5" />
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <PageHeader
+        title={t('products.title') || 'Products'}
+        subtitle={t('products.subtitle') || 'Manage your product catalog, variants, and pricing'}
+        icon={<Package className="h-5 w-5" />}
+        actions={
+          <div className="flex gap-2">
+            <button onClick={exportData} className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition" title="Export CSV">
+              <Download className="h-4 w-4" />
+            </button>
+            <button onClick={fetchProducts} className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition">
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <BtnPrimary onClick={openCreate} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> {t('products.add') || 'Add Product'}
+            </BtnPrimary>
+          </div>
+        }
+      />
+
+      <StatCardGrid cols={4}>
+        <StatCard label={t('products.total') || 'Total Products'} value={products.length} icon={<Package className="h-5 w-5" />} color="emerald" />
+        <StatCard label={t('products.totalStock') || 'Total Stock'} value={totalStock.toLocaleString()} icon={<Archive className="h-5 w-5" />} color="blue" />
+        <StatCard label={t('products.inventoryValue') || 'Inventory Value'} value={formatEGP(totalValue)} icon={<DollarSign className="h-5 w-5" />} color="teal" />
+        <StatCard label={t('products.lowStock') || 'Low Stock'} value={lowStock} icon={<AlertTriangle className="h-5 w-5" />} color="amber" />
+      </StatCardGrid>
+
+      <SearchFilter
+        search={search} onSearchChange={setSearch}
+        placeholder={t('products.search') || 'Search by name, SKU, or category...'}
+        filters={
+          <FilterTabs
+            tabs={[
+              { key: 'all', label: t('common.all') || 'All', count: products.length },
+              ...categories.slice(0, 5).map(c => ({ key: c.id, label: c.name, count: c.product_count })),
+            ]}
+            active={filterCat} onChange={setFilterCat}
+          />
+        }
+      />
+
+      <Table>
+        <Thead>
+          <tr>
+            <Th>Product</Th>
+            <Th>SKU</Th>
+            <Th>Category</Th>
+            <Th align="right">Price</Th>
+            <Th align="right">Cost</Th>
+            <Th align="right">Stock</Th>
+            <Th align="center">Variants</Th>
+            <Th>Status</Th>
+            <Th align="right">Actions</Th>
+          </tr>
+        </Thead>
+        <tbody>
+          {loading ? <TableSkeleton rows={6} cols={9} /> : filtered.length === 0 ? (
+            <tr><td colSpan={9}>
+              <EmptyState icon={<Package className="h-7 w-7" />} title="No products found"
+                description={search ? 'Try a different search term' : 'Start adding products to your catalog'}
+                action={!search ? <BtnPrimary onClick={openCreate} className="flex items-center gap-2"><Plus className="h-4 w-4" /> Add Product</BtnPrimary> : undefined}
+              />
+            </td></tr>
+          ) : (
+            filtered.map((p) => {
+              const price = Number(p.base_price) / 100;
+              const cost = Number(p.cost_price) / 100;
+              const stock = Number(p.total_stock || 0);
+              const margin = price > 0 ? ((price - cost) / price * 100) : 0;
+              return (
+                <Tr key={p.id} onClick={() => viewDetail(p)}>
+                  <Td>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-100 to-rose-100 text-lg">
+                        💄
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 line-clamp-1">{p.name}</p>
+                        {p.name_ar && <p className="text-xs text-gray-400" dir="rtl">{p.name_ar}</p>}
+                      </div>
+                    </div>
+                  </Td>
+                  <Td><span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{p.sku}</span></Td>
+                  <Td><Badge color="blue">{p.category_name || '—'}</Badge></Td>
+                  <Td align="right"><span className="font-semibold text-gray-900">{formatEGP(price)}</span></Td>
+                  <Td align="right">
+                    <div>
+                      <span className="text-gray-600">{formatEGP(cost)}</span>
+                      <p className="text-[10px] text-emerald-600 font-medium">{margin.toFixed(0)}% margin</p>
+                    </div>
+                  </Td>
+                  <Td align="right">
+                    <span className={cn('font-semibold', stock < 20 ? 'text-red-600' : 'text-gray-900')}>
+                      {stock.toLocaleString()}
+                    </span>
+                  </Td>
+                  <Td align="center">
+                    {Number(p.variant_count || 0) > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-sm"><Palette className="h-3.5 w-3.5 text-purple-500" /> {p.variant_count}</span>
+                    ) : <span className="text-gray-300">—</span>}
+                  </Td>
+                  <Td>
+                    <Badge color={p.status === 'active' ? 'emerald' : p.status === 'draft' ? 'amber' : 'gray'} dot>
+                      {p.status}
+                    </Badge>
+                  </Td>
+                  <Td align="right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={(e) => { e.stopPropagation(); viewDetail(p); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition">
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(p); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 transition">
+                        <Edit className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(p); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </Td>
+                </Tr>
+              );
+            })
+          )}
+        </tbody>
+      </Table>
+
+      {/* Pagination */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <span>Showing {filtered.length} products</span>
+          <div className="flex gap-2">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+              className="flex items-center gap-1 rounded-xl border px-3 py-2 hover:bg-gray-50 disabled:opacity-50 transition">
+              <ChevronLeft className="h-4 w-4" /> Prev
+            </button>
+            <span className="flex items-center px-3 font-medium">Page {page}</span>
+            <button onClick={() => setPage(p => p + 1)} disabled={filtered.length < limit}
+              className="flex items-center gap-1 rounded-xl border px-3 py-2 hover:bg-gray-50 disabled:opacity-50 transition">
+              Next <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
+      )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 p-6 border-b border-gray-100">
-          <div className="text-center p-3 rounded-xl bg-rose-50">
-            <DollarSign className="h-5 w-5 text-rose-500 mx-auto mb-1" />
-            <p className="text-xs text-gray-500">Sell Price</p>
-            <p className="text-lg font-bold text-gray-900">{formatEGP(product.price)}</p>
-          </div>
-          <div className="text-center p-3 rounded-xl bg-purple-50">
-            <Tag className="h-5 w-5 text-purple-500 mx-auto mb-1" />
-            <p className="text-xs text-gray-500">Cost Price</p>
-            <p className="text-lg font-bold text-gray-900">{formatEGP(product.cost)}</p>
-          </div>
-          <div className="text-center p-3 rounded-xl bg-blue-50">
-            <Archive className="h-5 w-5 text-blue-500 mx-auto mb-1" />
-            <p className="text-xs text-gray-500">Stock</p>
-            <p className={cn("text-lg font-bold", product.stock <= 10 ? "text-red-600" : "text-gray-900")}>{product.stock}</p>
-          </div>
-        </div>
-
-        {/* Details */}
-        <div className="p-6 space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-gray-400 uppercase">SKU</p>
-              <p className="text-sm font-mono text-gray-700 mt-0.5">{product.sku}</p>
+      {/* View Detail Modal */}
+      <BloomModal open={!!viewProduct} onClose={() => setViewProduct(null)} title={viewProduct?.name || ''} subtitle={viewProduct?.sku} size="lg">
+        {viewProduct && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <InfoBox label="Price" value={formatEGP(Number(viewProduct.base_price) / 100)} />
+              <InfoBox label="Cost" value={formatEGP(Number(viewProduct.cost_price) / 100)} />
+              <InfoBox label="Stock" value={String(viewProduct.total_stock || 0)} />
+              <InfoBox label="Category" value={viewProduct.category_name || '—'} />
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-400 uppercase">Category</p>
-              <p className="text-sm text-gray-700 mt-0.5">{product.category}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-400 uppercase">{t('common.status')}</p>
-              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium mt-0.5 ${statusStyles[product.status] || 'bg-gray-100 text-gray-600'}`}>{product.status}</span>
-            </div>
-            {product.barcode && (
+            {viewProduct.description && <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-3">{viewProduct.description}</p>}
+            {viewProduct.variants && viewProduct.variants.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-gray-400 uppercase">Barcode</p>
-                <p className="text-sm font-mono text-gray-700 mt-0.5">{product.barcode}</p>
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Palette className="h-4 w-4 text-purple-500" /> Color Variants</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {viewProduct.variants.map((v: any) => (
+                    <div key={v.id} className="flex items-center gap-3 rounded-xl border p-3 bg-white">
+                      {v.color_code && <div className="h-8 w-8 rounded-lg border-2 border-white shadow-sm" style={{ backgroundColor: v.color_code }} />}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{v.name}</p>
+                        <p className="text-xs text-gray-400 font-mono">{v.sku}</p>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">{v.stock || 0} units</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <div>
-              <p className="text-xs font-medium text-gray-400 uppercase">Margin</p>
-              <p className="text-sm font-bold text-emerald-600 mt-0.5">
-                {product.cost > 0 ? `${(((product.price - product.cost) / product.price) * 100).toFixed(1)}%` : '—'}
-              </p>
-            </div>
-            {product.created_at && (
-              <div>
-                <p className="text-xs font-medium text-gray-400 uppercase">Added</p>
-                <p className="text-sm text-gray-700 mt-0.5">{new Date(product.created_at).toLocaleDateString('en-EG')}</p>
-              </div>
-            )}
-          </div>
-
-          {product.description && (
-            <div className="mt-4">
-              <p className="text-xs font-medium text-gray-400 uppercase">Description</p>
-              <p className="text-sm text-gray-600 mt-1">{product.description}</p>
-            </div>
-          )}
-
-          {/* Variants */}
-          {product.variants && product.variants.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-medium text-gray-400 uppercase mb-2">Variants ({product.variants.length})</p>
-              <div className="space-y-2">
-                {product.variants.map(v => (
-                  <div key={v.id} className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                    <div className="flex items-center gap-2">
-                      {v.color_code && <div className="h-5 w-5 rounded-full border border-gray-200" style={{ backgroundColor: v.color_code }} />}
-                      <span className="text-sm font-medium text-gray-800">{v.name}</span>
-                      <span className="text-xs font-mono text-gray-400">{v.sku}</span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {v.price_override ? formatEGP(Number(v.price_override)) : '—'} · Stock: {v.stock ?? '—'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Edit / Add Product Modal ──────────────────────────────────
-function ProductFormModal({ product, categories, onClose, onSaved }: { 
-  product: Product | null; 
-  categories: ApiCategory[]; 
-  onClose: () => void; 
-  onSaved: () => void;
-}) {
-  const isEdit = !!product;
-  const { t, locale, isRTL } = useI18n();
-  const [form, setForm] = useState({
-    name: product?.name || '',
-    name_ar: product?.name_ar || '',
-    sku: product?.sku || '',
-    category_id: product?.categoryId || (categories[0]?.id ?? ''),
-    base_price: product ? String(product.price) : '',
-    cost_price: product ? String(product.cost) : '',
-    description: product?.description || '',
-    status: product?.status || 'active',
-    barcode: product?.barcode || '',
-  });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async () => {
-    if (!form.name.trim()) { setError('Product name is required'); return; }
-    if (!form.sku.trim()) { setError('SKU is required'); return; }
-    setSaving(true);
-    setError('');
-    try {
-      const payload: Record<string, unknown> = {
-        name: form.name.trim(),
-        sku: form.sku.trim(),
-        category_id: form.category_id || null,
-        base_price: Number(form.base_price) || 0,
-        cost_price: Number(form.cost_price) || 0,
-        status: form.status,
-      };
-      if (form.name_ar) payload.name_ar = form.name_ar;
-      if (form.description) payload.description = form.description;
-      if (form.barcode) payload.barcode = form.barcode;
-
-      if (isEdit) {
-        await apiCall('PUT', `/catalog/products/${product!.id}`, payload);
-      } else {
-        await apiCall('POST', '/catalog/products', payload);
-      }
-      onSaved();
-      onClose();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to save product');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {isEdit ? '✏️ Edit Product' : '➕ Add New Product'}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
-        </div>
-
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
-            <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
+      </BloomModal>
 
+      {/* Create/Edit Modal */}
+      <BloomModal open={showModal} onClose={() => setShowModal(false)}
+        title={editProduct ? 'Edit Product' : 'Add New Product'}
+        subtitle={editProduct ? `Editing ${editProduct.name}` : 'Add a new product to your catalog'}
+        footer={<><BtnSecondary onClick={() => setShowModal(false)}>Cancel</BtnSecondary><BtnPrimary onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</BtnPrimary></>}
+      >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-            <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-              placeholder="e.g. Matte Foundation" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Arabic Name</label>
-            <input type="text" dir="rtl" value={form.name_ar} onChange={e => setForm(f => ({ ...f, name_ar: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-              placeholder="الاسم بالعربي" />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Name (English)" value={form.name} onChange={(v: string) => setForm({...form, name: v})} placeholder="Product name" />
+            <FormField label="Name (Arabic)" value={form.name_ar} onChange={(v: string) => setForm({...form, name_ar: v})} placeholder="اسم المنتج" />
           </div>
           <div className="grid grid-cols-2 gap-4">
+            <FormField label="SKU" value={form.sku} onChange={(v: string) => setForm({...form, sku: v})} placeholder="BRS-001" />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
-              <input type="text" value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-mono focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                placeholder="BRS-XXX-001" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
-                <option value="">— No Category —</option>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+              <select value={form.category_id} onChange={(e) => setForm({...form, category_id: e.target.value})}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                <option value="">Select...</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price (EGP)</label>
-              <input type="number" value={form.base_price} onChange={e => setForm(f => ({ ...f, base_price: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                placeholder="350.00" min="0" step="0.01" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cost (EGP)</label>
-              <input type="number" value={form.cost_price} onChange={e => setForm(f => ({ ...f, cost_price: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                placeholder="180.00" min="0" step="0.01" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.status')}</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
-                <option value="active">{t('common.active')}</option>
-                <option value="inactive">{t('common.inactive')}</option>
-                <option value="draft">Draft</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
-              <input type="text" value={form.barcode} onChange={e => setForm(f => ({ ...f, barcode: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-mono focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                placeholder="6221234567890" />
-            </div>
+          <div className="grid grid-cols-3 gap-4">
+            <FormField label="Price (EGP)" value={form.base_price} onChange={(v: string) => setForm({...form, base_price: v})} placeholder="250" type="number" />
+            <FormField label="Cost (EGP)" value={form.cost_price} onChange={(v: string) => setForm({...form, cost_price: v})} placeholder="120" type="number" />
+            <FormField label="Barcode" value={form.barcode} onChange={(v: string) => setForm({...form, barcode: v})} placeholder="6901234567890" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 resize-none"
-              placeholder="Product description..." />
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+            <textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
+              rows={3} placeholder="Product description..."
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
           </div>
         </div>
+      </BloomModal>
 
-        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-          <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">{t('common.cancel')}</button>
-          <button onClick={handleSubmit} disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:from-rose-600 hover:to-purple-700 disabled:opacity-50">
-            {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {isEdit ? 'Save Changes' : 'Add Product'}
-          </button>
+      {/* Delete Confirm */}
+      <BloomModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Delete Product" size="sm"
+        footer={<><BtnSecondary onClick={() => setDeleteConfirm(null)}>Cancel</BtnSecondary><BtnDanger onClick={handleDelete}>Delete</BtnDanger></>}
+      >
+        <div className="text-center py-4">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100"><Trash2 className="h-7 w-7 text-red-600" /></div>
+          <p className="text-gray-600">Delete <strong>{deleteConfirm?.name}</strong>? This cannot be undone.</p>
         </div>
-      </div>
+      </BloomModal>
     </div>
   );
 }
 
-// ── Delete Confirmation Modal ─────────────────────────────────
-function DeleteConfirmModal({ product, onClose, onDeleted }: { product: Product; onClose: () => void; onDeleted: () => void }) {
-  const { t } = useI18n();
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    setError('');
-    try {
-      await apiCall('DELETE', `/catalog/products/${product.id}`);
-      onDeleted();
-      onClose();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to delete product');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
+function FormField({ label, value, onChange, placeholder, type = 'text' }: any) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-        <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 mb-4">
-            <AlertTriangle className="h-7 w-7 text-red-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">Delete Product?</h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Are you sure you want to delete <strong>{product.name}</strong>? This action cannot be undone.
-          </p>
-          {error && <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-        </div>
-        <div className="mt-6 flex justify-center gap-3">
-          <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">{t('common.cancel')}</button>
-          <button onClick={handleDelete} disabled={deleting}
-            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
-            {deleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            Delete
-          </button>
-        </div>
-      </div>
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all" />
     </div>
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────
-export default function ProductsPage() {
-  const { t, locale, isRTL } = useI18n();
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [page, setPage] = useState(1);
-
-  // Modal state
-  const [viewProduct, setViewProduct] = useState<Product | null>(null);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
-  const [successMsg, setSuccessMsg] = useState('');
-
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<ApiCategory[]>([]);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.get<ApiCategory[]>('/catalog/categories')
-      .then(cats => setCategories(Array.isArray(cats) ? cats : []))
-      .catch(() => setCategories([]));
-  }, []);
-
-  const categoryNameMap: Record<string, string> = {};
-  categories.forEach(c => { categoryNameMap[c.id] = c.name; });
-
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params: Record<string, string | number | boolean | undefined> = { page, limit: ITEMS_PER_PAGE };
-      if (search) params.search = search;
-      if (categoryFilter !== 'all') params.category_id = categoryFilter;
-      const res = await api.get<PaginatedResponse<ApiProduct>>('/catalog/products', params);
-      const mapped: Product[] = (res?.data ?? []).map(p => ({
-        id: p.id,
-        sku: p.sku || '—',
-        name: p.name,
-        name_ar: p.name_ar,
-        description: p.description,
-        category: p.category_name || p.category?.name || categoryNameMap[p.category_id ?? ''] || '—',
-        categoryId: p.category_id ?? '',
-        price: Number(p.base_price) || 0,
-        cost: Number(p.cost_price) || 0,
-        stock: Number(p.total_stock) || Number(p.stock) || Number(p.quantity_on_hand) || 0,
-        status: p.status ?? 'active',
-        barcode: p.barcode,
-        created_at: p.created_at,
-        variants: p.variants,
-      }));
-      setProducts(mapped);
-      setTotalProducts(res?.pagination?.total ?? mapped.length);
-    } catch (err) {
-      setError('Failed to load products');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, categoryFilter, page]);
-
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
-
-  const totalPages = Math.max(1, Math.ceil(totalProducts / ITEMS_PER_PAGE));
-
-  const showSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(''), 3000);
-  };
-
+function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      {/* Success toast */}
-      {successMsg && (
-        <div className="fixed top-4 right-4 z-[60] flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-white shadow-lg animate-in slide-in-from-top-2">
-          <Check className="h-4 w-4" />
-          <span className="text-sm font-medium">{successMsg}</span>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-500 mt-1">{loading ? '…' : `${totalProducts} products in catalog`}</p>
-        </div>
-        <div className="flex gap-2">
-              <button onClick={() => exportToCSV(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'bloom_products')}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition">
-                <Download className="w-4 h-4" /> CSV
-              </button>
-              <button onClick={() => exportToExcelXML(products.map((p: any) => ({ Name: p.name, SKU: p.sku, Price: Number(p.base_price)/100, 'Cost Price': Number(p.cost_price||0)/100, Status: p.status || 'active' })), 'bloom_products', 'Products')}
-                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition">
-                <Download className="w-4 h-4" /> Excel
-              </button>
-            </div>
-            <button onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:from-rose-600 hover:to-purple-700 transition-all">
-          <Plus className="h-4 w-4" /> Add Product
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input type="text" placeholder="Search by name or SKU..." value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500" />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => { setCategoryFilter('all'); setPage(1); }}
-            className={cn('rounded-lg px-3 py-2 text-sm font-medium transition-colors', categoryFilter === 'all' ? 'bg-rose-500 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50')}>{t('common.all')}</button>
-          {categories.map(cat => (
-            <button key={cat.id} onClick={() => { setCategoryFilter(cat.id); setPage(1); }}
-              className={cn('rounded-lg px-3 py-2 text-sm font-medium transition-colors', categoryFilter === cat.id ? 'bg-rose-500 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50')}>{cat.name}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Error state */}
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-sm text-red-600 mb-3">{error}</p>
-          <button onClick={fetchProducts} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white">
-            <RefreshCw className="h-3 w-3" /> Retry
-          </button>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/50">
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">SKU</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Category</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Price</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Cost</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Stock</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">{t('common.status')}</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">{t('common.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    <td className="px-6 py-4"><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-lg" /><Skeleton className="h-4 w-40" /></div></td>
-                    <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-4 w-16" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-4 w-10 ml-auto" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-5 w-14 mx-auto rounded-full" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                  </tr>
-                ))
-              ) : products.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <Package className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-gray-500">No products found</p>
-                    <p className="text-xs text-gray-400 mt-1">{search || categoryFilter !== 'all' ? 'Try changing your filters' : 'Add your first product to get started'}</p>
-                  </td>
-                </tr>
-              ) : (
-                products.map(product => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setViewProduct(product)}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-rose-100 to-purple-100">
-                          <Package className="h-5 w-5 text-rose-500" />
-                        </div>
-                        <span className="font-medium text-gray-900">{product.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{product.sku}</td>
-                    <td className="px-6 py-4 text-gray-600">{product.category}</td>
-                    <td className="px-6 py-4 text-right font-medium text-gray-900">{formatEGP(product.price)}</td>
-                    <td className="px-6 py-4 text-right text-gray-500">{formatEGP(product.cost)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={cn('font-medium', product.stock <= 10 ? 'text-red-600' : 'text-gray-900')}>{product.stock}</span>
-                      {product.stock <= 10 && <span className="ml-1 text-xs text-red-500">Low</span>}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[product.status] || 'bg-gray-100 text-gray-600'}`}>{product.status}</span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setViewProduct(product)} className="rounded-lg p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors" title="View">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => setEditProduct(product)} className="rounded-lg p-1.5 text-gray-400 hover:bg-amber-50 hover:text-amber-600 transition-colors" title="Edit">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => setDeleteProduct(product)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors" title="Delete">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {!loading && products.length > 0 && (
-          <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3">
-            <p className="text-sm text-gray-500">
-              Showing {(page - 1) * ITEMS_PER_PAGE + 1} to {Math.min(page * ITEMS_PER_PAGE, totalProducts)} of {totalProducts} products
-            </p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                className="rounded-lg border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const pageNum = totalPages <= 5 ? i + 1 : Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
-                return (
-                  <button key={pageNum} onClick={() => setPage(pageNum)}
-                    className={cn('h-8 w-8 rounded-lg text-sm font-medium transition-colors', pageNum === page ? 'bg-rose-500 text-white' : 'text-gray-600 hover:bg-gray-100')}>{pageNum}</button>
-                );
-              })}
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                className="rounded-lg border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Modals */}
-      {viewProduct && <ViewProductModal product={viewProduct} onClose={() => setViewProduct(null)} />}
-      {(showAddModal || editProduct) && (
-        <ProductFormModal
-          product={editProduct}
-          categories={categories}
-          onClose={() => { setShowAddModal(false); setEditProduct(null); }}
-          onSaved={() => { fetchProducts(); showSuccess(editProduct ? 'Product updated!' : 'Product added!'); }}
-        />
-      )}
-      {deleteProduct && (
-        <DeleteConfirmModal
-          product={deleteProduct}
-          onClose={() => setDeleteProduct(null)}
-          onDeleted={() => { fetchProducts(); showSuccess('Product deleted!'); }}
-        />
-      )}
+    <div className="rounded-xl bg-gray-50 p-3">
+      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
+      <p className="text-sm font-semibold text-gray-900">{value}</p>
     </div>
   );
 }
