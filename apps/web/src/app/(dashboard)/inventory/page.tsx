@@ -4,142 +4,147 @@ import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
-import { Search, Package, AlertTriangle, TrendingUp, ArrowRightLeft, RefreshCw, BarChart3 } from 'lucide-react';
+import { exportToCSV } from '@/lib/export-data';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard, StatCardGrid } from '@/components/ui/stat-card';
+import { SearchFilter, FilterTabs } from '@/components/ui/search-filter';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState, TableSkeleton } from '@/components/ui/empty-state';
+import { Table, Thead, Th, Td, Tr } from '@/components/ui/table';
+import { Archive, RefreshCw, Download, AlertTriangle, Package, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
 
-interface StockItem { id: string; product_name: string; sku: string; variant_name?: string; warehouse_name: string; warehouse_code: string; qty_on_hand: number; qty_reserved: number; qty_available: number; reorder_point: number; weighted_avg_cost: number; }
-
-type Tab = 'stock' | 'movements' | 'valuation';
+interface StockItem {
+  id: string; product_id: string; product_name?: string; sku?: string;
+  warehouse_id: string; warehouse_name?: string; qty_on_hand: number;
+  qty_reserved?: number; qty_available?: number; reorder_point?: number;
+  unit_cost?: number;
+}
 
 export default function InventoryPage() {
-  const { t, locale, isRTL } = useI18n();
+  const { t } = useI18n();
   const [stock, setStock] = useState<StockItem[]>([]);
-  const [movements, setMovements] = useState<any[]>([]);
-  const [valuation, setValuation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<Tab>('stock');
+  const [filter, setFilter] = useState('all');
 
   const fetchStock = useCallback(async () => {
     setLoading(true);
-    try { const res = await api.get<any>('/inventory/stock', { limit: 200 }); setStock(res?.data || []); } catch { setStock([]); } finally { setLoading(false); }
+    try {
+      const res = await api.get<any>('/inventory/stock');
+      const data = res?.data?.rows || res?.data || res?.rows || (Array.isArray(res) ? res : []);
+      setStock(Array.isArray(data) ? data : []);
+    } catch { setStock([]); } finally { setLoading(false); }
   }, []);
 
-  const fetchMovements = useCallback(async () => {
-    try { const res = await api.get<any>('/inventory/movements', { limit: 50 }); setMovements(res?.data || []); } catch { setMovements([]); }
-  }, []);
+  useEffect(() => { fetchStock(); }, [fetchStock]);
 
-  const fetchValuation = useCallback(async () => {
-    try { const res = await api.get<any>('/inventory/valuation'); setValuation(res); } catch {}
-  }, []);
+  const filtered = stock.filter(s => {
+    const matchSearch = `${s.product_name || ''} ${s.sku || ''} ${s.warehouse_name || ''}`.toLowerCase().includes(search.toLowerCase());
+    const qty = Number(s.qty_on_hand || 0);
+    const matchFilter = filter === 'all' || (filter === 'low' && qty < 20 && qty > 0) || (filter === 'out' && qty <= 0) || (filter === 'ok' && qty >= 20);
+    return matchSearch && matchFilter;
+  });
 
-  useEffect(() => { fetchStock(); fetchMovements(); fetchValuation(); }, [fetchStock, fetchMovements, fetchValuation]);
+  const totalUnits = stock.reduce((s, i) => s + Number(i.qty_on_hand || 0), 0);
+  const totalValue = stock.reduce((s, i) => s + Number(i.qty_on_hand || 0) * Number(i.unit_cost || 0), 0);
+  const lowCount = stock.filter(i => Number(i.qty_on_hand || 0) < 20 && Number(i.qty_on_hand || 0) > 0).length;
+  const outCount = stock.filter(i => Number(i.qty_on_hand || 0) <= 0).length;
 
-  const filtered = stock.filter(s => !search || s.product_name?.toLowerCase().includes(search.toLowerCase()) || s.sku?.toLowerCase().includes(search.toLowerCase()));
-  const lowStock = stock.filter(s => s.qty_on_hand <= (s.reorder_point || 10));
+  const exportData = () => {
+    exportToCSV(filtered.map(s => ({
+      Product: s.product_name || '', SKU: s.sku || '', Warehouse: s.warehouse_name || '',
+      'On Hand': s.qty_on_hand, Reserved: s.qty_reserved || 0, Available: s.qty_available || Number(s.qty_on_hand || 0) - Number(s.qty_reserved || 0),
+      'Unit Cost': Number(s.unit_cost || 0).toFixed(2),
+    })), 'inventory');
+  };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div><h1 className="text-2xl font-bold text-gray-900">Inventory</h1><p className="text-sm text-gray-500 mt-1">Stock levels, movements & valuation</p></div>
-        <button onClick={() => { fetchStock(); fetchMovements(); fetchValuation(); }} className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50"><RefreshCw className="h-4 w-4" /></button>
-      </div>
-
-      {valuation && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="rounded-xl border bg-white p-4"><p className="text-2xl font-bold">{valuation.total_products || stock.length}</p><p className="text-xs text-gray-500">Products Tracked</p></div>
-          <div className="rounded-xl border bg-white p-4"><p className="text-2xl font-bold">{(valuation.total_units || stock.reduce((s: number, i: StockItem) => s + i.qty_on_hand, 0)).toLocaleString()}</p><p className="text-xs text-gray-500">Total Units</p></div>
-          <div className="rounded-xl border bg-white p-4"><p className="text-2xl font-bold text-emerald-600">{formatEGP(valuation.total_value || 0)}</p><p className="text-xs text-gray-500">Total Value (WAC)</p></div>
-          <div className="rounded-xl border bg-white p-4"><p className="text-2xl font-bold text-red-600">{lowStock.length}</p><p className="text-xs text-gray-500">Low Stock Alerts</p></div>
-        </div>
-      )}
-
-      <div className="flex gap-2 mb-4">
-        {([['stock', 'Stock Levels', Package], ['movements', 'Movements', ArrowRightLeft], ['valuation', 'Valuation', BarChart3]] as [Tab, string, any][]).map(([id, label, Icon]) => (
-          <button key={id} onClick={() => setTab(id)} className={cn('flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium', tab === id ? 'bg-rose-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}><Icon className="h-4 w-4" />{label}</button>
-        ))}
-      </div>
-
-      {tab === 'stock' && <>
-        <div className="relative mb-4"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder="Search by product or SKU..." value={search} onChange={e => setSearch(e.target.value)} className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-rose-500 focus:outline-none" /></div>
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b"><tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Product</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Warehouse</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">On Hand</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Reserved</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Available</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Avg Cost</th>
-              <th className="px-4 py-3"></th>
-            </tr></thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? Array.from({length:5}).map((_,i) => <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td></tr>)
-              : filtered.map((s, i) => (
-                <tr key={i} className={cn('hover:bg-gray-50', s.qty_on_hand <= (s.reorder_point || 10) && 'bg-red-50')}>
-                  <td className="px-4 py-3"><p className="font-medium text-gray-900">{s.product_name}</p><p className="text-xs text-gray-400 font-mono">{s.sku}</p></td>
-                  <td className="px-4 py-3 text-gray-600">{s.warehouse_name} <span className="text-xs text-gray-400">({s.warehouse_code})</span></td>
-                  <td className="px-4 py-3 text-right font-medium">{s.qty_on_hand}</td>
-                  <td className="px-4 py-3 text-right text-gray-500">{s.qty_reserved || 0}</td>
-                  <td className="px-4 py-3 text-right"><span className={cn('font-medium', (s.qty_available || s.qty_on_hand) <= (s.reorder_point || 10) ? 'text-red-600' : 'text-gray-900')}>{s.qty_available || s.qty_on_hand - (s.qty_reserved || 0)}</span></td>
-                  <td className="px-4 py-3 text-right text-gray-600">{formatEGP(s.weighted_avg_cost || 0)}</td>
-                  <td className="px-4 py-3">{s.qty_on_hand <= (s.reorder_point || 10) && <AlertTriangle className="h-4 w-4 text-red-500" />}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </>}
-
-      {tab === 'movements' && (
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b"><tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Type</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Product</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Warehouse</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Quantity</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Reference</th>
-            </tr></thead>
-            <tbody className="divide-y divide-gray-100">
-              {movements.length === 0 ? <tr><td colSpan={5} className="text-center py-12 text-gray-400">No movements recorded yet</td></tr>
-              : movements.map((m: any, i: number) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3"><span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', m.movement_type === 'in' ? 'bg-emerald-100 text-emerald-700' : m.movement_type === 'out' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700')}>{m.movement_type}</span></td>
-                  <td className="px-4 py-3 font-medium">{m.product_name || '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{m.warehouse_name || '—'}</td>
-                  <td className="px-4 py-3 text-right font-medium">{m.quantity > 0 ? '+' : ''}{m.quantity}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{m.reference_type} {m.reference_id ? '#' + m.reference_id.substring(0,8) : ''}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === 'valuation' && valuation && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="rounded-xl border bg-white p-5">
-            <h3 className="font-semibold text-gray-900 mb-3">Valuation Summary</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-600">Method</span><span className="font-medium">Weighted Average Cost (WAC)</span></div>
-              <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-600">Total SKUs</span><span className="font-medium">{valuation.total_products || 0}</span></div>
-              <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-600">Total Units</span><span className="font-medium">{(valuation.total_units || 0).toLocaleString()}</span></div>
-              <div className="flex justify-between py-2"><span className="text-gray-600">Total Value</span><span className="font-bold text-emerald-600">{formatEGP(valuation.total_value || 0)}</span></div>
-            </div>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <PageHeader
+        title={t('inventory.title') || 'Inventory'}
+        subtitle={t('inventory.subtitle') || 'Real-time stock levels across all warehouses'}
+        icon={<Archive className="h-5 w-5" />}
+        actions={
+          <div className="flex gap-2">
+            <button onClick={exportData} className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition"><Download className="h-4 w-4" /></button>
+            <button onClick={fetchStock} className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition"><RefreshCw className="h-4 w-4" /></button>
           </div>
-          <div className="rounded-xl border bg-white p-5">
-            <h3 className="font-semibold text-gray-900 mb-3">By Warehouse</h3>
-            <div className="space-y-3">
-              {(valuation.by_warehouse || []).map((w: any) => (
-                <div key={w.warehouse_id || w.code} className="flex justify-between py-2 border-b border-gray-100">
-                  <div><p className="font-medium">{w.warehouse_name || w.name}</p><p className="text-xs text-gray-400">{w.sku_count} SKUs</p></div>
-                  <div className="text-right"><p className="font-medium">{(w.total_units || 0).toLocaleString()} units</p><p className="text-xs text-emerald-600">{formatEGP(w.total_value || 0)}</p></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+        }
+      />
+
+      <StatCardGrid cols={4}>
+        <StatCard label="Total Units" value={totalUnits.toLocaleString()} icon={<Package className="h-5 w-5" />} color="emerald" />
+        <StatCard label="Inventory Value" value={formatEGP(totalValue)} icon={<DollarSign className="h-5 w-5" />} color="blue" />
+        <StatCard label="Low Stock" value={lowCount} icon={<AlertTriangle className="h-5 w-5" />} color="amber" />
+        <StatCard label="Out of Stock" value={outCount} icon={<Archive className="h-5 w-5" />} color="red" />
+      </StatCardGrid>
+
+      <SearchFilter
+        search={search} onSearchChange={setSearch}
+        placeholder="Search by product, SKU, or warehouse..."
+        filters={
+          <FilterTabs
+            tabs={[
+              { key: 'all', label: 'All', count: stock.length },
+              { key: 'ok', label: '✅ In Stock' },
+              { key: 'low', label: '⚠️ Low Stock', count: lowCount },
+              { key: 'out', label: '❌ Out', count: outCount },
+            ]}
+            active={filter} onChange={setFilter}
+          />
+        }
+      />
+
+      <Table>
+        <Thead>
+          <tr>
+            <Th>Product</Th>
+            <Th>SKU</Th>
+            <Th>Warehouse</Th>
+            <Th align="right">On Hand</Th>
+            <Th align="right">Reserved</Th>
+            <Th align="right">Available</Th>
+            <Th align="right">Unit Cost</Th>
+            <Th align="right">Total Value</Th>
+            <Th>Status</Th>
+          </tr>
+        </Thead>
+        <tbody>
+          {loading ? <TableSkeleton rows={6} cols={9} /> : filtered.length === 0 ? (
+            <tr><td colSpan={9}>
+              <EmptyState icon={<Archive className="h-7 w-7" />} title="No stock records found" description="Stock data will appear after receiving goods" />
+            </td></tr>
+          ) : (
+            filtered.map((s) => {
+              const qty = Number(s.qty_on_hand || 0);
+              const reserved = Number(s.qty_reserved || 0);
+              const available = qty - reserved;
+              const cost = Number(s.unit_cost || 0);
+              const value = qty * cost;
+              const statusColor = qty <= 0 ? 'red' : qty < 20 ? 'amber' : 'emerald';
+              const statusLabel = qty <= 0 ? 'Out of Stock' : qty < 20 ? 'Low Stock' : 'In Stock';
+              return (
+                <Tr key={s.id}>
+                  <Td>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 text-sm">📦</div>
+                      <span className="font-semibold text-gray-900 line-clamp-1">{s.product_name || '—'}</span>
+                    </div>
+                  </Td>
+                  <Td><span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{s.sku || '—'}</span></Td>
+                  <Td><span className="text-sm text-gray-600">{s.warehouse_name || '—'}</span></Td>
+                  <Td align="right"><span className={cn('font-bold', qty < 20 ? 'text-red-600' : 'text-gray-900')}>{qty.toLocaleString()}</span></Td>
+                  <Td align="right"><span className="text-gray-500">{reserved}</span></Td>
+                  <Td align="right"><span className="font-medium text-gray-900">{available.toLocaleString()}</span></Td>
+                  <Td align="right"><span className="text-gray-600">{formatEGP(cost)}</span></Td>
+                  <Td align="right"><span className="font-semibold text-gray-900">{formatEGP(value)}</span></Td>
+                  <Td><Badge color={statusColor} dot>{statusLabel}</Badge></Td>
+                </Tr>
+              );
+            })
+          )}
+        </tbody>
+      </Table>
     </div>
   );
 }

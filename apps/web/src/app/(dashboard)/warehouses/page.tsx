@@ -4,76 +4,121 @@ import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
-import { Warehouse, MapPin, Package, Box, BarChart3, RefreshCw, Plus, X } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard, StatCardGrid } from '@/components/ui/stat-card';
+import { SearchFilter } from '@/components/ui/search-filter';
+import { BloomModal, BtnPrimary, BtnSecondary } from '@/components/ui/bloom-modal';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState, TableSkeleton } from '@/components/ui/empty-state';
+import { Table, Thead, Th, Td, Tr } from '@/components/ui/table';
+import { Warehouse, RefreshCw, Plus, Package, DollarSign, MapPin, Eye } from 'lucide-react';
 
-interface WarehouseData { id: string; code: string; name: string; name_ar?: string; warehouse_type: string; city?: string; governorate?: string; phone?: string; is_active: boolean; sku_count: number; total_units: number; total_value: number; }
-
-const typeColors: Record<string, string> = { standard: 'bg-blue-100 text-blue-700', showroom: 'bg-purple-100 text-purple-700', returns: 'bg-orange-100 text-orange-700' };
+interface WH {
+  id: string; code: string; name: string; name_ar?: string;
+  warehouse_type: string; city: string; governorate?: string;
+  phone?: string; is_active: boolean; is_default: boolean;
+  sku_count?: number; total_units?: number; total_value?: number;
+}
 
 export default function WarehousesPage() {
-  const { t, locale, isRTL } = useI18n();
-  const [warehouses, setWarehouses] = useState<WarehouseData[]>([]);
+  const { t } = useI18n();
+  const [warehouses, setWarehouses] = useState<WH[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
-  const [warehouseStock, setWarehouseStock] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<WH | null>(null);
 
   const fetchWarehouses = useCallback(async () => {
     setLoading(true);
-    try { const res = await api.get<any>('/warehouses'); setWarehouses(res?.data || []); } catch { setWarehouses([]); } finally { setLoading(false); }
+    try {
+      const res = await api.get<any>('/warehouses');
+      setWarehouses(Array.isArray(res) ? res : res?.data || []);
+    } catch { setWarehouses([]); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchWarehouses(); }, [fetchWarehouses]);
 
-  const viewStock = async (wh: WarehouseData) => {
-    setSelectedWarehouse(wh);
-    try { const res = await api.get<any>(`/warehouses/${wh.id}/stock`); setWarehouseStock(res?.data || []); } catch { setWarehouseStock([]); }
-  };
+  const filtered = warehouses.filter(w => `${w.name} ${w.code} ${w.city}`.toLowerCase().includes(search.toLowerCase()));
+  const totalSKUs = warehouses.reduce((s, w) => s + Number(w.sku_count || 0), 0);
+  const totalUnits = warehouses.reduce((s, w) => s + Number(w.total_units || 0), 0);
+  const totalValue = warehouses.reduce((s, w) => s + Number(w.total_value || 0), 0);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div><h1 className="text-2xl font-bold text-gray-900">Warehouses</h1><p className="text-sm text-gray-500 mt-1">Manage storage locations and stock</p></div>
-        <button onClick={fetchWarehouses} className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50"><RefreshCw className="h-4 w-4" /></button>
-      </div>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? Array.from({length:3}).map((_,i) => <div key={i} className="h-48 rounded-xl bg-gray-100 animate-pulse" />)
-        : warehouses.map(wh => (
-          <div key={wh.id} className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow cursor-pointer" onClick={() => viewStock(wh)}>
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100"><Warehouse className="h-5 w-5 text-blue-600" /></div>
-                <div><h3 className="font-semibold text-gray-900">{wh.name}</h3><p className="text-xs text-gray-400">{wh.code}</p></div>
-              </div>
-              <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', typeColors[wh.warehouse_type] || 'bg-gray-100 text-gray-600')}>{wh.warehouse_type}</span>
-            </div>
-            {wh.city && <div className="flex items-center gap-1 text-xs text-gray-500 mb-3"><MapPin className="h-3 w-3" />{wh.city}{wh.governorate ? `, ${wh.governorate}` : ''}</div>}
-            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
-              <div className="text-center"><p className="text-lg font-bold text-gray-900">{wh.sku_count}</p><p className="text-[10px] text-gray-500">SKUs</p></div>
-              <div className="text-center"><p className="text-lg font-bold text-gray-900">{wh.total_units?.toLocaleString()}</p><p className="text-[10px] text-gray-500">Units</p></div>
-              <div className="text-center"><p className="text-lg font-bold text-emerald-600">{formatEGP(wh.total_value || 0)}</p><p className="text-[10px] text-gray-500">Value</p></div>
-            </div>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <PageHeader title={t('warehouses.title') || 'Warehouses'} subtitle="Manage storage locations and stock distribution"
+        icon={<Warehouse className="h-5 w-5" />}
+        actions={
+          <div className="flex gap-2">
+            <button onClick={fetchWarehouses} className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition"><RefreshCw className="h-4 w-4" /></button>
+            <BtnPrimary className="flex items-center gap-2"><Plus className="h-4 w-4" /> Add Warehouse</BtnPrimary>
           </div>
-        ))}
-      </div>
+        }
+      />
 
-      {selectedWarehouse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl max-h-[80vh] overflow-y-auto">
-          <div className="flex justify-between mb-4"><h3 className="text-lg font-semibold">{selectedWarehouse.name} — Stock</h3><button onClick={() => setSelectedWarehouse(null)}><X className="h-5 w-5 text-gray-400" /></button></div>
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr><th className="text-left px-3 py-2">Product</th><th className="text-left px-3 py-2">SKU</th><th className="text-right px-3 py-2">On Hand</th><th className="text-right px-3 py-2">Reserved</th><th className="text-right px-3 py-2">Avg Cost</th></tr></thead>
-            <tbody className="divide-y">{warehouseStock.map((s: any, i: number) => (
-              <tr key={i} className={cn(s.qty_on_hand <= (s.reorder_point || 10) && 'bg-red-50')}>
-                <td className="px-3 py-2 font-medium">{s.product_name}</td>
-                <td className="px-3 py-2 text-gray-500 font-mono text-xs">{s.sku}</td>
-                <td className="px-3 py-2 text-right">{s.qty_on_hand}</td>
-                <td className="px-3 py-2 text-right text-gray-500">{s.qty_reserved || 0}</td>
-                <td className="px-3 py-2 text-right">{formatEGP(s.weighted_avg_cost || 0)}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div></div>
-      )}
+      <StatCardGrid cols={4}>
+        <StatCard label="Warehouses" value={warehouses.length} icon={<Warehouse className="h-5 w-5" />} color="emerald" />
+        <StatCard label="Total SKUs" value={totalSKUs.toLocaleString()} icon={<Package className="h-5 w-5" />} color="blue" />
+        <StatCard label="Total Units" value={totalUnits.toLocaleString()} icon={<Package className="h-5 w-5" />} color="teal" />
+        <StatCard label="Total Value" value={formatEGP(totalValue)} icon={<DollarSign className="h-5 w-5" />} color="amber" />
+      </StatCardGrid>
+
+      <SearchFilter search={search} onSearchChange={setSearch} placeholder="Search warehouses..." />
+
+      <Table>
+        <Thead><tr>
+          <Th>Warehouse</Th><Th>Code</Th><Th>Location</Th><Th>Type</Th>
+          <Th align="right">SKUs</Th><Th align="right">Units</Th><Th align="right">Value</Th><Th>Status</Th><Th align="right">Actions</Th>
+        </tr></Thead>
+        <tbody>
+          {loading ? <TableSkeleton rows={3} cols={9} /> : filtered.length === 0 ? (
+            <tr><td colSpan={9}><EmptyState icon={<Warehouse className="h-7 w-7" />} title="No warehouses found" /></td></tr>
+          ) : filtered.map(w => (
+            <Tr key={w.id} onClick={() => setSelected(w)}>
+              <Td>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 text-lg">🏭</div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{w.name}</p>
+                    {w.name_ar && <p className="text-xs text-gray-400" dir="rtl">{w.name_ar}</p>}
+                  </div>
+                </div>
+              </Td>
+              <Td><span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{w.code}</span></Td>
+              <Td><span className="text-sm text-gray-600 flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-gray-400" /> {w.city || '—'}</span></Td>
+              <Td><Badge color="blue">{w.warehouse_type || 'standard'}</Badge></Td>
+              <Td align="right"><span className="font-medium">{Number(w.sku_count || 0).toLocaleString()}</span></Td>
+              <Td align="right"><span className="font-semibold">{Number(w.total_units || 0).toLocaleString()}</span></Td>
+              <Td align="right"><span className="font-semibold text-gray-900">{formatEGP(Number(w.total_value || 0))}</span></Td>
+              <Td>
+                <div className="flex items-center gap-2">
+                  <Badge color={w.is_active ? 'emerald' : 'gray'} dot>{w.is_active ? 'Active' : 'Inactive'}</Badge>
+                  {w.is_default && <Badge color="purple">Default</Badge>}
+                </div>
+              </Td>
+              <Td align="right">
+                <button onClick={(e) => { e.stopPropagation(); setSelected(w); }}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 transition"><Eye className="h-4 w-4" /></button>
+              </Td>
+            </Tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <BloomModal open={!!selected} onClose={() => setSelected(null)} title={selected?.name || ''} subtitle={selected?.code}>
+        {selected && (
+          <div className="grid grid-cols-2 gap-3">
+            <InfoCard label="Type" value={selected.warehouse_type || 'standard'} />
+            <InfoCard label="City" value={selected.city || '—'} />
+            <InfoCard label="SKUs" value={String(Number(selected.sku_count || 0))} />
+            <InfoCard label="Units" value={Number(selected.total_units || 0).toLocaleString()} />
+            <InfoCard label="Value" value={formatEGP(Number(selected.total_value || 0))} />
+            <InfoCard label="Status" value={selected.is_active ? '✅ Active' : '⏸️ Inactive'} />
+          </div>
+        )}
+      </BloomModal>
     </div>
   );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-500 mb-0.5">{label}</p><p className="text-sm font-semibold text-gray-900">{value}</p></div>;
 }
