@@ -81,6 +81,37 @@ export class HealthController {
   @Version(VERSION_NEUTRAL)
   @ApiOperation({ summary: 'Run migration 029 manually' })
   async runMigration029() {
+    // Try to read and execute the actual migration file
+    const fs = require('fs');
+    const path = require('path');
+    const possiblePaths = [
+      path.join(process.cwd(), 'packages/db/migrations'),
+      '/app/packages/db/migrations',
+    ];
+    let migDir = '';
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) { migDir = p; break; }
+    }
+    
+    const migFile = path.join(migDir, '029_real_stock_take.sql');
+    if (!fs.existsSync(migFile)) {
+      return { error: 'Migration file not found', checked: possiblePaths, migDir, files: migDir ? fs.readdirSync(migDir).filter((f: string) => f.includes('029')) : [] };
+    }
+    
+    const sql = fs.readFileSync(migFile, 'utf-8');
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(sql);
+      await client.query("INSERT INTO public.migrations (name) VALUES ('029_real_stock_take') ON CONFLICT DO NOTHING");
+      await client.query('COMMIT');
+      return { success: true, message: 'Migration 029 applied!', sqlLength: sql.length };
+    } catch (e: any) {
+      await client.query('ROLLBACK');
+      return { success: false, error: e.message, detail: e.detail, hint: e.hint, position: e.position, sqlLength: sql.length, firstChars: sql.substring(0, 200) };
+    } finally {
+      client.release();
+    }
     const results: any = { steps: [], success: false };
     const t_id = 'a0000000-0000-0000-0000-000000000001';
     
