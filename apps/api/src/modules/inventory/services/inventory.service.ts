@@ -77,7 +77,7 @@ export class InventoryService implements IInventoryService {
     const result = await this.db.query(sql, params);
 
     // Get total count
-    const countSql = \`SELECT COUNT(*) FROM inventory.stock_levels sl WHERE sl.tenant_id = $1\`;
+    const countSql = `SELECT COUNT(*) FROM inventory.stock_levels sl WHERE sl.tenant_id = $1`;
     const countResult = await this.db.query(countSql, [tenantId]);
     const totalCount = parseInt(countResult.rows[0].count);
     
