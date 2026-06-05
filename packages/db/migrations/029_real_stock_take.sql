@@ -363,4 +363,4 @@ INSERT INTO inventory.stock_levels (id, tenant_id, product_id, warehouse_id, qty
 INSERT INTO inventory.stock_levels (id, tenant_id, product_id, warehouse_id, qty_on_hand) VALUES ('0caed40a-4f99-4520-bf3e-0ed9bbec4f70', 'a0000000-0000-0000-0000-000000000001', 'f67373a4-4533-4634-a49c-a1d1d060d56d', '20000000-0000-0000-0000-000000000001', 4);
 
 -- Step 5: Stock count record
-INSERT INTO inventory.stock_counts (id, tenant_id, warehouse_id, count_date, status, notes, created_by) VALUES ('ed3eea06-ba38-4103-a9bf-1c6b2f355ee4', 'a0000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '2026-06-04', 'completed', 'Physical Stock Take 04/06/2026 - 160 products', 'b0000000-0000-0000-0000-000000000001');
+INSERT INTO inventory.stock_counts (id, tenant_id, warehouse_id, count_date, status, notes) VALUES ('ed3eea06-ba38-4103-a9bf-1c6b2f355ee4', 'a0000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '2026-06-04', 'completed', 'Physical Stock Take 04/06/2026 - 160 products');
