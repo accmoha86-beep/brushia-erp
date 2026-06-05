@@ -37,6 +37,28 @@ export class HealthController {
       results.migrations = mig.rows;
     } catch (e: any) { results.migrations_error = e.message; }
     
+    // Check migration files
+    const fs = await import('fs');
+    const pathMod = await import('path');
+    const possiblePaths = [
+      pathMod.join(process.cwd(), 'packages/db/migrations'),
+      '/app/packages/db/migrations',
+    ];
+    results.migrationDir = 'not found';
+    results.migrationFiles = [];
+    for (const p of possiblePaths) {
+      try {
+        if (fs.existsSync(p)) {
+          results.migrationDir = p;
+          results.migrationFiles = fs.readdirSync(p)
+            .filter((f: string) => f.endsWith('.sql'))
+            .sort()
+            .slice(-5);
+          break;
+        }
+      } catch {}
+    }
+    
     const tables = [
       'catalog.categories', 'catalog.products', 'inventory.stock_levels',
       'sales.sales_orders', 'purchasing.purchase_orders',
