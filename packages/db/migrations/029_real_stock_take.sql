@@ -7,7 +7,7 @@ DELETE FROM purchasing.goods_receipt_items WHERE goods_receipt_id IN (SELECT id 
 DELETE FROM purchasing.goods_receipts WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001';
 DELETE FROM purchasing.purchase_order_items WHERE purchase_order_id IN (SELECT id FROM purchasing.purchase_orders WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001');
 DELETE FROM purchasing.purchase_orders WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001';
-DELETE FROM purchasing.vendor_bill_items WHERE bill_id IN (SELECT id FROM purchasing.vendor_bills WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001');
+DELETE FROM purchasing.bill_payments WHERE bill_id IN (SELECT id FROM purchasing.vendor_bills WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001');
 DELETE FROM purchasing.vendor_bills WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001';
 -- Inventory transfers & reservations
 DELETE FROM inventory.stock_transfer_items WHERE transfer_id IN (SELECT id FROM inventory.stock_transfers WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001');
