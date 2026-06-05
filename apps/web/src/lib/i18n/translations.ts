@@ -217,6 +217,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     'orders.avgOrderValue': 'Average Order Value',
     'orders.printInvoice': 'Print Invoice',
     'orders.printReceipt': 'Print Receipt',
+    'orders.revenue': 'Revenue',
+    'orders.collected': 'Collected',
+    'orders.avgOrder': 'Avg. Order',
+    'orders.search': 'Search by order number or customer...',
 
     // Customers
     'customers.title': 'Customers',
@@ -312,6 +316,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'branches.warehouse': 'Warehouse',
     'branches.totalBranches': 'Total Branches',
     'branches.salesChannels': 'Sales Channels',
+    'branches.add': 'Add Branch',
+    'branches.search': 'Search branches...',
 
     // Shipping
     'shipping.title': 'Shipping',
@@ -801,6 +807,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     'orders.avgOrderValue': 'متوسط قيمة الطلب',
     'orders.printInvoice': 'طباعة الفاتورة',
     'orders.printReceipt': 'طباعة الإيصال',
+    'orders.revenue': 'الإيرادات',
+    'orders.collected': 'المحصّل',
+    'orders.avgOrder': 'متوسط الطلب',
+    'orders.search': 'بحث برقم الطلب أو العميل...',
 
     // Customers
     'customers.title': 'العملاء',
@@ -896,6 +906,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'branches.warehouse': 'مستودع',
     'branches.totalBranches': 'إجمالي الفروع',
     'branches.salesChannels': 'قنوات البيع',
+    'branches.add': 'إضافة فرع',
+    'branches.search': 'بحث في الفروع...',
 
     // Shipping
     'shipping.title': 'الشحن',
