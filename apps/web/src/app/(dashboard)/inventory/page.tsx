@@ -136,7 +136,7 @@ export default function InventoryPage() {
                   <Td align="right"><span className={cn('font-bold', qty < 20 ? 'text-red-600' : 'text-gray-900')}>{qty.toLocaleString()}</span></Td>
                   <Td align="right"><span className="text-gray-500">{reserved}</span></Td>
                   <Td align="right"><span className="font-medium text-gray-900">{available.toLocaleString()}</span></Td>
-                  <Td align="right"><span className="text-gray-600">{formatEGP(costRaw)}</span></Td>
+                  <Td align="right"><span className="text-gray-600">{formatEGP(cost)}</span></Td>
                   <Td align="right"><span className="font-semibold text-gray-900">{formatEGP(value)}</span></Td>
                   <Td><Badge color={statusColor} dot>{statusLabel}</Badge></Td>
                 </Tr>
