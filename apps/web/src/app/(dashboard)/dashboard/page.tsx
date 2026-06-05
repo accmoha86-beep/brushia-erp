@@ -109,7 +109,7 @@ export default function DashboardPage() {
       const [products, categories, stock, orders, customers, promotions, commissions, branches] = await Promise.all([
         fetchJSON('/catalog/products?limit=50').catch(() => ({ data: [], pagination: { total: 0 } })),
         fetchJSON('/catalog/categories').catch(() => ({ data: [] })),
-        fetchJSON('/inventory/stock?limit=200').catch(() => ({ data: [] })),
+        fetchJSON('/inventory/stock?limit=500').catch(() => ({ data: [] })),
         fetchJSON('/sales/orders').catch(() => ({ data: [] })),
         fetchJSON('/customers/stats').catch(() => ({})),
         fetchJSON('/promotions').catch(() => ({ data: [] })),

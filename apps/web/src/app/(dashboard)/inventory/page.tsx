@@ -30,7 +30,7 @@ export default function InventoryPage() {
   const fetchStock = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<any>('/inventory/stock');
+      const res = await api.get<any>('/inventory/stock?limit=500');
       const data = res?.data?.rows || res?.data || res?.rows || (Array.isArray(res) ? res : []);
       setStock(Array.isArray(data) ? data : []);
     } catch { setStock([]); } finally { setLoading(false); }

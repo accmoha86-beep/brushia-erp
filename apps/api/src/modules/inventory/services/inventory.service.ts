@@ -32,7 +32,7 @@ export class InventoryService implements IInventoryService {
 
   async getStockLevels(tenantId: string, query: TStockQuery) {
     const page = parseInt(query.page);
-    const limit = Math.min(parseInt(query.limit), 100);
+    const limit = Math.min(parseInt(query.limit) || 50, 500);
     const offset = (page - 1) * limit;
 
     let sql = `
@@ -76,9 +76,14 @@ export class InventoryService implements IInventoryService {
 
     const result = await this.db.query(sql, params);
 
+    // Get total count
+    const countSql = \`SELECT COUNT(*) FROM inventory.stock_levels sl WHERE sl.tenant_id = $1\`;
+    const countResult = await this.db.query(countSql, [tenantId]);
+    const totalCount = parseInt(countResult.rows[0].count);
+    
     return {
       data: result.rows,
-      pagination: { page, limit, total: result.rows.length, hasMore: result.rows.length === limit },
+      pagination: { page, limit, total: totalCount, hasMore: result.rows.length === limit },
     };
   }
 

@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
       apiFetch('/sales/orders'),
       apiFetch('/catalog/products'),
       apiFetch('/customers'),
-      apiFetch('/inventory/stock'),
+      apiFetch('/inventory/stock?limit=500'),
       apiFetch('/catalog/categories'),
       apiFetch('/promotions'),
       apiFetch('/commissions'),

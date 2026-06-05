@@ -883,7 +883,7 @@ export default function CostTrackingPage() {
       try {
         const [productsRes, stockRes, ordersRes] = await Promise.all([
           api.get<any>('/catalog/products?limit=200'),
-          api.get<any>('/inventory/stock'),
+          api.get<any>('/inventory/stock?limit=500'),
           api.get<any>('/purchasing/orders'),
         ]);
         setProducts(productsRes?.data ?? productsRes?.products ?? productsRes ?? []);
