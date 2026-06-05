@@ -36,7 +36,7 @@ export default function FacebookPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     // Load config from integrations
-    const integrations = await apiFetch('/integrations');
+    const integrations = await apiFetch('/settings/integrations');
     const list = Array.isArray(integrations) ? integrations : integrations?.data ?? [];
     const fbConfig = list.find((i: any) => i.type === 'facebook' || i.name?.toLowerCase().includes('facebook'));
     if (fbConfig?.config) {
@@ -65,7 +65,7 @@ export default function FacebookPage() {
 
   const handleSaveConfig = async () => {
     setSaving(true);
-    await apiFetch('/integrations/facebook', {
+    await apiFetch('/settings/integrations/meta_pixel', {
       method: 'PUT',
       body: JSON.stringify({ type: 'facebook', config }),
     });

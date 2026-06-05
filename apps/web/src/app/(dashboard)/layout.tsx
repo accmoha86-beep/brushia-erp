@@ -74,7 +74,7 @@ function NotificationCenter() {
     const headers: any = token ? { Authorization: 'Bearer ' + token } : {};
 
     try {
-      const stockRes = await fetch('/api/v1/inventory/stock-levels', { headers });
+      const stockRes = await fetch('/api/v1/inventory/stock', { headers });
       if (stockRes.ok) {
         const stockData = await stockRes.json();
         const levels = Array.isArray(stockData) ? stockData : stockData?.data ?? stockData?.rows ?? [];

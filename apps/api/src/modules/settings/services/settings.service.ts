@@ -14,28 +14,40 @@ export class SettingsService {
     return {
       name: tenant.name,
       slug: tenant.slug,
-      settings: tenant.settings || {},
+      legal_name: tenant.legal_name || '',
+      email: tenant.email || '',
+      phone: tenant.phone || '',
+      tax_id: tenant.tax_id || '',
+      commercial_reg: tenant.commercial_reg || '',
+      city: tenant.city || '',
+      governorate: tenant.governorate || '',
+      currency: tenant.currency || 'EGP',
+      country: tenant.country || 'EG',
+      logo_url: tenant.logo_url || '',
+      tagline: tenant.tagline || '',
+      website: tenant.website || '',
+      social_instagram: tenant.social_instagram || '',
+      social_facebook: tenant.social_facebook || '',
+      social_tiktok: tenant.social_tiktok || '',
     };
   }
 
   async updateCompanyInfo(tenantId: string, dto: any) {
-    const settings = JSON.stringify({
-      legal_name: dto.legal_name || '',
-      email: dto.email || '',
-      phone: dto.phone || '',
-      tax_id: dto.tax_id || '',
-      commercial_reg: dto.commercial_reg || '',
-      city: dto.city || '',
-      governorate: dto.governorate || '',
-      currency: dto.currency || 'EGP',
-      vat_rate: dto.vat_rate ?? 14,
-      ...(dto.settings || {}),
-    });
-
     const result = await this.db.queryOne(
-      `UPDATE iam.tenants SET name = COALESCE($2, name), settings = $3, updated_at = NOW()
+      `UPDATE iam.tenants SET 
+        name = COALESCE($2, name),
+        legal_name = COALESCE($3, legal_name),
+        email = COALESCE($4, email),
+        phone = COALESCE($5, phone),
+        tax_id = COALESCE($6, tax_id),
+        commercial_reg = COALESCE($7, commercial_reg),
+        city = COALESCE($8, city),
+        governorate = COALESCE($9, governorate),
+        currency = COALESCE($10, currency),
+        updated_at = NOW()
        WHERE id = $1 RETURNING *`,
-      [tenantId, dto.name || null, settings]
+      [tenantId, dto.name, dto.legal_name, dto.email, dto.phone,
+       dto.tax_id, dto.commercial_reg, dto.city, dto.governorate, dto.currency]
     );
     return result;
   }
@@ -43,26 +55,29 @@ export class SettingsService {
   // === Tax Settings ===
   async getTaxSettings(tenantId: string) {
     const tenant = await this.db.queryOne(
-      'SELECT settings FROM iam.tenants WHERE id = $1', [tenantId]
+      'SELECT vat_rate, fiscal_year_start FROM iam.tenants WHERE id = $1', [tenantId]
     );
-    const s = tenant?.settings || {};
     return {
-      vat_rate: s.vat_rate ?? 14,
-      tax_inclusive: s.tax_inclusive ?? true,
-      fiscal_year_start: s.fiscal_year_start || 'January',
+      vat_rate: tenant ? (Number(tenant.vat_rate) / 100) : 14,
+      vat_rate_raw: tenant?.vat_rate ?? 1400,
+      tax_inclusive: true,
+      fiscal_year_start: tenant?.fiscal_year_start ?? 1,
     };
   }
 
   async updateTaxSettings(tenantId: string, dto: any) {
-    const tenant = await this.db.queryOne(
-      'SELECT settings FROM iam.tenants WHERE id = $1', [tenantId]
-    );
-    const settings = { ...(tenant?.settings || {}), ...dto };
+    const vatRate = dto.vat_rate != null ? Math.round(Number(dto.vat_rate) * 100) : undefined;
+    const fiscalYear = dto.fiscal_year_start != null ? Number(dto.fiscal_year_start) : undefined;
+
     await this.db.query(
-      'UPDATE iam.tenants SET settings = $2, updated_at = NOW() WHERE id = $1',
-      [tenantId, JSON.stringify(settings)]
+      `UPDATE iam.tenants SET 
+        vat_rate = COALESCE($2, vat_rate),
+        fiscal_year_start = COALESCE($3, fiscal_year_start),
+        updated_at = NOW()
+       WHERE id = $1`,
+      [tenantId, vatRate, fiscalYear]
     );
-    return settings;
+    return this.getTaxSettings(tenantId);
   }
 
   // === Integration Settings ===
@@ -100,7 +115,6 @@ export class SettingsService {
   }
 
   async configureIntegration(tenantId: string, userId: string, key: string, dto: any) {
-    // Validate required fields per integration type
     const requiredFields = this.getRequiredFields(key);
     for (const field of requiredFields) {
       if (!dto.config?.[field.key]) {
@@ -135,7 +149,6 @@ export class SettingsService {
         case 'bosta_shipping': {
           const apiKey = (integration.config as any)?.api_key;
           if (!apiKey) throw new Error('API key not configured');
-          // Test by fetching cities from Bosta
           const resp = await fetch('https://app.bosta.co/api/v2/cities', {
             headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' }
           });

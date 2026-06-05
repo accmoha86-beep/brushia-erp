@@ -51,11 +51,11 @@ export default function AnalyticsPage() {
     const [orders, products, customers, stockLevels, categories, promotions, commissions] = await Promise.all([
       apiFetch('/sales/orders'),
       apiFetch('/catalog/products'),
-      apiFetch('/sales/customers'),
-      apiFetch('/inventory/stock-levels'),
+      apiFetch('/customers'),
+      apiFetch('/inventory/stock'),
       apiFetch('/catalog/categories'),
       apiFetch('/promotions'),
-      apiFetch('/commissions/salespersons'),
+      apiFetch('/commissions'),
     ]);
 
     const orderList = Array.isArray(orders) ? orders : orders?.data ?? [];
