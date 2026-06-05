@@ -286,7 +286,7 @@ function ProductCostsTab({
                   <td className="px-4 py-3 text-gray-400 font-mono text-xs">{r.sku}</td>
                   <td className="px-4 py-3 text-right text-white">{formatEGP(r.basePrice)}</td>
                   <td className="px-4 py-3 text-right text-gray-400">
-                    {formatEGP(r.cost_price / 100)}
+                    {formatEGP(r.cost_price)}
                   </td>
                   <td className="px-4 py-3 text-right text-rose-400 font-medium">
                     {formatEGP(r.wac)}
@@ -548,7 +548,7 @@ function PurchaseOrderCostsTab({ orders }: { orders: PurchaseOrder[] }) {
                                     </td>
                                     <td className="py-2 text-right">{item.quantity}</td>
                                     <td className="py-2 text-right">
-                                      {formatEGP(item.unit_cost / 100)}
+                                      {formatEGP(item.unit_cost)}
                                     </td>
                                     <td className="py-2 text-right">{formatEGP(lineTotal)}</td>
                                     <td className="py-2 text-right text-gray-500">

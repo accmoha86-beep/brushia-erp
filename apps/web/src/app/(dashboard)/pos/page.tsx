@@ -551,7 +551,7 @@ export default function POSPage() {
             ].map(([label, val]) => (
               <div key={label as string} className="flex justify-between text-sm">
                 <span className="text-gray-400">{label as string}</span>
-                <span className="text-white font-medium">{val != null ? formatEGP((val as number) / 100) : '—'}</span>
+                <span className="text-white font-medium">{val != null ? formatEGP(val as number) : '—'}</span>
               </div>
             ))}
           </div>
@@ -582,19 +582,19 @@ export default function POSPage() {
           {receiptData.items?.map((item: any, i: number) => (
             <div key={i} className="flex justify-between text-sm">
               <span className="text-gray-300">{item.name ?? item.product_name ?? 'Item'} ×{item.quantity}</span>
-              <span className="text-white">{formatEGP((item.unit_price * item.quantity) / 100)}</span>
+              <span className="text-white">{formatEGP(item.unit_price * item.quantity)}</span>
             </div>
           ))}
         </div>
         <div className="border-t border-gray-700 pt-3 space-y-1">
           <div className="flex justify-between text-lg font-bold">
             <span className="text-white">Total</span>
-            <span className="text-rose-400">{formatEGP((receiptData.grand_total ?? grandTotal) / 100)}</span>
+            <span className="text-rose-400">{formatEGP(receiptData.grand_total ?? grandTotal)}</span>
           </div>
           {receiptData.change > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Change</span>
-              <span className="text-emerald-400">{formatEGP(receiptData.change / 100)}</span>
+              <span className="text-emerald-400">{formatEGP(receiptData.change)}</span>
             </div>
           )}
         </div>
@@ -709,7 +709,7 @@ export default function POSPage() {
                         className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-left hover:border-rose-500/50 transition group">
                         {p.image_url && <img src={p.image_url} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />}
                         <p className="text-white text-sm font-medium truncate">{p.name}</p>
-                        <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(p.base_price / 100)}</p>
+                        <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(p.base_price)}</p>
                       </button>
                     ))}
                     {filteredProducts.length === 0 && <p className="text-gray-500 col-span-full text-center py-8">No products found</p>}
@@ -752,7 +752,7 @@ export default function POSPage() {
                           className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-left hover:border-rose-500/50 transition">
                           {v.color && <div className="w-8 h-8 rounded-full mb-2 border-2 border-gray-700" style={{ backgroundColor: v.color }} />}
                           <p className="text-white text-sm font-medium">{v.name}</p>
-                          <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP((v.price ?? selectedProduct.base_price) / 100)}</p>
+                          <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(v.price ?? selectedProduct.base_price)}</p>
                           {v.stock != null && <p className="text-gray-500 text-xs mt-0.5">{v.stock} in stock</p>}
                         </button>
                       ))}
@@ -771,7 +771,7 @@ export default function POSPage() {
                           className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-left hover:border-rose-500/50 transition group">
                           {p.image_url && <img src={p.image_url} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />}
                           <p className="text-white text-sm font-medium truncate">{p.name}</p>
-                          <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(p.base_price / 100)}</p>
+                          <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(p.base_price)}</p>
                           {p.variants && p.variants.length > 0 && (
                             <p className="text-gray-500 text-xs mt-0.5 flex items-center gap-1">{p.variants.length} variants <ChevronRight className="w-3 h-3" /></p>
                           )}
@@ -832,13 +832,13 @@ export default function POSPage() {
                         {selectedReturn.items?.map((it: any, i: number) => (
                           <div key={i} className="flex justify-between text-sm">
                             <span className="text-gray-300">{it.name ?? it.product_name} ×{it.quantity}</span>
-                            <span className="text-white">{formatEGP((it.unit_price * it.quantity) / 100)}</span>
+                            <span className="text-white">{formatEGP(it.unit_price * it.quantity)}</span>
                           </div>
                         ))}
                       </div>
                       {selectedReturn.grand_total != null && (
                         <div className="flex justify-between font-bold text-white border-t border-gray-700 pt-2 mb-4">
-                          <span>Total</span><span>{formatEGP(selectedReturn.grand_total / 100)}</span>
+                          <span>Total</span><span>{formatEGP(selectedReturn.grand_total)}</span>
                         </div>
                       )}
                       <label className="block text-sm text-gray-300 mb-1">Return Reason</label>
@@ -871,7 +871,7 @@ export default function POSPage() {
                               <p className="text-gray-500 text-xs">{o.customer_name || 'Walk-in'} · {o.status}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-white font-semibold">{o.grand_total != null ? formatEGP(o.grand_total / 100) : '—'}</p>
+                              <p className="text-white font-semibold">{o.grand_total != null ? formatEGP(o.grand_total) : '—'}</p>
                               {o.created_at && <p className="text-gray-600 text-xs">{new Date(o.created_at).toLocaleDateString()}</p>}
                             </div>
                           </div>
@@ -941,7 +941,7 @@ export default function POSPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-medium truncate">{item.product.name}</p>
                   {item.variant && <p className="text-gray-500 text-xs">{item.variant.name}</p>}
-                  <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP((item.unit_price * item.quantity) / 100)}</p>
+                  <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(item.unit_price * item.quantity)}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => updateQty(idx, -1)} className="w-7 h-7 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-gray-300 transition">
@@ -977,12 +977,12 @@ export default function POSPage() {
 
           {/* totals */}
           <div className="px-4 py-3 border-t border-gray-800 space-y-1.5 text-sm">
-            <div className="flex justify-between text-gray-400"><span>Subtotal</span><span className="text-white">{formatEGP(subtotal / 100)}</span></div>
-            {discountAmt > 0 && <div className="flex justify-between text-emerald-400"><span>Discount ({discountPct}%)</span><span>-{formatEGP(discountAmt / 100)}</span></div>}
-            <div className="flex justify-between text-gray-400"><span>VAT (14%)</span><span className="text-white">{formatEGP(vatAmt / 100)}</span></div>
+            <div className="flex justify-between text-gray-400"><span>Subtotal</span><span className="text-white">{formatEGP(subtotal)}</span></div>
+            {discountAmt > 0 && <div className="flex justify-between text-emerald-400"><span>Discount ({discountPct}%)</span><span>-{formatEGP(discountAmt)}</span></div>}
+            <div className="flex justify-between text-gray-400"><span>VAT (14%)</span><span className="text-white">{formatEGP(vatAmt)}</span></div>
             <div className="flex justify-between text-lg font-bold pt-1 border-t border-gray-700">
               <span className="text-white">Total</span>
-              <span className="text-rose-400">{formatEGP(grandTotal / 100)}</span>
+              <span className="text-rose-400">{formatEGP(grandTotal)}</span>
             </div>
           </div>
 
@@ -994,7 +994,7 @@ export default function POSPage() {
             </button>
             <button onClick={openPayment} disabled={cart.length === 0}
               className="flex-[2] bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 transition disabled:opacity-30">
-              <Banknote className="w-4 h-4" /> Charge {cart.length > 0 ? formatEGP(grandTotal / 100) : ''}
+              <Banknote className="w-4 h-4" /> Charge {cart.length > 0 ? formatEGP(grandTotal) : ''}
             </button>
           </div>
         </aside>
@@ -1014,7 +1014,7 @@ export default function POSPage() {
               {/* total */}
               <div className="text-center">
                 <p className="text-gray-400 text-sm">Total Due</p>
-                <p className="text-3xl font-bold text-white">{formatEGP((splitMode ? remaining : grandTotal) / 100)}</p>
+                <p className="text-3xl font-bold text-white">{formatEGP(splitMode ? remaining : grandTotal)}</p>
               </div>
 
               {/* split toggle */}
@@ -1044,7 +1044,7 @@ export default function POSPage() {
                     className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-lg font-mono focus:outline-none focus:ring-2 focus:ring-rose-500" />
                   {cashTendered && (
                     <p className="text-sm mt-2">
-                      Change: <span className="text-emerald-400 font-bold">{formatEGP(changeAmount() / 100)}</span>
+                      Change: <span className="text-emerald-400 font-bold">{formatEGP(changeAmount())}</span>
                     </p>
                   )}
                   {/* quick amounts */}
@@ -1075,10 +1075,10 @@ export default function POSPage() {
                   {payments.map((p, i) => (
                     <div key={i} className="flex justify-between text-sm bg-gray-800 rounded-lg px-3 py-2">
                       <span className="text-gray-300 capitalize">{p.method.replace('_', ' ')}</span>
-                      <span className="text-white font-medium">{formatEGP(p.amount / 100)}</span>
+                      <span className="text-white font-medium">{formatEGP(p.amount)}</span>
                     </div>
                   ))}
-                  <p className="text-xs text-gray-400">Remaining: <span className="text-rose-400 font-bold">{formatEGP(remaining / 100)}</span></p>
+                  <p className="text-xs text-gray-400">Remaining: <span className="text-rose-400 font-bold">{formatEGP(remaining)}</span></p>
                 </div>
               )}
 

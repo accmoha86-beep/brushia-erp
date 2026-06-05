@@ -105,7 +105,7 @@ export default function ProductsPage() {
     return matchSearch && matchCat;
   });
 
-  const totalValue = products.reduce((s, p) => s + (Number(p.base_price) / 100) * Number(p.total_stock || 0), 0);
+  const totalValue = products.reduce((s, p) => s + Number(p.base_price) * Number(p.total_stock || 0), 0);
   const totalStock = products.reduce((s, p) => s + Number(p.total_stock || 0), 0);
   const lowStock = products.filter(p => Number(p.total_stock || 0) < 20).length;
 
@@ -133,22 +133,22 @@ export default function ProductsPage() {
               <RefreshCw className="h-4 w-4" />
             </button>
             <BtnPrimary onClick={openCreate} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" /> {t('products.add') || 'Add Product'}
+              <Plus className="h-4 w-4" /> {t('products.addProduct') || 'Add Product' || 'Add Product'}
             </BtnPrimary>
           </div>
         }
       />
 
       <StatCardGrid cols={4}>
-        <StatCard label={t('products.total') || 'Total Products'} value={products.length} icon={<Package className="h-5 w-5" />} color="emerald" />
-        <StatCard label={t('products.totalStock') || 'Total Stock'} value={totalStock.toLocaleString()} icon={<Archive className="h-5 w-5" />} color="blue" />
-        <StatCard label={t('products.inventoryValue') || 'Inventory Value'} value={formatEGP(totalValue)} icon={<DollarSign className="h-5 w-5" />} color="teal" />
+        <StatCard label={t('products.totalProducts') || 'Total Products'} value={products.length} icon={<Package className="h-5 w-5" />} color="emerald" />
+        <StatCard label={t('products.stock') || 'Total Stock'} value={totalStock.toLocaleString()} icon={<Archive className="h-5 w-5" />} color="blue" />
+        <StatCard label={'Inventory Value'} value={formatEGP(totalValue)} icon={<DollarSign className="h-5 w-5" />} color="teal" />
         <StatCard label={t('products.lowStock') || 'Low Stock'} value={lowStock} icon={<AlertTriangle className="h-5 w-5" />} color="amber" />
       </StatCardGrid>
 
       <SearchFilter
         search={search} onSearchChange={setSearch}
-        placeholder={t('products.search') || 'Search by name, SKU, or category...'}
+        placeholder={t('products.productName') || 'Search products...' || 'Search by name, SKU, or category...'}
         filters={
           <FilterTabs
             tabs={[
@@ -184,8 +184,10 @@ export default function ProductsPage() {
             </td></tr>
           ) : (
             filtered.map((p) => {
-              const price = Number(p.base_price) / 100;
-              const cost = Number(p.cost_price) / 100;
+              const priceRaw = Number(p.base_price);
+              const costRaw = Number(p.cost_price);
+              const price = priceRaw / 100;
+              const cost = costRaw / 100;
               const stock = Number(p.total_stock || 0);
               const margin = price > 0 ? ((price - cost) / price * 100) : 0;
               return (
@@ -203,10 +205,10 @@ export default function ProductsPage() {
                   </Td>
                   <Td><span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{p.sku}</span></Td>
                   <Td><Badge color="blue">{p.category_name || '—'}</Badge></Td>
-                  <Td align="right"><span className="font-semibold text-gray-900">{formatEGP(price)}</span></Td>
+                  <Td align="right"><span className="font-semibold text-gray-900">{formatEGP(priceRaw)}</span></Td>
                   <Td align="right">
                     <div>
-                      <span className="text-gray-600">{formatEGP(cost)}</span>
+                      <span className="text-gray-600">{formatEGP(costRaw)}</span>
                       <p className="text-[10px] text-emerald-600 font-medium">{margin.toFixed(0)}% margin</p>
                     </div>
                   </Td>
@@ -271,8 +273,8 @@ export default function ProductsPage() {
         {viewProduct && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <InfoBox label="Price" value={formatEGP(Number(viewProduct.base_price) / 100)} />
-              <InfoBox label="Cost" value={formatEGP(Number(viewProduct.cost_price) / 100)} />
+              <InfoBox label="Price" value={formatEGP(Number(viewProduct.base_price))} />
+              <InfoBox label="Cost" value={formatEGP(Number(viewProduct.cost_price))} />
               <InfoBox label="Stock" value={String(viewProduct.total_stock || 0)} />
               <InfoBox label="Category" value={viewProduct.category_name || '—'} />
             </div>

@@ -176,7 +176,7 @@ export default function BarcodeLabelsPage() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{p.name}</p>
-                        <p className="text-gray-500 text-xs">{p.sku || 'No SKU'} &middot; {formatEGP(p.base_price / 100)}</p>
+                        <p className="text-gray-500 text-xs">{p.sku || 'No SKU'} &middot; {formatEGP(p.base_price)}</p>
                       </div>
                       <button onClick={() => addItem(p)}
                         className={cn('px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1',
@@ -313,7 +313,7 @@ export default function BarcodeLabelsPage() {
                     <div key={item.sku + '-' + qi} style={{ border: '1px dashed #ccc', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
                       {showName && <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#333', marginBottom: '4px' }}>{item.name}</p>}
                       <canvas data-barcode={item.sku} width="200" height="50" style={{ maxWidth: '100%' }} />
-                      {showPrice && <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#111', marginTop: '2px' }}>{formatEGP(item.price / 100)}</p>}
+                      {showPrice && <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#111', marginTop: '2px' }}>{formatEGP(item.price)}</p>}
                     </div>
                   ))
                 )}

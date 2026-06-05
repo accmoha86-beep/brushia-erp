@@ -284,7 +284,7 @@ export default function FacebookPage() {
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium">{p.name}</td>
                     <td className="px-4 py-3 text-xs text-gray-500">{p.sku}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-rose-600">{formatEGP(Number(p.base_price) / 100)}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-rose-600">{formatEGP(Number(p.base_price))}</td>
                     <td className="px-4 py-3"><span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{t('common.active')}</span></td>
                     <td className="px-4 py-3">
                       <span className="text-xs text-gray-400">{isConfigured ? '✅ Ready' : '⏳ Configure first'}</span>

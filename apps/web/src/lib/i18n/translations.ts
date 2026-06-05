@@ -189,6 +189,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     'products.lowStock': 'Low Stock',
     'products.outOfStock': 'Out of Stock',
     'products.barcode': 'Barcode',
+    'products.add': 'Add Product',
+    'products.search': 'Search products...',
+    'products.inventoryValue': 'Inventory Value',
+    'products.totalStock': 'Total Stock',
+    'products.total': 'Total Products',
 
     // Categories
     'categories.title': 'Categories',
