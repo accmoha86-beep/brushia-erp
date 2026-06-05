@@ -7,7 +7,7 @@ interface StatCardProps {
   label: string;
   value: string | number;
   icon: ReactNode;
-  color?: 'emerald' | 'blue' | 'amber' | 'rose' | 'purple' | 'teal' | 'indigo' | 'orange';
+  color?: 'emerald' | 'blue' | 'amber' | 'rose' | 'purple' | 'teal' | 'indigo' | 'orange' | 'red' | 'gray' | 'green';
   trend?: { value: string; up?: boolean };
   className?: string;
 }
@@ -21,10 +21,13 @@ const colorMap = {
   teal:    { bg: 'bg-teal-50',    icon: 'bg-teal-100 text-teal-600',       border: 'border-teal-100' },
   indigo:  { bg: 'bg-indigo-50',  icon: 'bg-indigo-100 text-indigo-600',   border: 'border-indigo-100' },
   orange:  { bg: 'bg-orange-50',  icon: 'bg-orange-100 text-orange-600',   border: 'border-orange-100' },
+  red:     { bg: 'bg-red-50',     icon: 'bg-red-100 text-red-600',         border: 'border-red-100' },
+  gray:    { bg: 'bg-gray-50',    icon: 'bg-gray-100 text-gray-600',       border: 'border-gray-100' },
+  green:   { bg: 'bg-green-50',   icon: 'bg-green-100 text-green-600',     border: 'border-green-100' },
 };
 
 export function StatCard({ label, value, icon, color = 'emerald', trend, className }: StatCardProps) {
-  const c = colorMap[color];
+  const c = colorMap[color] || colorMap.emerald;
   return (
     <div className={cn('rounded-2xl border bg-white p-5 transition-all hover:shadow-md', c.border, className)}>
       <div className="flex items-center justify-between">
