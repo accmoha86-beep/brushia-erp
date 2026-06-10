@@ -1,3 +1,4 @@
+// Migration 034 applied - clear import notes
 import { NestFactory } from '@nestjs/core';
 import { VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
