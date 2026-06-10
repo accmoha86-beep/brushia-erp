@@ -1,21 +1,22 @@
--- Migration 031: Fix order_items tenant_id + customer name display
--- ═══════════════════════════════════════════════════════════════
--- Bug 1: Migration 030 inserted order_items without tenant_id (column is nullable)
---         API filters by tenant_id, so items never appear
--- Bug 2: Migration 030 inserted customers with first_name/last_name but not name column
---         API joins on c.name which returns NULL → shows "Walk-in Customer"
+-- Migration 031: Fix order_items tenant_id + customer data
+-- ═══════════════════════════════════════════════════════
+-- Bug: Migration 030 order_items have NULL tenant_id
+--      API filters by tenant_id, so items never appear
 
--- Fix 1: Set tenant_id on all order_items that are missing it
+-- Step 1: Add last_order_at column if missing
+ALTER TABLE sales.customers ADD COLUMN IF NOT EXISTS last_order_at TIMESTAMPTZ;
+
+-- Step 2: Fix tenant_id on ALL order_items that are missing it
 UPDATE sales.order_items 
 SET tenant_id = 'a0000000-0000-0000-0000-000000000001' 
 WHERE tenant_id IS NULL;
 
--- Fix 2: Populate name column from first_name + last_name for all customers missing name
+-- Step 3: Populate name column from first_name + last_name where missing
 UPDATE sales.customers 
 SET name = TRIM(CONCAT(first_name, ' ', COALESCE(last_name, '')))
 WHERE name IS NULL AND tenant_id = 'a0000000-0000-0000-0000-000000000001';
 
--- Fix 3: Also update customer last_order_at and total_orders/total_spent from actual orders
+-- Step 4: Update customer stats from actual orders
 UPDATE sales.customers c
 SET 
   total_orders = sub.order_count,
