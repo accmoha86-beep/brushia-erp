@@ -132,14 +132,12 @@ export class POSService {
       if (!session) throw new NotFoundException('Open session not found');
       if (session.cashier_id !== userId) throw new BadRequestException('Only the session cashier can close this session');
 
-      // Check for held orders
-      const heldOrders = await client.query(
-        `SELECT COUNT(*) as count FROM pos.held_orders WHERE session_id = $1 AND tenant_id = $2 AND status = 'held'`,
+      // Auto-void any remaining held orders
+      await client.query(
+        \`UPDATE pos.held_orders SET status = 'voided', updated_at = NOW() 
+         WHERE session_id = $1 AND tenant_id = $2 AND status = 'held'\`,
         [sessionId, tenantId],
       );
-      if (parseInt(heldOrders.rows[0].count) > 0) {
-        throw new BadRequestException('Cannot close session with held orders. Complete or void them first.');
-      }
 
       // Calculate expected cash
       const transactions = await client.query(
