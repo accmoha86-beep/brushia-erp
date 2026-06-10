@@ -162,6 +162,43 @@ export class PurchasingController {
     return this.purchasingService.payBill(user.tenantId, user.id, id, dto);
   }
 
+
+  // ═══ Vendor-Product Linking ════════════════════════
+  @Get('vendors/:id/detail')
+  @RequirePermissions('purchasing:read')
+  @ApiOperation({ summary: 'Get vendor with stats (product count, PO total)' })
+  async getVendorDetail(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.purchasingService.getVendorDetail(user.tenantId, id);
+  }
+
+  @Get('vendors/:id/products')
+  @RequirePermissions('purchasing:read')
+  @ApiOperation({ summary: 'List products linked to a vendor' })
+  async listVendorProducts(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.purchasingService.listVendorProducts(user.tenantId, id);
+  }
+
+  @Post('vendors/:id/products')
+  @RequirePermissions('purchasing:write')
+  @ApiOperation({ summary: 'Link a product to a vendor' })
+  async linkProduct(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+    return this.purchasingService.linkProduct(user.tenantId, id, dto);
+  }
+
+  @Delete('vendors/:vendorId/products/:productId')
+  @RequirePermissions('purchasing:write')
+  @ApiOperation({ summary: 'Unlink a product from a vendor' })
+  async unlinkProduct(@CurrentUser() user: any, @Param('vendorId') vendorId: string, @Param('productId') productId: string) {
+    return this.purchasingService.unlinkProduct(user.tenantId, vendorId, productId);
+  }
+
+  @Get('products/:productId/vendors')
+  @RequirePermissions('purchasing:read')
+  @ApiOperation({ summary: 'List vendors that supply a specific product' })
+  async getProductVendors(@CurrentUser() user: any, @Param('productId') productId: string) {
+    return this.purchasingService.getProductVendors(user.tenantId, productId);
+  }
+
   // ═══ Stats ═════════════════════════════════════════
   @Get('stats')
   @RequirePermissions('purchasing:read')

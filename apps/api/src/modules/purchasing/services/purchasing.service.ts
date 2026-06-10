@@ -450,3 +450,81 @@ export class PurchasingService {
     return this.createGRN(tenantId, userId, { purchase_order_id: id, warehouse_id: dto.warehouse_id, items: dto.items, notes: dto.notes });
   }
 }
+
+  // ═══════════════════════════════════════════════════
+  // VENDOR-PRODUCT LINKING
+  // ═══════════════════════════════════════════════════
+  async listVendorProducts(tenantId: string, vendorId: string) {
+    const rows = await this.db.query(
+      `SELECT vp.*, p.name as product_name, p.sku as product_sku, p.base_price,
+        p.cost_price, c.name as category_name,
+        (SELECT COALESCE(SUM(sl.qty_on_hand),0)::int FROM inventory.stock_levels sl WHERE sl.product_id = p.id) as stock
+       FROM purchasing.vendor_products vp
+       JOIN catalog.products p ON p.id = vp.product_id
+       LEFT JOIN catalog.categories c ON c.id = p.category_id
+       WHERE vp.vendor_id = $1 AND vp.tenant_id = $2
+       ORDER BY p.name ASC`,
+      [vendorId, tenantId]
+    );
+    return rows.rows;
+  }
+
+  async linkProduct(tenantId: string, vendorId: string, dto: any) {
+    // If marking as preferred, unset other preferred for same product
+    if (dto.is_preferred) {
+      await this.db.query(
+        `UPDATE purchasing.vendor_products SET is_preferred = false
+         WHERE tenant_id = $1 AND product_id = $2 AND vendor_id != $3`,
+        [tenantId, dto.product_id, vendorId]
+      );
+    }
+    return this.db.queryOne(
+      `INSERT INTO purchasing.vendor_products
+        (tenant_id, vendor_id, product_id, vendor_sku, vendor_price, lead_time_days, is_preferred, min_order_qty, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT (tenant_id, vendor_id, product_id) DO UPDATE SET
+        vendor_sku = EXCLUDED.vendor_sku, vendor_price = EXCLUDED.vendor_price,
+        lead_time_days = EXCLUDED.lead_time_days, is_preferred = EXCLUDED.is_preferred,
+        min_order_qty = EXCLUDED.min_order_qty, notes = EXCLUDED.notes, updated_at = NOW()
+       RETURNING *`,
+      [tenantId, vendorId, dto.product_id, dto.vendor_sku || null,
+       dto.vendor_price || 0, dto.lead_time_days || null,
+       dto.is_preferred || false, dto.min_order_qty || 1, dto.notes || null]
+    );
+  }
+
+  async unlinkProduct(tenantId: string, vendorId: string, productId: string) {
+    const r = await this.db.queryOne(
+      'DELETE FROM purchasing.vendor_products WHERE vendor_id = $1 AND product_id = $2 AND tenant_id = $3 RETURNING id',
+      [vendorId, productId, tenantId]
+    );
+    if (!r) throw new NotFoundException('Link not found');
+    return { deleted: true };
+  }
+
+  async getProductVendors(tenantId: string, productId: string) {
+    const rows = await this.db.query(
+      `SELECT vp.*, v.name as vendor_name, v.vendor_number, v.country, v.is_active,
+        v.contact_person, v.lead_time_days as vendor_lead_time
+       FROM purchasing.vendor_products vp
+       JOIN purchasing.vendors v ON v.id = vp.vendor_id
+       WHERE vp.product_id = $1 AND vp.tenant_id = $2
+       ORDER BY vp.is_preferred DESC, v.name ASC`,
+      [productId, tenantId]
+    );
+    return rows.rows;
+  }
+
+  async getVendorDetail(tenantId: string, id: string) {
+    const v = await this.db.queryOne(
+      `SELECT v.*,
+        (SELECT COUNT(*)::int FROM purchasing.purchase_orders WHERE vendor_id = v.id) as po_count,
+        (SELECT COALESCE(SUM(total),0)::bigint FROM purchasing.purchase_orders WHERE vendor_id = v.id) as total_po_value,
+        (SELECT COUNT(*)::int FROM purchasing.vendor_products WHERE vendor_id = v.id AND tenant_id = $2) as product_count
+       FROM purchasing.vendors v WHERE v.id = $1 AND v.tenant_id = $2`,
+      [id, tenantId]
+    );
+    if (!v) throw new NotFoundException('Vendor not found');
+    return v;
+  }
+}

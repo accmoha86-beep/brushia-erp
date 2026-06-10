@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ const emptyForm = { name: '', name_ar: '', contact_person: '', email: '', phone:
 
 export default function VendorsPage() {
   const { t } = useI18n();
+  const router = useRouter();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -146,7 +148,7 @@ export default function VendorsPage() {
             filtered.map((v) => {
               const ci = countryInfo[v.country] || { flag: '🌍', label: v.country };
               return (
-                <Tr key={v.id} onClick={() => setViewVendor(v)}>
+                <Tr key={v.id} onClick={() => router.push(`/vendors/${v.id}`)}>
                   <Td>
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 text-lg">
@@ -175,7 +177,7 @@ export default function VendorsPage() {
                   <Td><Badge color={v.is_active ? 'emerald' : 'gray'} dot>{v.is_active ? 'Active' : 'Inactive'}</Badge></Td>
                   <Td align="right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={(e) => { e.stopPropagation(); setViewVendor(v); }} className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition"><Eye className="h-3.5 w-3.5" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); router.push(`/vendors/${v.id}`); }} className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition"><Eye className="h-3.5 w-3.5" /></button>
                       <button onClick={(e) => { e.stopPropagation(); openEdit(v); }} className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 transition"><Pencil className="h-3.5 w-3.5" /></button>
                       <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(v); }} className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
