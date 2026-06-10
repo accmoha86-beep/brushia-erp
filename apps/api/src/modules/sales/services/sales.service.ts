@@ -79,6 +79,7 @@ export class SalesService implements ISalesService {
           line_total: lineTotal,
           unit_cost: (Number(product.current_cost) || 0),
           product_name: product.name,
+          product_name_ar: product.name_ar,
           product_sku: product.sku,
         });
       }
@@ -122,12 +123,12 @@ export class SalesService implements ISalesService {
         await client.query(
           `INSERT INTO sales.order_items (
             tenant_id, order_id, line_number, product_id, variant_id,
-            name, sku, quantity, unit_price, cost_price,
+            name, name_ar, sku, quantity, unit_price, cost_price,
             discount_amount, tax_amount, total
-          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
           [
             tenantId, order.id, i + 1, item.product_id, item.variant_id,
-            item.product_name, item.product_sku, item.quantity, item.unit_price, item.unit_cost,
+            item.product_name, item.product_name_ar || null, item.product_sku, item.quantity, item.unit_price, item.unit_cost,
             item.discount_amount,
             dto.is_taxable ? Math.round(item.line_total * (dto.tax_rate / 100)) : 0,
             item.line_total,

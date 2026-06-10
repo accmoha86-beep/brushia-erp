@@ -294,8 +294,8 @@ export class CatalogService implements ICatalogService {
     }
 
     if (query.search) {
-      sql += ` AND (p.name ILIKE $${idx} OR p.sku ILIKE $${idx} OR p.barcode = $${idx + 1})`;
-      countSql += ` AND (p.name ILIKE $${cidx} OR p.sku ILIKE $${cidx} OR p.barcode = $${cidx + 1})`;
+      sql += ` AND (p.name ILIKE $${idx} OR p.name_ar ILIKE $${idx} OR p.sku ILIKE $${idx} OR p.barcode = $${idx + 1})`;
+      countSql += ` AND (p.name ILIKE $${cidx} OR p.name_ar ILIKE $${cidx} OR p.sku ILIKE $${cidx} OR p.barcode = $${cidx + 1})`;
       params.push(`%${query.search}%`, query.search);
       countParams.push(`%${query.search}%`, query.search);
       idx += 2;
@@ -352,6 +352,7 @@ export class CatalogService implements ICatalogService {
          FROM catalog.product_variants v 
          WHERE v.product_id = $1 AND v.tenant_id = $2 
          ORDER BY v.sort_order ASC, v.name ASC`,
+      // Note: v.* includes name_ar if column exists
         [productId, tenantId],
       );
       product.variants = variants.rows;
@@ -382,7 +383,7 @@ export class CatalogService implements ICatalogService {
   async resolveBarcode(tenantId: string, barcode: string) {
     // Check products first
     let item = await this.db.queryOne(
-      `SELECT p.id, p.name, p.sku, p.selling_price, p.cost_price, p.tax_rate, p.is_taxable, p.image_url,
+      `SELECT p.id, p.name, p.name_ar, p.sku, p.selling_price, p.cost_price, p.tax_rate, p.is_taxable, p.image_url,
         'product' as item_type, NULL as variant_id
        FROM catalog.products p 
        WHERE p.barcode = $1 AND p.tenant_id = $2 AND p.is_active = true`,
@@ -392,7 +393,7 @@ export class CatalogService implements ICatalogService {
     if (!item) {
       // Check variants
       item = await this.db.queryOne(
-        `SELECT p.id as product_id, p.name as product_name, v.id, v.name, v.sku,
+        `SELECT p.id as product_id, p.name as product_name, p.name_ar as product_name_ar, v.id, v.name, v.name_ar, v.sku,
           COALESCE(v.selling_price, p.selling_price) as selling_price,
           COALESCE(v.cost_price, p.cost_price) as cost_price,
           p.tax_rate, p.is_taxable,
@@ -408,7 +409,7 @@ export class CatalogService implements ICatalogService {
     // Check additional barcodes table
     if (!item) {
       item = await this.db.queryOne(
-        `SELECT pb.product_id, pb.variant_id, p.name, p.sku, p.selling_price, p.cost_price, p.tax_rate, p.is_taxable, p.image_url,
+        `SELECT pb.product_id, pb.variant_id, p.name, p.name_ar, p.sku, p.selling_price, p.cost_price, p.tax_rate, p.is_taxable, p.image_url,
           CASE WHEN pb.variant_id IS NOT NULL THEN 'variant' ELSE 'product' END as item_type
          FROM catalog.product_barcodes pb
          INNER JOIN catalog.products p ON p.id = pb.product_id
@@ -546,7 +547,7 @@ export class CatalogService implements ICatalogService {
 
   async searchProducts(tenantId: string, searchTerm: string, limit = 20) {
     const result = await this.db.query(
-      `SELECT p.id, p.name, p.sku, p.barcode, p.selling_price, p.cost_price, p.image_url, p.product_type,
+      `SELECT p.id, p.name, p.name_ar, p.sku, p.barcode, p.selling_price, p.cost_price, p.image_url, p.product_type,
         c.name as category_name,
         COALESCE(
           (SELECT SUM(sl.qty_on_hand) FROM inventory.stock_levels sl WHERE sl.product_id = p.id AND sl.tenant_id = $1), 0
@@ -555,7 +556,7 @@ export class CatalogService implements ICatalogService {
        LEFT JOIN catalog.categories c ON c.id = p.category_id
        WHERE p.tenant_id = $1 AND p.is_active = true AND p.parent_id IS NULL
          AND (
-           p.name ILIKE $2 OR p.sku ILIKE $2 OR p.barcode = $3
+           p.name ILIKE $2 OR p.name_ar ILIKE $2 OR p.sku ILIKE $2 OR p.barcode = $3
            OR p.search_vector @@ plainto_tsquery('english', $3)
          )
        ORDER BY 

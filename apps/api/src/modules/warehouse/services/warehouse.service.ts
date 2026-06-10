@@ -67,7 +67,7 @@ export class WarehouseService {
 
   async getStock(tenantId: string, warehouseId: string) {
     const result = await this.db.query(`
-      SELECT sl.*, p.name as product_name, p.sku
+      SELECT sl.*, p.name as product_name, p.name_ar as product_name_ar, p.sku
       FROM inventory.stock_levels sl
       JOIN catalog.products p ON p.id = sl.product_id
       WHERE sl.warehouse_id = $1 AND sl.tenant_id = $2
@@ -78,7 +78,7 @@ export class WarehouseService {
 
   async getMovements(tenantId: string, warehouseId: string) {
     const result = await this.db.query(`
-      SELECT sm.*, p.name as product_name, p.sku
+      SELECT sm.*, p.name as product_name, p.name_ar as product_name_ar, p.sku
       FROM inventory.stock_movements sm
       JOIN catalog.products p ON p.id = sm.product_id
       WHERE sm.warehouse_id = $1 AND sm.tenant_id = $2
