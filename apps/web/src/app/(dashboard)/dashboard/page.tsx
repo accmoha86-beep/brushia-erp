@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import Link from 'next/link';
 import { formatEGP, cn } from '@/lib/utils';
 import {
@@ -432,7 +433,7 @@ export default function DashboardPage() {
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {data.lowStock.slice(0, 8).map((item: any, idx: number) => (
                     <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 text-xs">
-                      <span className="font-medium text-gray-700 truncate flex-1">{item.product_name || item.name || 'Product'}</span>
+                      <span className="font-medium text-gray-700 truncate flex-1">{item.product_name_ar && locale === 'ar' ? item.product_name_ar : (item.product_name || item.name || 'Product')}</span>
                       <span className={cn('font-bold ml-2', Number(item.qty_on_hand) <= 10 ? 'text-red-600' : 'text-amber-600')}>
                         {item.qty_on_hand} {t('common.units')}
                       </span>

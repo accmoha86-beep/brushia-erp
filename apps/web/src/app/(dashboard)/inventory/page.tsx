@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import { exportToCSV } from '@/lib/export-data';
@@ -21,7 +22,7 @@ interface StockItem {
 }
 
 export default function InventoryPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -128,7 +129,7 @@ export default function InventoryPage() {
                   <Td>
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 text-sm">📦</div>
-                      <span className="font-semibold text-gray-900 line-clamp-1">{s.product_name || '—'}</span>
+                      <span className="font-semibold text-gray-900 line-clamp-1">{s.product_name_ar && locale === 'ar' ? s.product_name_ar : (s.product_name || '—')}</span>
                     </div>
                   </Td>
                   <Td><span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{s.sku || '—'}</span></Td>

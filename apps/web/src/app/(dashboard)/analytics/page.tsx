@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { formatEGP, cn } from '@/lib/utils';
 import {
   BarChart3, TrendingUp, PieChart as PieIcon, Calendar, RefreshCw,
@@ -126,7 +127,7 @@ export default function AnalyticsPage() {
         return sum + Number(sl?.qty_on_hand ?? 0);
       }, 0);
       return {
-        name: c.name,
+        name: localizedName(c, locale),
         products: catProducts.length,
         stock: catStock,
         value: catProducts.reduce((s: number, p: any) => s + Number(p.base_price || 0) / 100, 0),
@@ -140,7 +141,7 @@ export default function AnalyticsPage() {
       const price = Number(p.base_price || 0) / 100;
       const cost = Number(p.cost_price || 0) / 100;
       return {
-        name: p.name?.substring(0, 25) || 'Unknown',
+        name: localizedName(p, locale)?.substring(0, 25) || 'Unknown',
         stock: qty,
         value: Math.round(qty * price),
         margin: price > 0 ? Math.round(((price - cost) / price) * 100) : 0,

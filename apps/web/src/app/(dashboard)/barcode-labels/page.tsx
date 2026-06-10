@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import {
@@ -77,12 +78,12 @@ export default function BarcodeLabelsPage() {
   const filtered = products.filter(p => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q);
+    return p.name.toLowerCase().includes(q) || (p.name_ar || '').toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q);
   });
 
   const addItem = (p: Product, variant?: any) => {
     const sku = variant?.sku || p.sku || 'P-' + p.id.slice(0, 6);
-    const name = variant?.name ? p.name + ' - ' + variant.name : p.name;
+    const name = variant ? localizedName(p, locale) + ' - ' + localizedName(variant, locale) : localizedName(p, locale);
     const price = variant?.price ?? p.base_price;
     setLabelItems(prev => {
       const idx = prev.findIndex(i => i.sku === sku);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { api } from '@/lib/api-client';
 import { formatEGP, cn } from '@/lib/utils';
 import {
@@ -163,7 +164,7 @@ function ProductCostsTab({
       const q = search.toLowerCase();
       list = list.filter(
         (r) =>
-          r.name?.toLowerCase().includes(q) ||
+          (r.name?.toLowerCase().includes(q) || r.name_ar?.toLowerCase().includes(q)) ||
           r.sku?.toLowerCase().includes(q)
       );
     }
@@ -282,7 +283,7 @@ function ProductCostsTab({
                   key={r.id}
                   className="border-b border-gray-800/50 hover:bg-gray-800/40 transition-colors"
                 >
-                  <td className="px-4 py-3 font-medium text-white">{r.name}</td>
+                  <td className="px-4 py-3 font-medium text-white">{localizedName(r, locale)}</td>
                   <td className="px-4 py-3 text-gray-400 font-mono text-xs">{r.sku}</td>
                   <td className="px-4 py-3 text-right text-white">{formatEGP(r.basePrice)}</td>
                   <td className="px-4 py-3 text-right text-gray-400">
@@ -322,7 +323,7 @@ function ProductCostsTab({
 // ─── Tab 2: Purchase Order Costs ─────────────────────────────────────────────
 
 function PurchaseOrderCostsTab({ orders }: { orders: PurchaseOrder[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<'date' | 'landed' | 'per_unit'>('date');
@@ -683,13 +684,13 @@ function CostAnalysisTab({
           icon={TrendingUp}
           label="Best Margin"
           value={top5[0] ? `${top5[0].marginPct.toFixed(1)}%` : '—'}
-          sub={top5[0]?.name ?? '—'}
+          sub={top5[0] ? localizedName(top5[0], locale) : '—'}
         />
         <StatCard
           icon={TrendingDown}
           label="Worst Margin"
           value={bottom5[0] ? `${bottom5[0].marginPct.toFixed(1)}%` : '—'}
-          sub={bottom5[0]?.name ?? '—'}
+          sub={bottom5[0] ? localizedName(bottom5[0], locale) : '—'}
         />
       </div>
 

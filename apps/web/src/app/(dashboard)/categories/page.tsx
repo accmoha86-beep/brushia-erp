@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { FolderTree, RefreshCw, Plus, X, Package, Trash2, Pencil, GripVertical, ToggleLeft, ToggleRight } from 'lucide-react';
@@ -120,8 +121,8 @@ export default function CategoriesPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-gray-900">{cat.name}</p>
-                {cat.name_ar && <span className="text-sm text-gray-400 rtl">{cat.name_ar}</span>}
+                <p className="font-semibold text-gray-900">{localizedName(cat, locale)}</p>
+                {(locale === 'ar' ? cat.name : cat.name_ar) && <span className="text-sm text-gray-400" dir={locale === 'ar' ? 'ltr' : 'rtl'}>{locale === 'ar' ? cat.name : cat.name_ar}</span>}
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
                 <span className="font-mono">/{cat.slug}</span>
@@ -199,7 +200,7 @@ export default function CategoriesPage() {
                 <div className="absolute -top-3 -right-3 w-10 h-10 bg-white/10 rounded-full" />
                 <span className="text-lg">{emoji}</span>
                 <div>
-                  <p className="text-white font-semibold text-xs leading-tight">{cat.name}</p>
+                  <p className="text-white font-semibold text-xs leading-tight">{localizedName(cat, locale)}</p>
                   <p className="text-white/60 text-[10px]">{count} items</p>
                 </div>
               </div>

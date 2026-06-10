@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { Plus, X, Calendar, Percent, CircleDollarSign, Copy, Tag, Search, Edit2, Trash2, Check, Clock, Ban, Zap, Gift, BarChart3 } from 'lucide-react';
@@ -64,7 +65,7 @@ export default function PromotionsPage() {
   const copyCode = (code: string) => { navigator.clipboard.writeText(code); setCopied(code); setTimeout(() => setCopied(''), 2000); };
 
   const filtered = promotions.filter(p => {
-    if (search && !`${p.name} ${p.code}`.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !`${p.name} ${p.name_ar || ''} ${p.code}`.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
     return true;
   });
