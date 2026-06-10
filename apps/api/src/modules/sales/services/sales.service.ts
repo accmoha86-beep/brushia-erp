@@ -427,7 +427,7 @@ export class SalesService implements ISalesService {
 
   async getOrder(tenantId: string, orderId: string) {
     const order = await this.db.queryOne(
-      `SELECT o.*, c.name as customer_name, c.phone as customer_phone,
+      `SELECT o.*, COALESCE(c.name, CONCAT(c.first_name, ' ', COALESCE(c.last_name, ''))) as customer_name, c.phone as customer_phone,
         w.name as warehouse_name, u.display_name as created_by_name,
         sp.name as salesperson_name
        FROM sales.sales_orders o
@@ -457,11 +457,11 @@ export class SalesService implements ISalesService {
 
   async listOrders(tenantId: string, query: TOrderQuery) {
     const page = parseInt(query.page);
-    const limit = Math.min(parseInt(query.limit), 100);
+    const limit = Math.min(parseInt(query.limit), 500);
     const offset = (page - 1) * limit;
 
     let sql = `
-      SELECT o.*, c.name as customer_name, w.name as warehouse_name,
+      SELECT o.*, COALESCE(c.name, CONCAT(c.first_name, ' ', COALESCE(c.last_name, ''))) as customer_name, w.name as warehouse_name,
         (SELECT COUNT(*) FROM sales.order_items oi WHERE oi.order_id = o.id) as item_count
       FROM sales.sales_orders o
       LEFT JOIN sales.customers c ON c.id = o.customer_id
@@ -495,7 +495,7 @@ export class SalesService implements ISalesService {
       params.push(query.date_to);
     }
     if (query.search) {
-      sql += ` AND (o.order_number ILIKE $${idx} OR c.name ILIKE $${idx})`;
+      sql += ` AND (o.order_number ILIKE $${idx} OR c.name ILIKE $${idx} OR c.first_name ILIKE $${idx})`;
       params.push(`%${query.search}%`);
       idx++;
     }
