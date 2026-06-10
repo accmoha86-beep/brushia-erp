@@ -179,7 +179,7 @@ export function printA4Invoice(data: InvoiceData) {
     </table>
   </div>
 
-  ${data.notes ? `<div style="margin-top:20px;padding:12px;background:#fffbeb;border-radius:8px;border-right:4px solid #f59e0b"><p style="color:#92400e;font-size:12px"><strong>ملاحظات:</strong> ${data.notes}</p></div>` : ''}
+  ${data.notes && data.notes !== "Imported from Excel sheet" ? `<div style="margin-top:20px;padding:12px;background:#fffbeb;border-radius:8px;border-right:4px solid #f59e0b"><p style="color:#92400e;font-size:12px"><strong>ملاحظات:</strong> ${data.notes}</p></div>` : ''}
 
   <div style="margin-top:40px;padding-top:20px;border-top:1px solid #eee;text-align:center">
     <p style="color:${color};font-weight:600;font-size:14px">${footer}</p>

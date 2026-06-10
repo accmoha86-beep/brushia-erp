@@ -140,7 +140,7 @@ export default function OrdersPage() {
     items: orderItems.map(i => ({ name: i.name, sku: i.sku, quantity: Number(i.quantity), unit_price: safeNum(i.unit_price), total: safeNum(i.total) })),
     subtotal: safeNum(order.subtotal), discount: safeNum(order.discount_amount), tax: safeNum(order.tax_amount),
     shipping: safeNum(order.shipping_amount), total: safeNum(order.grand_total || order.total),
-    paid: safeNum(order.paid_amount), payment_method: order.payment_method, channel: order.channel, notes: order.notes,
+    paid: safeNum(order.paid_amount), payment_method: order.payment_method, channel: order.channel, notes: order.notes === 'Imported from Excel sheet' ? '' : (order.notes || ''),
   });
 
   const customerAddr = selectedOrder ? buildCustomerAddress(selectedOrder) : '';
