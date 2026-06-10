@@ -449,7 +449,6 @@ export class PurchasingService {
   async receivePO(tenantId: string, userId: string, id: string, dto: any) {
     return this.createGRN(tenantId, userId, { purchase_order_id: id, warehouse_id: dto.warehouse_id, items: dto.items, notes: dto.notes });
   }
-}
 
   // ═══════════════════════════════════════════════════
   // VENDOR-PRODUCT LINKING
