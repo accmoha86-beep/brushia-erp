@@ -55,7 +55,22 @@ const channelEmoji: Record<string, string> = { pos: '🏪', online: '🌐', what
 
 function safeNum(v: any) { return isNaN(Number(v)) ? 0 : Number(v); }
 
+function parseShippingAddr(addr: any): { address?: string; city?: string; governorate?: string; phone?: string } | null {
+  if (!addr) return null;
+  if (typeof addr === 'string') { try { return JSON.parse(addr); } catch { return { address: addr }; } }
+  if (typeof addr === 'object') return addr;
+  return null;
+}
+
 function buildCustomerAddress(order: Order): string {
+  // Use shipping_address JSONB first (has full address), then customer fields
+  const ship = parseShippingAddr(order.shipping_address);
+  if (ship?.address) {
+    const parts = [ship.address];
+    if (ship.city) parts.push(ship.city);
+    if (ship.governorate && ship.governorate !== ship.city) parts.push(ship.governorate);
+    return parts.join('، ');
+  }
   const parts: string[] = [];
   if (order.customer_address) parts.push(order.customer_address);
   if (order.customer_city) parts.push(order.customer_city);
@@ -277,8 +292,8 @@ export default function OrdersPage() {
                   {selectedOrder.customer_name && (
                     <div><span className="text-gray-400 text-xs">Name</span><p className="font-medium text-gray-800">{selectedOrder.customer_name}</p></div>
                   )}
-                  {selectedOrder.customer_phone && (
-                    <div><span className="text-gray-400 text-xs">Phone</span><p className="font-medium text-gray-800">{selectedOrder.customer_phone}</p></div>
+                  {(selectedOrder.customer_phone || parseShippingAddr(selectedOrder.shipping_address)?.phone) && (
+                    <div><span className="text-gray-400 text-xs">Phone</span><p className="font-medium text-gray-800">{selectedOrder.customer_phone || parseShippingAddr(selectedOrder.shipping_address)?.phone}</p></div>
                   )}
                   {selectedOrder.customer_email && (
                     <div><span className="text-gray-400 text-xs">Email</span><p className="font-medium text-gray-800">{selectedOrder.customer_email}</p></div>
@@ -286,11 +301,7 @@ export default function OrdersPage() {
                   {customerAddr && (
                     <div><span className="text-gray-400 text-xs">Address</span><p className="font-medium text-gray-800">📍 {customerAddr}</p></div>
                   )}
-                  {selectedOrder.shipping_address && (
-                    <div className="md:col-span-2"><span className="text-gray-400 text-xs">Shipping Address</span>
-                      <p className="font-medium text-gray-800">🚚 {typeof selectedOrder.shipping_address === 'object' ? JSON.stringify(selectedOrder.shipping_address) : selectedOrder.shipping_address}</p>
-                    </div>
-                  )}
+
                 </div>
               </div>
             )}

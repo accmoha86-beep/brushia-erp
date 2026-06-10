@@ -381,7 +381,7 @@ export class SalesService implements ISalesService {
   async getOrder(tenantId: string, orderId: string) {
     const order = await this.db.queryOne(
       `SELECT o.*, COALESCE(c.name, CONCAT(c.first_name, ' ', COALESCE(c.last_name, ''))) as customer_name, c.phone as customer_phone,
-        c.email as customer_email, c.address as customer_address, c.city as customer_city, 
+        c.email as customer_email, c.city as customer_city, 
         c.governorate as customer_governorate, o.shipping_address,
         w.name as warehouse_name, u.display_name as created_by_name,
         CONCAT(sp.first_name, ' ', COALESCE(sp.last_name, '')) as salesperson_name
