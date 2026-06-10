@@ -23,7 +23,7 @@ export class HealthController {
   @ApiOperation({ summary: 'Liveness probe' })
   async check(): Promise<HealthCheckResult> {
     return this.health.check([
-      () => Promise.resolve({ api: { status: 'up' } }),
+      () => Promise.resolve({ api: { status: 'up', build: '030-fix-v2', ts: new Date().toISOString() } }),
     ]);
   }
 
