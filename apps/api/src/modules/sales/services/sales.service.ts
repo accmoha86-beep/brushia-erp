@@ -7,14 +7,6 @@ import { OutboxService } from '../../outbox/outbox.service';
 import { TCreateSalesOrder, TCancelOrder, TOrderQuery } from '../dto/sales.dto';
 import { ISalesService } from '@brushia/shared';
 
-/**
- * SALES ENGINE
- * 
- * Orchestrates the complete sales workflow:
- * Order → Payment → Inventory Deduction → Accounting Entry → Audit → Events
- * 
- * All in a single database transaction.
- */
 @Injectable()
 export class SalesService implements ISalesService {
   private readonly logger = new Logger(SalesService.name);
@@ -27,15 +19,8 @@ export class SalesService implements ISalesService {
     private readonly outbox: OutboxService,
   ) {}
 
-  /**
-   * Create a complete sales order.
-   * 
-   * This is the MAIN entry point for all sales (POS, web, WhatsApp, etc.)
-   * Everything happens in one transaction — atomicity guaranteed.
-   */
   async createOrder(tenantId: string, userId: string, dto: TCreateSalesOrder) {
     return this.db.transaction(async (client) => {
-      // Safety: ensure numeric defaults for optional fields
       dto.order_discount_amount = dto.order_discount_amount ?? 0;
       dto.order_discount_percentage = dto.order_discount_percentage ?? 0;
       dto.shipping_amount = dto.shipping_amount ?? 0;
@@ -46,16 +31,13 @@ export class SalesService implements ISalesService {
         item.discount_amount = item.discount_amount ?? 0;
         item.discount_percentage = item.discount_percentage ?? 0;
       });
-      // Resolve warehouse_id from either warehouse_id or location_id in the DTO
       const warehouseId = (dto as any).warehouse_id || dto.location_id;
-      // ─── 1. Calculate line items ─────────────────────
       let subtotal = 0;
       let totalDiscount = 0;
       let totalCostOfGoods = 0;
       const orderItems: any[] = [];
 
       for (const item of dto.items) {
-        // Get product info + current cost
         const product = await client.query(
           `SELECT p.*, COALESCE(
             (SELECT sl.weighted_avg_cost FROM inventory.stock_levels sl 
@@ -68,7 +50,6 @@ export class SalesService implements ISalesService {
 
         if (!product) throw new NotFoundException(`Product ${item.product_id} not found`);
 
-        // Check price list override for wholesale
         let unitPrice = item.unit_price;
         if (dto.price_list_id) {
           const plPrice = await client.query(
@@ -79,7 +60,6 @@ export class SalesService implements ISalesService {
           if (plPrice) unitPrice = parseInt(plPrice.price);
         }
 
-        // Calculate line totals
         const lineSubtotal = unitPrice * item.quantity;
         const itemDiscount = item.discount_amount > 0 
           ? item.discount_amount 
@@ -103,32 +83,24 @@ export class SalesService implements ISalesService {
         });
       }
 
-      // ─── 2. Apply order-level discounts ──────────────
       let orderDiscount = (dto.order_discount_amount || 0);
       if (dto.order_discount_percentage > 0) {
         orderDiscount = Math.round(subtotal * (dto.order_discount_percentage / 100));
       }
       totalDiscount += orderDiscount;
 
-      // ─── 3. Calculate tax ────────────────────────────
       const taxableAmount = subtotal - totalDiscount;
       const taxAmount = dto.is_taxable ? Math.round(taxableAmount * (dto.tax_rate / 100)) : 0;
-
-      // ─── 4. Calculate total ──────────────────────────
       const grandTotal = taxableAmount + taxAmount + dto.shipping_amount;
 
-      // Apply loyalty points discount
       let loyaltyDiscount = 0;
       if (dto.loyalty_points_used > 0 && dto.customer_id) {
-        // 1 point = 1 piaster (configurable)
         loyaltyDiscount = dto.loyalty_points_used;
       }
       const finalTotal = grandTotal - loyaltyDiscount;
 
-      // ─── 5. Generate order number ────────────────────
       const orderNumber = await this.generateOrderNumber(client, tenantId, dto.source);
 
-      // ─── 6. Create order ─────────────────────────────
       const order = await client.query(
         `INSERT INTO sales.sales_orders (
           tenant_id, order_number, customer_id, warehouse_id, source, status,
@@ -145,7 +117,6 @@ export class SalesService implements ISalesService {
         ],
       ).then(r => r.rows[0]);
 
-      // ─── 7. Create order items ───────────────────────
       for (let i = 0; i < orderItems.length; i++) {
         const item = orderItems[i];
         await client.query(
@@ -164,7 +135,6 @@ export class SalesService implements ISalesService {
         );
       }
 
-      // ─── 8. Record payments ──────────────────────────
       if (dto.payment_method === 'split' && dto.payments) {
         for (const payment of dto.payments) {
           const splitPayNum = await this.generatePaymentNumber(client, tenantId);
@@ -185,12 +155,10 @@ export class SalesService implements ISalesService {
         );
       }
 
-      // ─── 9. Deduct inventory ─────────────────────────
       for (const item of orderItems) {
         const lockKey = this.computeLockKey(item.product_id, warehouseId);
         await client.query(`SELECT pg_advisory_xact_lock($1)`, [lockKey]);
 
-        // Get current stock
         const stockLevel = await client.query(
           `SELECT * FROM inventory.stock_levels
            WHERE product_id = $1 AND warehouse_id = $2 AND tenant_id = $3
@@ -208,7 +176,6 @@ export class SalesService implements ISalesService {
           );
         }
 
-        // Record movement
         await client.query(
           `INSERT INTO inventory.stock_movements (
             tenant_id, product_id, variant_id, warehouse_id,
@@ -224,7 +191,6 @@ export class SalesService implements ISalesService {
           ],
         );
 
-        // Update stock level
         await client.query(
           `UPDATE inventory.stock_levels SET qty_on_hand = $3, updated_at = NOW()
            WHERE product_id = $1 AND warehouse_id = $4 AND tenant_id = $5
@@ -233,7 +199,6 @@ export class SalesService implements ISalesService {
         );
       }
 
-      // ─── 10. Post accounting entry (non-blocking — sale succeeds even if accounting fails) ───
       try {
         await this.accounting.postSaleEntry(tenantId, userId, {
           orderId: order.id,
@@ -247,7 +212,6 @@ export class SalesService implements ISalesService {
         console.error('[Sales] Accounting entry failed (non-blocking):', acctErr?.message);
       }
 
-      // ─── 11. Update customer stats ───────────────────
       if (dto.customer_id) {
         await client.query(
           `UPDATE sales.customers SET 
@@ -259,8 +223,7 @@ export class SalesService implements ISalesService {
           [dto.customer_id, tenantId, finalTotal],
         );
 
-        // Award loyalty points (1 point per EGP spent)
-        const pointsEarned = Math.floor(finalTotal / 100); // 1 point per 1 EGP
+        const pointsEarned = Math.floor(finalTotal / 100);
         if (pointsEarned > 0) {
           await client.query(
             `UPDATE sales.customers SET loyalty_points = loyalty_points + $3, updated_at = NOW()
@@ -269,7 +232,6 @@ export class SalesService implements ISalesService {
           );
         }
 
-        // Deduct loyalty points if used
         if (dto.loyalty_points_used > 0) {
           await client.query(
             `UPDATE sales.customers SET loyalty_points = loyalty_points - $3, updated_at = NOW()
@@ -279,7 +241,6 @@ export class SalesService implements ISalesService {
         }
       }
 
-      // ─── 12. Write outbox event ──────────────────────
       await this.outbox.write(client, {
         tenant_id: tenantId,
         event_type: 'sales.order_created',
@@ -295,7 +256,6 @@ export class SalesService implements ISalesService {
         },
       });
 
-      // ─── 13. Audit log ──────────────────────────────
       await this.audit.logWithinTransaction(client, {
         tenantId, userId,
         action: 'sales_order.created',
@@ -332,20 +292,17 @@ export class SalesService implements ISalesService {
         throw new BadRequestException(`Order is already ${order.status}`);
       }
 
-      // Get order items for restocking
       const items = await client.query(
         `SELECT * FROM sales.order_items WHERE order_id = $1 AND tenant_id = $2`,
         [orderId, tenantId],
       );
 
-      // Cancel the order
       await client.query(
         `UPDATE sales.sales_orders SET status = 'cancelled', cancel_reason = $3, cancelled_at = NOW(), updated_at = NOW()
          WHERE id = $1 AND tenant_id = $2`,
         [orderId, tenantId, dto.reason],
       );
 
-      // Restock if requested
       if (dto.restock) {
         for (const item of items.rows) {
           const lockKey = this.computeLockKey(item.product_id, order.warehouse_id);
@@ -386,8 +343,6 @@ export class SalesService implements ISalesService {
         }
       }
 
-      // Void the journal entry
-      // Find the JE for this order
       const je = await client.query(
         `SELECT id FROM accounting.journal_entries 
          WHERE reference_type = 'sales_order' AND reference_id = $1 AND tenant_id = $2 AND status = 'posted'`,
@@ -398,7 +353,6 @@ export class SalesService implements ISalesService {
         await this.accounting.voidJournalEntry(tenantId, userId, je.id, `Order cancelled: ${dto.reason}`);
       }
 
-      // Restore customer stats
       if (order.customer_id) {
         await client.query(
           `UPDATE sales.customers SET 
@@ -410,7 +364,6 @@ export class SalesService implements ISalesService {
         );
       }
 
-      // Outbox
       await this.outbox.write(client, {
         tenant_id: tenantId,
         event_type: 'sales.order_cancelled',
@@ -429,7 +382,7 @@ export class SalesService implements ISalesService {
     const order = await this.db.queryOne(
       `SELECT o.*, COALESCE(c.name, CONCAT(c.first_name, ' ', COALESCE(c.last_name, ''))) as customer_name, c.phone as customer_phone,
         w.name as warehouse_name, u.display_name as created_by_name,
-        sp.name as salesperson_name
+        CONCAT(sp.first_name, ' ', COALESCE(sp.last_name, '')) as salesperson_name
        FROM sales.sales_orders o
        LEFT JOIN sales.customers c ON c.id = o.customer_id
        LEFT JOIN inventory.warehouses w ON w.id = o.warehouse_id
@@ -524,10 +477,6 @@ export class SalesService implements ISalesService {
     return result.rows[0];
   }
 
-  // ═══════════════════════════════════════════════════════
-  // HELPERS
-  // ═══════════════════════════════════════════════════════
-
   private async generateOrderNumber(client: any, tenantId: string, source: string): Promise<string> {
     const prefix = source === 'pos' ? 'POS' : source === 'wholesale' ? 'WS' : 'SO';
     const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
@@ -542,7 +491,6 @@ export class SalesService implements ISalesService {
     const num = String(result.rows[0].next_num).padStart(4, '0');
     return `${prefix}-${today}-${num}`;
   }
-
 
   private async generatePaymentNumber(client: any, tenantId: string): Promise<string> {
     const result = await client.query(
