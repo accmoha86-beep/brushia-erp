@@ -105,4 +105,12 @@ export class SalesController {
     }
   }
 
+
+  @Post('admin/clear-import-notes')
+  @RequirePermissions('sales:create')
+  @ApiOperation({ summary: 'Clear import notes from orders' })
+  async clearImportNotes(@CurrentUser() user: any) {
+    return this.salesService.clearImportNotes(user.tenantId);
+  }
+
 }

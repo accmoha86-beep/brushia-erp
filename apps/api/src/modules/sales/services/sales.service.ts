@@ -511,4 +511,13 @@ export class SalesService implements ISalesService {
     }
     return Math.abs(hash);
   }
+
+  async clearImportNotes(tenantId: string): Promise<{ cleared: number }> {
+    const result = await this.db.query(
+      `UPDATE sales.sales_orders SET notes = NULL WHERE tenant_id = $1 AND notes = 'Imported from Excel sheet'`,
+      [tenantId],
+    );
+    return { cleared: result.rowCount || 0 };
+  }
+
 }
