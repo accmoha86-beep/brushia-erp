@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { api } from '@/lib/api-client';
 import { printThermalReceipt, printA4Invoice } from '@/lib/print-invoice';
 import { formatEGP, cn } from '@/lib/utils';
@@ -15,9 +16,9 @@ import {
 /* ─── types ─── */
 interface Register { id: string; name: string; location?: string }
 interface Session { id: string; register_id: string; register_name?: string; opening_cash: number; opened_at: string }
-interface Category { id: string; name: string; slug?: string; parent_id?: string | null }
-interface Variant { id: string; name: string; sku?: string; price?: number; color?: string; stock?: number }
-interface Product { id: string; name: string; base_price: number; category_id?: string; image_url?: string; variants?: Variant[]; stock?: number; sku?: string; barcode?: string }
+interface Category { id: string; name: string; name_ar?: string; slug?: string; parent_id?: string | null }
+interface Variant { id: string; name: string; name_ar?: string; sku?: string; price?: number; color?: string; stock?: number }
+interface Product { id: string; name: string; name_ar?: string; base_price: number; category_id?: string; image_url?: string; variants?: Variant[]; stock?: number; sku?: string; barcode?: string }
 interface CartItem { product: Product; variant?: Variant; quantity: number; unit_price: number; discount_amount?: number; discount_percentage?: number }
 interface Customer { id: string; name: string; phone?: string; email?: string; loyalty_points?: number }
 interface HeldOrder { id: string; customer_name?: string; items: any[]; notes?: string; created_at?: string }
@@ -379,7 +380,7 @@ export default function POSPage() {
     if (found) {
       addToCart(found.product, found.variant);
       playBeep(true);
-      setScanFeedback({ type: 'success', message: `✅ ${found.variant?.name || found.product.name} added to cart` });
+      setScanFeedback({ type: 'success', message: `✅ ${localizedName(found.variant || found.product, locale)} added to cart` });
     } else {
       playBeep(false);
       setScanFeedback({ type: 'error', message: `❌ Barcode "${barcode}" not found` });
@@ -473,7 +474,7 @@ export default function POSPage() {
     if (selectedCategory && p.category_id !== selectedCategory.id) return false;
     if (productSearch) {
       const q = productSearch.toLowerCase();
-      return p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q);
+      return p.name.toLowerCase().includes(q) || (p.name_ar || '').toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q);
     }
     return true;
   });
@@ -604,7 +605,7 @@ export default function POSPage() {
               receipt_number: receiptData.receipt_number || '',
               date: new Date().toLocaleDateString('en-EG', { year: 'numeric', month: 'short', day: 'numeric' }),
               customer_name: customer?.name,
-              items: (receiptData.items || cart).map((i: any) => ({ name: i.name || i.product?.name || 'Item', sku: i.sku, quantity: Number(i.quantity), unit_price: Number(i.unit_price), total: Number(i.unit_price) * Number(i.quantity) })),
+              items: (receiptData.items || cart).map((i: any) => ({ name: localizedName(i.product || i, locale) || i.name || 'Item', sku: i.sku, quantity: Number(i.quantity), unit_price: Number(i.unit_price), total: Number(i.unit_price) * Number(i.quantity) })),
               subtotal: subtotal, discount: discountAmount, tax: vatAmount, shipping: 0,
               total: receiptData.grand_total ?? grandTotal, paid: receiptData.grand_total ?? grandTotal, payment_method: payMethod,
             })} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2">
@@ -615,7 +616,7 @@ export default function POSPage() {
               receipt_number: receiptData.receipt_number || '',
               date: new Date().toLocaleDateString('en-EG', { year: 'numeric', month: 'long', day: 'numeric' }),
               customer_name: customer?.name,
-              items: (receiptData.items || cart).map((i: any) => ({ name: i.name || i.product?.name || 'Item', sku: i.sku, quantity: Number(i.quantity), unit_price: Number(i.unit_price), total: Number(i.unit_price) * Number(i.quantity) })),
+              items: (receiptData.items || cart).map((i: any) => ({ name: localizedName(i.product || i, locale) || i.name || 'Item', sku: i.sku, quantity: Number(i.quantity), unit_price: Number(i.unit_price), total: Number(i.unit_price) * Number(i.quantity) })),
               subtotal: subtotal, discount: discountAmount, tax: vatAmount, shipping: 0,
               total: receiptData.grand_total ?? grandTotal, paid: receiptData.grand_total ?? grandTotal, payment_method: payMethod,
             })} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2">
@@ -708,7 +709,7 @@ export default function POSPage() {
                       <button key={p.id} onClick={() => p.variants && p.variants.length > 0 ? setSelectedProduct(p) : addToCart(p)}
                         className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-left hover:border-rose-500/50 transition group">
                         {p.image_url && <img src={p.image_url} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />}
-                        <p className="text-white text-sm font-medium truncate">{p.name}</p>
+                        <p className="text-white text-sm font-medium truncate">{localizedName(p, locale)}</p>
                         <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(p.base_price)}</p>
                       </button>
                     ))}
@@ -732,7 +733,7 @@ export default function POSPage() {
                           <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-black/10 rounded-full" />
                           <span className="text-3xl relative z-10 drop-shadow-md">{emojiFor(cat.slug ?? cat.name)}</span>
                           <div className="relative z-10 mt-auto">
-                            <p className="text-white font-bold text-base leading-tight drop-shadow">{cat.name}</p>
+                            <p className="text-white font-bold text-base leading-tight drop-shadow">{localizedName(cat, locale)}</p>
                             <p className="text-white/70 text-xs mt-0.5">{count} product{count !== 1 ? 's' : ''}</p>
                           </div>
                         </button>
@@ -743,15 +744,15 @@ export default function POSPage() {
                   /* Level 3: variant selection */
                   <div>
                     <button onClick={() => setSelectedProduct(null)} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-4 transition">
-                      <ArrowLeft className="w-4 h-4" /> Back to {selectedCategory.name}
+                      <ArrowLeft className="w-4 h-4" /> Back to {localizedName(selectedCategory, locale)}
                     </button>
-                    <h3 className="text-white font-bold text-lg mb-4">{selectedProduct.name} — Choose variant</h3>
+                    <h3 className="text-white font-bold text-lg mb-4">{localizedName(selectedProduct, locale)} — Choose variant</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {(selectedProduct.variants ?? []).map(v => (
                         <button key={v.id} onClick={() => addToCart(selectedProduct, v)}
                           className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-left hover:border-rose-500/50 transition">
                           {v.color && <div className="w-8 h-8 rounded-full mb-2 border-2 border-gray-700" style={{ backgroundColor: v.color }} />}
-                          <p className="text-white text-sm font-medium">{v.name}</p>
+                          <p className="text-white text-sm font-medium">{localizedName(v, locale)}</p>
                           <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(v.price ?? selectedProduct.base_price)}</p>
                           {v.stock != null && <p className="text-gray-500 text-xs mt-0.5">{v.stock} in stock</p>}
                         </button>
@@ -764,13 +765,13 @@ export default function POSPage() {
                     <button onClick={() => { setSelectedCategory(null); setProductSearch(''); }} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-4 transition">
                       <ArrowLeft className="w-4 h-4" /> All Categories
                     </button>
-                    <h3 className="text-white font-bold text-lg mb-4">{emojiFor(selectedCategory.slug ?? selectedCategory.name)} {selectedCategory.name}</h3>
+                    <h3 className="text-white font-bold text-lg mb-4">{emojiFor(selectedCategory.slug ?? selectedCategory.name)} {localizedName(selectedCategory, locale)}</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {filteredProducts.map(p => (
                         <button key={p.id} onClick={() => p.variants && p.variants.length > 0 ? setSelectedProduct(p) : addToCart(p)}
                           className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-left hover:border-rose-500/50 transition group">
                           {p.image_url && <img src={p.image_url} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />}
-                          <p className="text-white text-sm font-medium truncate">{p.name}</p>
+                          <p className="text-white text-sm font-medium truncate">{localizedName(p, locale)}</p>
                           <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(p.base_price)}</p>
                           {p.variants && p.variants.length > 0 && (
                             <p className="text-gray-500 text-xs mt-0.5 flex items-center gap-1">{p.variants.length} variants <ChevronRight className="w-3 h-3" /></p>
@@ -939,8 +940,8 @@ export default function POSPage() {
             {cart.map((item, idx) => (
               <div key={idx} className="bg-gray-800/60 rounded-xl p-3 flex gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{item.product.name}</p>
-                  {item.variant && <p className="text-gray-500 text-xs">{item.variant.name}</p>}
+                  <p className="text-white text-sm font-medium truncate">{localizedName(item.product, locale)}</p>
+                  {item.variant && <p className="text-gray-500 text-xs">{localizedName(item.variant, locale)}</p>}
                   <p className="text-rose-400 text-sm font-semibold mt-1">{formatEGP(item.unit_price * item.quantity)}</p>
                 </div>
                 <div className="flex items-center gap-1.5">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { formatEGP, cn } from '@/lib/utils';
 import { api } from '@/lib/api-client';
 import { exportToCSV, exportToExcelXML } from '@/lib/export-data';
@@ -26,12 +27,12 @@ interface Product {
   variants?: Array<{ id: string; name: string; sku: string; color_code?: string; cost_override?: number; price_override?: number; stock?: number; }>;
 }
 
-interface Category { id: string; name: string; slug: string; product_count?: number; }
+interface Category { id: string; name: string; name_ar?: string; slug: string; product_count?: number; }
 
 const emptyForm = { name: '', name_ar: '', sku: '', description: '', category_id: '', base_price: '', cost_price: '', barcode: '', status: 'active' };
 
 export default function ProductsPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +101,7 @@ export default function ProductsPage() {
   };
 
   const filtered = products.filter(p => {
-    const matchSearch = `${p.name} ${p.sku} ${p.category_name || ''}`.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = `${p.name} ${p.name_ar || ''} ${p.sku} ${p.category_name || ''}`.toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCat === 'all' || p.category_id === filterCat;
     return matchSearch && matchCat;
   });
@@ -111,7 +112,7 @@ export default function ProductsPage() {
 
   const exportData = () => {
     const rows = filtered.map(p => ({
-      SKU: p.sku, Name: p.name, Category: p.category_name || '', 
+      SKU: p.sku, Name: p.name, 'Name (AR)': p.name_ar || '', Category: p.category_name || '', 
       Price: (Number(p.base_price) / 100).toFixed(2), Cost: (Number(p.cost_price) / 100).toFixed(2),
       Stock: p.total_stock || 0, Variants: p.variant_count || 0, Status: p.status,
     }));
@@ -153,7 +154,7 @@ export default function ProductsPage() {
           <FilterTabs
             tabs={[
               { key: 'all', label: t('common.all') || 'All', count: products.length },
-              ...categories.slice(0, 5).map(c => ({ key: c.id, label: c.name, count: c.product_count })),
+              ...categories.slice(0, 5).map(c => ({ key: c.id, label: localizedName(c, locale), count: c.product_count })),
             ]}
             active={filterCat} onChange={setFilterCat}
           />
@@ -198,8 +199,8 @@ export default function ProductsPage() {
                         💄
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900 line-clamp-1">{p.name}</p>
-                        {p.name_ar && <p className="text-xs text-gray-400" dir="rtl">{p.name_ar}</p>}
+                        <p className="font-semibold text-gray-900 line-clamp-1">{localizedName(p, locale)}</p>
+                        {(locale === 'ar' ? p.name : p.name_ar) && <p className="text-xs text-gray-400" dir={locale === 'ar' ? 'ltr' : 'rtl'}>{locale === 'ar' ? p.name : p.name_ar}</p>}
                       </div>
                     </div>
                   </Td>
@@ -269,7 +270,7 @@ export default function ProductsPage() {
       )}
 
       {/* View Detail Modal */}
-      <BloomModal open={!!viewProduct} onClose={() => setViewProduct(null)} title={viewProduct?.name || ''} subtitle={viewProduct?.sku} size="lg">
+      <BloomModal open={!!viewProduct} onClose={() => setViewProduct(null)} title={localizedName(viewProduct, locale)} subtitle={viewProduct?.sku} size="lg">
         {viewProduct && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -303,7 +304,7 @@ export default function ProductsPage() {
       {/* Create/Edit Modal */}
       <BloomModal open={showModal} onClose={() => setShowModal(false)}
         title={editProduct ? 'Edit Product' : 'Add New Product'}
-        subtitle={editProduct ? `Editing ${editProduct.name}` : 'Add a new product to your catalog'}
+        subtitle={editProduct ? `Editing ${localizedName(editProduct, locale)}` : 'Add a new product to your catalog'}
         footer={<><BtnSecondary onClick={() => setShowModal(false)}>Cancel</BtnSecondary><BtnPrimary onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</BtnPrimary></>}
       >
         <div className="space-y-4">
@@ -318,7 +319,7 @@ export default function ProductsPage() {
               <select value={form.category_id} onChange={(e) => setForm({...form, category_id: e.target.value})}
                 className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
                 <option value="">Select...</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {categories.map(c => <option key={c.id} value={c.id}>{localizedName(c, locale)}</option>)}
               </select>
             </div>
           </div>
@@ -342,7 +343,7 @@ export default function ProductsPage() {
       >
         <div className="text-center py-4">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100"><Trash2 className="h-7 w-7 text-red-600" /></div>
-          <p className="text-gray-600">Delete <strong>{deleteConfirm?.name}</strong>? This cannot be undone.</p>
+          <p className="text-gray-600">Delete <strong>{localizedName(deleteConfirm, locale)}</strong>? This cannot be undone.</p>
         </div>
       </BloomModal>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { localizedName } from '@/lib/localized-name';
 import { api } from '@/lib/api-client';
 import { formatEGP, formatDate, cn } from '@/lib/utils';
 import { exportToCSV, exportToExcelXML } from '@/lib/export-data';
@@ -79,7 +80,7 @@ function buildCustomerAddress(order: Order): string {
 }
 
 export default function OrdersPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -137,7 +138,7 @@ export default function OrdersPage() {
     customer_city: order.customer_city,
     customer_governorate: order.customer_governorate,
     shipping_address: order.shipping_address,
-    items: orderItems.map(i => ({ name: i.name, sku: i.sku, quantity: Number(i.quantity), unit_price: safeNum(i.unit_price), total: safeNum(i.total) })),
+    items: orderItems.map(i => ({ name: localizedName(i, locale), sku: i.sku, quantity: Number(i.quantity), unit_price: safeNum(i.unit_price), total: safeNum(i.total) })),
     subtotal: safeNum(order.subtotal), discount: safeNum(order.discount_amount), tax: safeNum(order.tax_amount),
     shipping: safeNum(order.shipping_amount), total: safeNum(order.grand_total || order.total),
     paid: safeNum(order.paid_amount), payment_method: order.payment_method, channel: order.channel, notes: order.notes === 'Imported from Excel sheet' ? '' : (order.notes || ''),
@@ -320,7 +321,7 @@ export default function OrdersPage() {
                     <tbody className="divide-y">
                       {orderItems.map((item) => (
                         <tr key={item.id}>
-                          <td className="px-4 py-2.5"><p className="font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-400 font-mono">{item.sku}</p></td>
+                          <td className="px-4 py-2.5"><p className="font-medium text-gray-900">{localizedName(item, locale)}</p><p className="text-xs text-gray-400 font-mono">{item.sku}</p></td>
                           <td className="px-4 py-2.5 text-right text-gray-700">{item.quantity}</td>
                           <td className="px-4 py-2.5 text-right text-gray-700">{formatEGP(safeNum(item.unit_price))}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-gray-900">{formatEGP(safeNum(item.total))}</td>
