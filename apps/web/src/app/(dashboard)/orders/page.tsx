@@ -15,7 +15,7 @@ import { EmptyState, TableSkeleton } from '@/components/ui/empty-state';
 import { Table, Thead, Th, Td, Tr } from '@/components/ui/table';
 import {
   ShoppingBag, Eye, Download, RefreshCw, Printer, Receipt, FileText,
-  CreditCard, Banknote, Hash, Clock, CheckCircle2, XCircle, Truck, Package,
+  CreditCard, Banknote, Hash, Clock, CheckCircle2, XCircle, Truck, Package, MapPin,
 } from 'lucide-react';
 
 interface Order {
@@ -24,6 +24,10 @@ interface Order {
   tax_amount: string; shipping_amount: string; total: string; grand_total: string;
   paid_amount: string; payment_method?: string; item_count?: string; created_at: string;
   currency: string; notes?: string;
+  // Address fields
+  customer_phone?: string; customer_email?: string;
+  customer_address?: string; customer_city?: string; customer_governorate?: string;
+  shipping_address?: string;
 }
 
 interface OrderItem {
@@ -51,6 +55,14 @@ const channelEmoji: Record<string, string> = { pos: '🏪', online: '🌐', what
 
 function safeNum(v: any) { return isNaN(Number(v)) ? 0 : Number(v); }
 
+function buildCustomerAddress(order: Order): string {
+  const parts: string[] = [];
+  if (order.customer_address) parts.push(order.customer_address);
+  if (order.customer_city) parts.push(order.customer_city);
+  if (order.customer_governorate && order.customer_governorate !== order.customer_city) parts.push(order.customer_governorate);
+  return parts.join('، ');
+}
+
 export default function OrdersPage() {
   const { t } = useI18n();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -72,11 +84,15 @@ export default function OrdersPage() {
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const viewOrder = async (order: Order) => {
-    setSelectedOrder(order);
     try {
       const res = await api.get<any>(`/sales/orders/${order.id}`);
+      // Merge detail data (with address) into order
+      setSelectedOrder({ ...order, ...res, items: undefined });
       setOrderItems(res?.items || []);
-    } catch { setOrderItems([]); }
+    } catch {
+      setSelectedOrder(order);
+      setOrderItems([]);
+    }
   };
 
   const filtered = orders.filter(o => {
@@ -99,11 +115,20 @@ export default function OrdersPage() {
 
   const buildInvoiceData = (order: Order) => ({
     order_number: order.order_number, date: new Date(order.created_at).toLocaleDateString('en-EG', { year:'numeric',month:'long',day:'numeric' }),
-    customer_name: order.customer_name, items: orderItems.map(i => ({ name: i.name, sku: i.sku, quantity: Number(i.quantity), unit_price: safeNum(i.unit_price), total: safeNum(i.total) })),
+    customer_name: order.customer_name,
+    customer_phone: order.customer_phone,
+    customer_email: order.customer_email,
+    customer_address: order.customer_address,
+    customer_city: order.customer_city,
+    customer_governorate: order.customer_governorate,
+    shipping_address: order.shipping_address,
+    items: orderItems.map(i => ({ name: i.name, sku: i.sku, quantity: Number(i.quantity), unit_price: safeNum(i.unit_price), total: safeNum(i.total) })),
     subtotal: safeNum(order.subtotal), discount: safeNum(order.discount_amount), tax: safeNum(order.tax_amount),
     shipping: safeNum(order.shipping_amount), total: safeNum(order.grand_total || order.total),
     paid: safeNum(order.paid_amount), payment_method: order.payment_method, channel: order.channel, notes: order.notes,
   });
+
+  const customerAddr = selectedOrder ? buildCustomerAddress(selectedOrder) : '';
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -126,7 +151,7 @@ export default function OrdersPage() {
       <StatCardGrid cols={4}>
         <StatCard label={t('orders.totalOrders') || 'Total Orders'} value={orders.length} icon={<ShoppingBag className="h-5 w-5" />} color="emerald" />
         <StatCard label={t('orders.revenue') || 'Revenue'} value={formatEGP(totalRevenue)} icon={<CreditCard className="h-5 w-5" />} color="blue" />
-        <StatCard label={t('orders.collected') || 'Collected'} value={formatEGP(totalPaid)} icon={<Banknote className="h-5 w-5" />} color="teal" />
+        <StatCard label={t('orders.collected') || 'Collected'} value={formatEGP(totalPaid)} icon={<Banknote className="h-5 w-5" />} color="amber" />
         <StatCard label={t('orders.avgOrder') || 'Avg. Order'} value={formatEGP(avgOrder)} icon={<Hash className="h-5 w-5" />} color="purple" />
       </StatCardGrid>
 
@@ -241,6 +266,34 @@ export default function OrdersPage() {
                 <p className="text-sm font-medium">{new Date(selectedOrder.created_at).toLocaleDateString('en-GB')}</p>
               </div>
             </div>
+
+            {/* Customer Info + Address */}
+            {(selectedOrder.customer_name || customerAddr) && (
+              <div className="rounded-xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white p-4">
+                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-emerald-600" /> Customer Details
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  {selectedOrder.customer_name && (
+                    <div><span className="text-gray-400 text-xs">Name</span><p className="font-medium text-gray-800">{selectedOrder.customer_name}</p></div>
+                  )}
+                  {selectedOrder.customer_phone && (
+                    <div><span className="text-gray-400 text-xs">Phone</span><p className="font-medium text-gray-800">{selectedOrder.customer_phone}</p></div>
+                  )}
+                  {selectedOrder.customer_email && (
+                    <div><span className="text-gray-400 text-xs">Email</span><p className="font-medium text-gray-800">{selectedOrder.customer_email}</p></div>
+                  )}
+                  {customerAddr && (
+                    <div><span className="text-gray-400 text-xs">Address</span><p className="font-medium text-gray-800">📍 {customerAddr}</p></div>
+                  )}
+                  {selectedOrder.shipping_address && (
+                    <div className="md:col-span-2"><span className="text-gray-400 text-xs">Shipping Address</span>
+                      <p className="font-medium text-gray-800">🚚 {typeof selectedOrder.shipping_address === 'object' ? JSON.stringify(selectedOrder.shipping_address) : selectedOrder.shipping_address}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {orderItems.length > 0 && (
               <div>

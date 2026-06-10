@@ -7,6 +7,10 @@ interface InvoiceData {
   customer_name?: string;
   customer_phone?: string;
   customer_email?: string;
+  customer_address?: string;
+  customer_city?: string;
+  customer_governorate?: string;
+  shipping_address?: string;
   items: { name: string; sku?: string; quantity: number; unit_price: number; total: number }[];
   subtotal: number;
   discount: number;
@@ -42,6 +46,14 @@ function getTenantBranding() {
   };
 }
 
+function buildAddressHTML(data: InvoiceData): string {
+  const parts: string[] = [];
+  if (data.customer_address) parts.push(data.customer_address);
+  if (data.customer_city) parts.push(data.customer_city);
+  if (data.customer_governorate && data.customer_governorate !== data.customer_city) parts.push(data.customer_governorate);
+  return parts.join('، ');
+}
+
 export function printA4Invoice(data: InvoiceData) {
   const w = window.open('', '_blank');
   if (!w) return;
@@ -54,6 +66,7 @@ export function printA4Invoice(data: InvoiceData) {
   const website = b.website || '';
   const header = b.invoiceHeader || `✨ ${companyName}`;
   const footer = b.invoiceFooter || `Thank you for shopping with ${companyName}! ✨`;
+  const customerAddress = buildAddressHTML(data);
 
   const itemRows = data.items.map(i => `
     <tr>
@@ -74,6 +87,14 @@ export function printA4Invoice(data: InvoiceData) {
 
   const shippingLine = data.shipping > 0 ? `
     <tr><td style="padding:4px 0;color:#666;font-size:13px">Shipping</td><td style="padding:4px 0;text-align:right;font-size:13px">EGP ${(data.shipping / 100).toFixed(2)}</td></tr>
+  ` : '';
+
+  // Shipping address section (if different from billing)
+  const shippingAddressHTML = data.shipping_address ? `
+  <div style="background:#fafafa;border-radius:10px;padding:16px;margin-bottom:24px">
+    <p style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Ship To</p>
+    <p style="color:#444;font-size:14px">${typeof data.shipping_address === 'object' ? JSON.stringify(data.shipping_address) : data.shipping_address}</p>
+  </div>
   ` : '';
 
   w.document.write(`<!DOCTYPE html><html><head><title>Invoice ${data.order_number}</title>
@@ -100,8 +121,8 @@ export function printA4Invoice(data: InvoiceData) {
     <div>
       <h1 style="font-size:32px;font-weight:800;color:${color};margin-bottom:4px">${header}</h1>
       <p style="color:#888;font-size:13px">${tagline}</p>
-      ${city ? `<p style="color:#888;font-size:12px;margin-top:8px">${city}, Egypt</p>` : ''}
-      ${email ? `<p style="color:#888;font-size:12px">${email}</p>` : ''}
+      ${city ? `<p style="color:#888;font-size:12px;margin-top:8px">📍 ${city}, Egypt</p>` : ''}
+      ${email ? `<p style="color:#888;font-size:12px">✉️ ${email}</p>` : ''}
     </div>
     <div style="text-align:right">
       <h2 style="font-size:28px;font-weight:700;color:#333;margin-bottom:8px">INVOICE</h2>
@@ -115,13 +136,22 @@ export function printA4Invoice(data: InvoiceData) {
     </div>
   </div>
 
-  <!-- Customer -->
+  <!-- Customer / Bill To -->
   ${data.customer_name ? `
-  <div style="background:#fafafa;border-radius:10px;padding:16px;margin-bottom:24px">
-    <p style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Bill To</p>
-    <p style="font-weight:600;font-size:16px">${data.customer_name}</p>
-    ${data.customer_phone ? `<p style="color:#666;font-size:13px">${data.customer_phone}</p>` : ''}
-    ${data.customer_email ? `<p style="color:#666;font-size:13px">${data.customer_email}</p>` : ''}
+  <div style="display:flex;gap:24px;margin-bottom:24px">
+    <div style="flex:1;background:#fafafa;border-radius:10px;padding:16px">
+      <p style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Bill To</p>
+      <p style="font-weight:600;font-size:16px">${data.customer_name}</p>
+      ${data.customer_phone ? `<p style="color:#666;font-size:13px;margin-top:4px">📞 ${data.customer_phone}</p>` : ''}
+      ${data.customer_email ? `<p style="color:#666;font-size:13px">✉️ ${data.customer_email}</p>` : ''}
+      ${customerAddress ? `<p style="color:#666;font-size:13px;margin-top:4px">📍 ${customerAddress}</p>` : ''}
+    </div>
+    ${data.shipping_address ? `
+    <div style="flex:1;background:#fafafa;border-radius:10px;padding:16px">
+      <p style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Ship To</p>
+      <p style="color:#444;font-size:14px">${typeof data.shipping_address === 'object' ? JSON.stringify(data.shipping_address) : data.shipping_address}</p>
+    </div>
+    ` : ''}
   </div>
   ` : ''}
 
@@ -172,6 +202,7 @@ export function printThermalReceipt(data: InvoiceData) {
   const city = b.city || '';
   const receiptFooter = b.receiptFooter || 'Thank you for shopping! ✨';
   const website = b.website || '';
+  const customerAddress = buildAddressHTML(data);
 
   const items = data.items.map(i => `
     <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px">
@@ -201,14 +232,17 @@ export function printThermalReceipt(data: InvoiceData) {
   <span>#${data.receipt_number || data.order_number}</span>
   <span>${data.date}</span>
 </div>
-${data.customer_name ? `<div style="font-size:11px">Customer: ${data.customer_name}</div>` : ''}
-${data.payment_method ? `<div style="font-size:11px">Payment: ${data.payment_method}</div>` : ''}
+${data.customer_name ? `<div style="font-size:11px"><b>Customer:</b> ${data.customer_name}</div>` : ''}
+${data.customer_phone ? `<div style="font-size:11px"><b>Phone:</b> ${data.customer_phone}</div>` : ''}
+${customerAddress ? `<div style="font-size:11px"><b>Address:</b> ${customerAddress}</div>` : ''}
+${data.payment_method ? `<div style="font-size:11px"><b>Payment:</b> ${data.payment_method}</div>` : ''}
 <div class="line"></div>
 ${items}
 <div class="line"></div>
 <div style="display:flex;justify-content:space-between;font-size:12px"><span>Subtotal</span><span>EGP ${(data.subtotal / 100).toFixed(2)}</span></div>
 ${data.discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px"><span>Discount</span><span>-EGP ${(data.discount / 100).toFixed(2)}</span></div>` : ''}
 ${data.tax > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px"><span>VAT 14%</span><span>EGP ${(data.tax / 100).toFixed(2)}</span></div>` : ''}
+${data.shipping > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px"><span>Shipping</span><span>EGP ${(data.shipping / 100).toFixed(2)}</span></div>` : ''}
 <div class="line"></div>
 <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:bold;padding:4px 0">
   <span>TOTAL</span><span>EGP ${(data.total / 100).toFixed(2)}</span>

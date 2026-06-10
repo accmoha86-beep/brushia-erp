@@ -58,10 +58,10 @@ export class CustomerService {
       [tenantId]
     );
     const result = await this.db.queryOne(
-      `INSERT INTO sales.customers (tenant_id, customer_number, first_name, last_name, email, phone, whatsapp, customer_type, company_name, city, governorate)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      `INSERT INTO sales.customers (tenant_id, customer_number, first_name, last_name, email, phone, whatsapp, customer_type, company_name, city, governorate, address)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
       [tenantId, num.next_number, dto.first_name, dto.last_name || '', dto.email || null, dto.phone || null,
-       dto.whatsapp || null, dto.customer_type || 'retail', dto.company_name || null, dto.city || null, dto.governorate || null]
+       dto.whatsapp || null, dto.customer_type || 'retail', dto.company_name || null, dto.city || null, dto.governorate || null, dto.address || null]
     );
     return result;
   }
@@ -69,7 +69,7 @@ export class CustomerService {
   async update(tenantId: string, id: string, dto: any) {
     const sets: string[] = []; const params: any[] = [id, tenantId]; let idx = 3;
     for (const [key, val] of Object.entries(dto)) {
-      if (['first_name','last_name','email','phone','whatsapp','customer_type','company_name','city','governorate'].includes(key)) {
+      if (['first_name','last_name','email','phone','whatsapp','customer_type','company_name','city','governorate','address'].includes(key)) {
         sets.push(`${key} = $${idx}`); params.push(val); idx++;
       }
     }
