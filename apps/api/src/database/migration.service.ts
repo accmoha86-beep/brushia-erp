@@ -18,11 +18,12 @@ export class MigrationService implements OnModuleInit {
   }
 
   private async runMigrations() {
-    this.logger.log('Running database migrations...');
+    this.logger.log('Running database migrations (v2 — June 2026)...');
 
     const possiblePaths = [
       path.join(process.cwd(), 'packages/db/migrations'),
       '/app/packages/db/migrations',
+      '/app/migrations',
       path.join(__dirname, '../../../../packages/db/migrations'),
       path.join(__dirname, '../../../packages/db/migrations'),
     ];
@@ -59,11 +60,12 @@ export class MigrationService implements OnModuleInit {
       .filter(f => f.endsWith('.sql') && !f.startsWith('seed'))
       .sort();
 
+    this.logger.log(`Found ${files.length} migration files, ${appliedSet.size} already applied`);
+
     for (const file of files) {
       const name = file.replace('.sql', '');
       if (appliedSet.has(name)) {
-        this.logger.log(`Migration ${name} already applied, skipping.`);
-        continue;
+        continue; // Already applied, skip silently
       }
 
       this.logger.log(`Applying migration: ${name}`);
@@ -75,7 +77,7 @@ export class MigrationService implements OnModuleInit {
         await client.query(sql);
         await client.query('INSERT INTO public.migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [name]);
         await client.query('COMMIT');
-        this.logger.log(`✅ Migration ${name} applied`);
+        this.logger.log(`✅ Migration ${name} applied successfully`);
       } catch (error: any) {
         await client.query('ROLLBACK');
         this.logger.error(`❌ Migration ${name} failed: ${error.message}`);
