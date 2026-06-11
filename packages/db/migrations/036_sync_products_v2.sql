@@ -83,79 +83,79 @@ UPDATE products SET name = 'Puff Set Pink' WHERE name_ar = 'سيت باف بين
 -- ============================================
 
 -- Lashes
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000c', 'Lashes 138', 'باكت 138', 'LASH-138', 27500, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000c', 'Lashes 138', 'باكت 138', 'LASH-138', '138-lash-138', 27500, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'باكت 138' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000c', 'Lashes Mix', 'باكت ميكس', 'LASH-MIX', 27500, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000c', 'Lashes Mix', 'باكت ميكس', 'LASH-MIX', '-lash-mix', 27500, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'باكت ميكس' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- Blusher
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000017', 'Blusher 014', 'بلاشر 014', 'BLSH-014', 47500, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000017', 'Blusher 014', 'بلاشر 014', 'BLSH-014', '014-blsh-014', 47500, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'بلاشر 014' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000017', 'Blusher Powder 014', 'بلاشر باودر 014', 'BLSH-PWD-014', 47500, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000017', 'Blusher Powder 014', 'بلاشر باودر 014', 'BLSH-PWD-014', '014-blsh-pwd-014', 47500, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'بلاشر باودر 014' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- Glitter
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000a', 'Pigment Single 1H', 'بيجمنت سينجل 1H', 'GLIT-SGL-1H', 28500, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000a', 'Pigment Single 1H', 'بيجمنت سينجل 1H', 'GLIT-SGL-1H', '1h-glit-sgl-1h', 28500, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'بيجمنت سينجل 1H' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000a', 'Pink Palette', 'باليت بينك', 'PALETTE-PINK', 180000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000a', 'Pink Palette', 'باليت بينك', 'PALETTE-PINK', '-palette-pink', 180000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'باليت بينك' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- Beauty Blender
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000006', 'Beauty Blender Lemon', 'بيوتي بلندر ليموني', 'BB-LEMON', 26000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000006', 'Beauty Blender Lemon', 'بيوتي بلندر ليموني', 'BB-LEMON', '-bb-lemon', 26000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'بيوتي بلندر ليموني' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000006', 'Jacob Puff Set', 'سيت باف جيكوب', 'BB-JL-PUFF-SET', 45000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000006', 'Jacob Puff Set', 'سيت باف جيكوب', 'BB-JL-PUFF-SET', '-bb-jl-puff-set', 45000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'سيت باف جيكوب' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- Brushes
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Amal Wagih Brush', 'فرشة أمل وجيه', 'BRSH-AMAL', 45000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Amal Wagih Brush', 'فرشة أمل وجيه', 'BRSH-AMAL', '-brsh-amal', 45000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'فرشة أمل وجيه' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Amal Wagih Brush — Exchange', 'فرشة أمل وجيه — مقايضة', 'BRSH-AMAL-EX', 0, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Amal Wagih Brush — Exchange', 'فرشة أمل وجيه — مقايضة', 'BRSH-AMAL-EX', '-brsh-amal-ex', 0, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar LIKE '%أمل وجيه%مقايضة%' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Double Blush Brush Brown', 'فرشة بلاشر دابل بني', 'BRSH-DBL-BLUSH-BRN', 35000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Double Blush Brush Brown', 'فرشة بلاشر دابل بني', 'BRSH-DBL-BLUSH-BRN', '-brsh-dbl-blush-brn', 35000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'فرشة بلاشر دابل بني' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Gold Eyebrow Cleaning Brush', 'فرشة تنظيف حواجب جولد', 'BRSH-GOLD-EB-CLN', 25000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Gold Eyebrow Cleaning Brush', 'فرشة تنظيف حواجب جولد', 'BRSH-GOLD-EB-CLN', '-brsh-gold-eb-cln', 25000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar LIKE '%تنظيف حواجب جولد%' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Single Eyeshadow Brush', 'فرشة ايشادو سينجل', 'BRSH-EYESHD-SGL', 30000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000e', 'Single Eyeshadow Brush', 'فرشة ايشادو سينجل', 'BRSH-EYESHD-SGL', '-brsh-eyeshd-sgl', 30000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar LIKE '%ايشادو سينجل%' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- Brush Sets
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000f', 'Jacob Green Full Set', 'طقم جيكوب الأخضر', 'BSET-JACOB-GRN-FULL', 600000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000f', 'Jacob Green Full Set', 'طقم جيكوب الأخضر', 'BSET-JACOB-GRN-FULL', '-bset-jacob-grn-full', 600000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'طقم جيكوب الأخضر' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000f', 'Jacob Set Brushes — Exchange', 'فرشة طقم جيكوب — مقايضة', 'BSET-JACOB-EX', 0, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000f', 'Jacob Set Brushes — Exchange', 'فرشة طقم جيكوب — مقايضة', 'BSET-JACOB-EX', '-bset-jacob-ex', 0, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar LIKE '%طقم جيكوب%مقايضة%' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- Gel Liner
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000007', 'Kohl Light Brown', 'كحل لايت براون', 'KOHL-LB', 45000, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000007', 'Kohl Light Brown', 'كحل لايت براون', 'KOHL-LB', '-kohl-lb', 45000, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'كحل لايت براون' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- Gift item
-INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, base_price, cost_price, is_active, track_inventory)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000a', 'Gift — Loose Glitter', 'هدية لوس جليتر', 'GIFT-LOOSE-GLIT', 0, 0, true, true
+INSERT INTO products (id, tenant_id, category_id, name, name_ar, sku, slug, base_price, cost_price, is_active, track_inventory)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-00000000000a', 'Gift — Loose Glitter', 'هدية لوس جليتر', 'GIFT-LOOSE-GLIT', '-gift-loose-glit', 0, 0, true, true
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE name_ar = 'هدية لوس جليتر' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 -- ============================================
