@@ -1,4 +1,4 @@
-// Migration 034 applied - clear import notes
+// Migrations 034-038 applied + sync June 2026 - clear import notes
 import { NestFactory } from '@nestjs/core';
 import { VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
