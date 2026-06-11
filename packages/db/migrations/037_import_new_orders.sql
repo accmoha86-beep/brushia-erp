@@ -5,88 +5,88 @@
 -- ============================================
 SET search_path = sales, public;
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'رحمه حسن محمد', 'رحمه حسن محمد', '', '01030581694', 'القليوبية', 'العبور', 'مدينه العبور الحي التاسع شارع امين الهنيدي بلوك 52 عماره 8 الدور الثاني شقه 24'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00102', 'رحمه حسن محمد', 'رحمه حسن محمد', '', '01030581694', 'القليوبية', 'العبور', 'مدينه العبور الحي التاسع شارع امين الهنيدي بلوك 52 عماره 8 الدور الثاني شقه 24'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'رحمه حسن محمد' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'هاجر النجار', 'هاجر النجار', '', '01020520370', 'كفر الشيخ', 'الرياض', 'كفر الشيخ الرياض بجوار بنك مصر برج جنات'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00103', 'هاجر النجار', 'هاجر النجار', '', '01020520370', 'كفر الشيخ', 'الرياض', 'كفر الشيخ الرياض بجوار بنك مصر برج جنات'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'هاجر النجار' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'جنا المصري', 'جنا المصري', '', '01011064889', 'الفيوم', 'الفيوم', 'الفيوم الصيفية بجوار بنزينة بهنساوى'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00104', 'جنا المصري', 'جنا المصري', '', '01011064889', 'الفيوم', 'الفيوم', 'الفيوم الصيفية بجوار بنزينة بهنساوى'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'جنا المصري' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'نور عصام', 'نور عصام', '', '01158151949', 'الإسكندرية', 'العجمي', 'العجمي البيطاش آخر شارع الحي جوا شارع صيدليه النصر العماره القبل القهوه'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00105', 'نور عصام', 'نور عصام', '', '01158151949', 'الإسكندرية', 'العجمي', 'العجمي البيطاش آخر شارع الحي جوا شارع صيدليه النصر العماره القبل القهوه'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'نور عصام' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'رنين جميل', 'رنين جميل', '', '01099676830', 'دمياط', 'العنانية', 'دمياط العنانيه أمام المجلس المحلي'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00106', 'رنين جميل', 'رنين جميل', '', '01099676830', 'دمياط', 'العنانية', 'دمياط العنانيه أمام المجلس المحلي'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'رنين جميل' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'ولاء ضيف', 'ولاء ضيف', '', '01007727701', 'الجيزة', 'الحوامدية', 'الحوامديه طريق 11 شارع ابوجبر العماره امام حمام السباحة اكوا ستار الدور الاول'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00107', 'ولاء ضيف', 'ولاء ضيف', '', '01007727701', 'الجيزة', 'الحوامدية', 'الحوامديه طريق 11 شارع ابوجبر العماره امام حمام السباحة اكوا ستار الدور الاول'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'ولاء ضيف' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'اسماء احمد زكريا', 'اسماء احمد زكريا', '', '01149107755', 'أسوان', 'أسوان', 'اسوان طريق السادات حي خالد بن الوليد'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00108', 'اسماء احمد زكريا', 'اسماء احمد زكريا', '', '01149107755', 'أسوان', 'أسوان', 'اسوان طريق السادات حي خالد بن الوليد'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'اسماء احمد زكريا' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'مي السيد', 'مي السيد', '', '01228422628', 'بورسعيد', 'بورسعيد', 'بورسعيد حي الزهور منطقه ال500 عند مسجد البغدادي عماره 83 فوق صيدليه الصواف'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00109', 'مي السيد', 'مي السيد', '', '01228422628', 'بورسعيد', 'بورسعيد', 'بورسعيد حي الزهور منطقه ال500 عند مسجد البغدادي عماره 83 فوق صيدليه الصواف'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'مي السيد' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'فرح خالد', 'فرح خالد', '', '01012041655', 'الجيزة', 'أرض اللواء', '9 شارع فايز سليمان خلف التوحيد والنور ارض اللواء'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00110', 'فرح خالد', 'فرح خالد', '', '01012041655', 'الجيزة', 'أرض اللواء', '9 شارع فايز سليمان خلف التوحيد والنور ارض اللواء'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'فرح خالد' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'ميار محمد ابراهيم', 'ميار محمد ابراهيم', '', '01144475858', 'الجيزة', 'حدائق الأهرام', '89ج بوابة أحمس حدائق الأهرام'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00111', 'ميار محمد ابراهيم', 'ميار محمد ابراهيم', '', '01144475858', 'الجيزة', 'حدائق الأهرام', '89ج بوابة أحمس حدائق الأهرام'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'ميار محمد ابراهيم' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'علا سلامه محمد', 'علا سلامه محمد', '', '01224395220', 'القليوبية', 'كفر شكر', 'كفر شكر كفر تصفا موقف العمومي سنتر علا سلامه'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00112', 'علا سلامه محمد', 'علا سلامه محمد', '', '01224395220', 'القليوبية', 'كفر شكر', 'كفر شكر كفر تصفا موقف العمومي سنتر علا سلامه'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'علا سلامه محمد' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'زينه طارق', 'زينه طارق', '', '01000494433', 'القاهرة', 'مدينة نصر', 'كمبوند جاردينيا سيتي زهراء مدينة نصر عمارة 62 شقة 53'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00113', 'زينه طارق', 'زينه طارق', '', '01000494433', 'القاهرة', 'مدينة نصر', 'كمبوند جاردينيا سيتي زهراء مدينة نصر عمارة 62 شقة 53'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'زينه طارق' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'Nour Hendawy', 'Nour Hendawy', '', '01147090402', 'القاهرة', 'مدينة نصر', '7 ابن الهيثم متفرع من عباس العقاد الدور الثالث'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00114', 'Nour Hendawy', 'Nour Hendawy', '', '01147090402', 'القاهرة', 'مدينة نصر', '7 ابن الهيثم متفرع من عباس العقاد الدور الثالث'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'Nour Hendawy' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'امال منير', 'امال منير', '', '01012954929', 'الدقهلية', 'شربين', 'شربين شارع المركز أمام مدرسة الصنايع برج طيبة الدور التاني'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00115', 'امال منير', 'امال منير', '', '01012954929', 'الدقهلية', 'شربين', 'شربين شارع المركز أمام مدرسة الصنايع برج طيبة الدور التاني'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'امال منير' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'رنا', 'رنا', '', '01112334414', 'الجيزة', '6 أكتوبر', 'اكتوبر الحي الرابع مجاورة 6 عمارة 1131 شقة 6'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00116', 'رنا', 'رنا', '', '01112334414', 'الجيزة', '6 أكتوبر', 'اكتوبر الحي الرابع مجاورة 6 عمارة 1131 شقة 6'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'رنا' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'رنا سعيد', 'رنا سعيد', '', '01094664862', 'الغربية', 'طنطا', 'طنطا سبرباي شارع السندبات عمارة معرض المها الدور التالت'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00117', 'رنا سعيد', 'رنا سعيد', '', '01094664862', 'الغربية', 'طنطا', 'طنطا سبرباي شارع السندبات عمارة معرض المها الدور التالت'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'رنا سعيد' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'رضوى شريف', 'رضوى شريف', '', '01202168710', 'بورسعيد', 'بورسعيد', 'أرض العزب ورا قهوة بصلة جمب محمصة الحطاب استوديو رضوى شريف'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00118', 'رضوى شريف', 'رضوى شريف', '', '01202168710', 'بورسعيد', 'بورسعيد', 'أرض العزب ورا قهوة بصلة جمب محمصة الحطاب استوديو رضوى شريف'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'رضوى شريف' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'ايه العبسي', 'ايه العبسي', '', '01012828587', 'كفر الشيخ', 'دسوق', 'دسوق شارع المركز قدام المغربي'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00119', 'ايه العبسي', 'ايه العبسي', '', '01012828587', 'كفر الشيخ', 'دسوق', 'دسوق شارع المركز قدام المغربي'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'ايه العبسي' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'منة خلاف', 'منة خلاف', '', '01026623278', 'الغربية', 'كفر الزيات', 'كفر الزيات شارع عرابي عند الوكايل العمارة اللي جمب قهوة الفحات'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00120', 'منة خلاف', 'منة خلاف', '', '01026623278', 'الغربية', 'كفر الزيات', 'كفر الزيات شارع عرابي عند الوكايل العمارة اللي جمب قهوة الفحات'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'منة خلاف' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'زينب غريب', 'زينب غريب', '', '01092740724', 'السويس', 'السويس', 'الألبان شارع الورش عند سوبر ماركت الأمراء'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00121', 'زينب غريب', 'زينب غريب', '', '01092740724', 'السويس', 'السويس', 'الألبان شارع الورش عند سوبر ماركت الأمراء'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'زينب غريب' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
-INSERT INTO customers (id, tenant_id, name, first_name, last_name, phone, governorate, city, address)
-SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'سندس عباس', 'سندس عباس', '', '01119433463', 'القاهرة', 'التجمع الأول', 'التجمع الأول شارع أبو موسى الأشعري أمام سنترال التجمع الأول فيلا 11 الدور 3'
+INSERT INTO customers (id, tenant_id, customer_number, name, first_name, last_name, phone, governorate, city, address)
+SELECT gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'CUST-00122', 'سندس عباس', 'سندس عباس', '', '01119433463', 'القاهرة', 'التجمع الأول', 'التجمع الأول شارع أبو موسى الأشعري أمام سنترال التجمع الأول فيلا 11 الدور 3'
 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = 'سندس عباس' AND tenant_id = 'a0000000-0000-0000-0000-000000000001');
 
 
