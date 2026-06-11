@@ -134,8 +134,8 @@ export class POSService {
 
       // Auto-void any remaining held orders
       await client.query(
-        \`UPDATE pos.held_orders SET status = 'voided', updated_at = NOW() 
-         WHERE session_id = $1 AND tenant_id = $2 AND status = 'held'\`,
+        `UPDATE pos.held_orders SET status = 'voided', updated_at = NOW() 
+         WHERE session_id = $1 AND tenant_id = $2 AND status = 'held'`,
         [sessionId, tenantId],
       );
 
